@@ -130,7 +130,7 @@ Docker 未安装（本机实测），延后到 M3；镜像需装 `fontconfig` + 
 
 ### C. 尾斜杠行为（**升级引入的功能回退 → 已修复**）
 
-**背景**：Spring Framework 6.0 起尾斜杠匹配默认值由 `true` 改为 `false`，6.2 更移除了 `PathMatchConfigurer#setUseTrailingSlashMatch` 开关。本项目原先运行在 Spring 5.3（Boot 2.7.5）上、默认匹配尾斜杠 —— 所以这是**升级引入的回退**，不是项目原有行为。
+**背景**：Spring Framework 6.0 起尾斜杠匹配默认值由 `true` 改为 `false`。该配置项同时被标记为 deprecated，但**截至 Spring 6.2 仍然存在且仍然生效**（字节码中可见 `WebMvcConfigurationSupport` 仍在调用 `PathMatchConfigurer#isUseTrailingSlashMatch()` 与 `RequestMappingHandlerMapping#setUseTrailingSlashMatch(boolean)`）。本项目原先运行在 Spring 5.3（Boot 2.7.5）上、默认匹配尾斜杠 —— 所以这是**升级引入的回退**，不是项目原有行为。
 
 **修复前实测**：
 
@@ -145,7 +145,12 @@ Docker 未安装（本机实测），延后到 M3；镜像需装 `fontconfig` + 
 > （第一次已用“首页必须含 DB 数据”闸门拦住；第二次是因为错误页正则未覆盖“页面不存在/请求错误/服务异常”，已补全。）
 
 **修复**：新增 `config/TrailingSlashNormalizeFilter.java` —— 将 `GET /xxx/` 重定向到 `/xxx`（保留查询参数），仅处理 GET、不影响表单 POST。
-选重定向而非改 `PathPatternParser` 的理由：与项目内 `/admin/login/` 既有 302 行为一致，且不依赖 Spring 内部 bean。
+
+**另一个可选方案**：`configurePathMatch(c -> c.setUseTrailingSlashMatch(true))`（3 行、可达原行为，因为该 deprecated API 仍生效）。**未选它的理由**：依赖 deprecated API、且重定向语义更显式并与项目内 `/admin/login/` 既有行为一致。
+
+> ⚠️ **准确表述**：本修复是**恢复了可用性**，**不是**恢复了原行为 ——
+> Boot 2.7.5 是**内部匹配**（URL 保持 `/search/`、直接 200），现在是 **302 重定向**（URL 变为 `/search`）。
+> 对浏览器等价，对**不跟随重定向**的脚本 / 爬虫 / API 客户端不等价。
 
 **修复后实测**：
 
