@@ -14,10 +14,14 @@
 
 ## 前置检查（开工前确认，任一不满足就先解决）
 
-- [ ] JDK 25 可用：`/mnt/c/Users/22421/.jdks/openjdk-25/bin/java -version` → 输出 `25`
-- [ ] MySQL 在跑：`E:\mysql-9.7.1`，3306 可连（本机开发期用现有库）
-- [ ] Redis 在跑：6379 可连（本机 3.0.504）
-- [ ] **Docker Desktop 是否已装**：M1 不依赖它；若未装，Task 10 的容器项标记为「延后到 M3」，并在 README 记 TODO
+> **2026-09-17 实测校正**：原计划中的 Maven 路径已失效（`.m2/wrapper` 被 C 盘清理删除），本文档已同步修正。
+
+- [x] JDK 25 可用：`/mnt/c/Users/22421/.jdks/openjdk-25/bin/java.exe -version` → `openjdk 25`（**必须带 `.exe`**）
+- [x] Maven 3.9.16 可用：`D:\tools\apache-maven-3.9.16`（本次装入）→ **必须经 `bash ops/mvn.sh` 调用**（本机 WSL 无 Linux Maven/JDK）
+- [x] MySQL 在跑：3306 监听中（`E:\mysql-9.7.1`）
+- [x] Redis 在跑：6379 监听中（本机 3.0.504）
+- [ ] **Docker Desktop 未安装**（实测）→ M1 不依赖；Task 10 的容器字体项标记「延后到 M3」，并在 README 记 TODO
+- [ ] 数据库密码：Task 9 启动前需提供 `DB_PASSWORD`（Task 7 已把密码外置为环境变量）
 
 ---
 
@@ -32,6 +36,7 @@ newbee-mall-ai/
 │   ├── PLAN.md                       # 本文件
 │   └── UPGRADE-BOOT3.md              # Task 11 产出
 ├── ops/
+│   ├── mvn.sh                        # Maven 包装器（WSL → PowerShell → Windows Maven）
 │   └── smoke.sh                      # Task 4 产出（冒烟脚本）
 └── mall-backend/
     ├── pom.xml                       # Task 5 修改
@@ -41,7 +46,7 @@ newbee-mall-ai/
         └── test/java/…
 ```
 
-**职责边界**：`ops/smoke.sh` 只做「URL → 期望状态码/关键字」判定，不含业务逻辑；`mall-backend/` 是唯一应用；文档与运维脚本留在仓库根。
+**职责边界**：`ops/mvn.sh` 只做「WSL → Windows Maven」的环境转发，不含构建逻辑；`ops/smoke.sh` 只做「URL → 期望状态码/关键字」判定，不含业务逻辑；`mall-backend/` 是唯一应用；文档与运维脚本留在仓库根。
 
 ---
 
@@ -302,13 +307,10 @@ echo "=== 通过 $PASS / 失败 $FAIL ==="
 - [ ] **Step 2: 对旧仓库跑一次，建立基线（阳性对照）**
 
 ```bash
-# 终端 A：在旧仓库启动（HEAD 版本）
-cd "/mnt/d/GitHub/xiangmu/newbee-mall"
-JAVA_HOME="/mnt/c/Users/22421/.jdks/openjdk-25" \
-  "$USERPROFILE/.m2/wrapper/dists/apache-maven-3.9.6-bin/3311e1d4/apache-maven-3.9.6/bin/mvn" \
-  spring-boot:run
-# 终端 B：
-bash ops/smoke.sh http://127.0.0.1:28089
+# 终端 A：在旧仓库启动（HEAD 版本）—— 旧仓库没有 ops/mvn.sh，直接用 PowerShell
+powershell.exe -NoProfile -Command "cd 'D:\GitHub\xiangmu\newbee-mall'; \$env:JAVA_HOME='C:\Users\22421\.jdks\openjdk-25'; & 'D:\tools\apache-maven-3.9.16\bin\mvn.cmd' spring-boot:run"
+# 终端 B（用绝对路径，因为当前不在 newbee-mall-ai 目录）：
+bash /mnt/d/GitHub/xiangmu/newbee-mall-ai/ops/smoke.sh http://127.0.0.1:28089
 ```
 
 Expected: 记录实际通过/失败数，写入 `docs/UPGRADE-BOOT3.md` 的「升级前基线」
@@ -553,10 +555,8 @@ git commit -m "config: 迁移 Boot 3 配置键（spring.data.redis.*）并外置
 - [ ] **Step 1: 编译**
 
 ```bash
-cd "/mnt/d/GitHub/xiangmu/newbee-mall-ai/mall-backend"
-JAVA_HOME="/mnt/c/Users/22421/.jdks/openjdk-25" \
-  "$USERPROFILE/.m2/wrapper/dists/apache-maven-3.9.6-bin/3311e1d4/apache-maven-3.9.6/bin/mvn" \
-  -q clean compile 2>&1 | tail -30
+cd "/mnt/d/GitHub/xiangmu/newbee-mall-ai"
+bash ops/mvn.sh -q clean compile 2>&1 | tail -30
 ```
 
 Expected: `BUILD SUCCESS`（无 `package javax.* does not exist`）
@@ -566,7 +566,7 @@ Expected: `BUILD SUCCESS`（无 `package javax.* does not exist`）
 ```bash
 cd "/mnt/d/GitHub/xiangmu/newbee-mall-ai/mall-backend"
 f=$(find target/classes -name "*.class" | head -1)
-"/mnt/c/Users/22421/.jdks/openjdk-25/bin/javap" -verbose "$f" | grep -m1 "major version"
+"/mnt/c/Users/22421/.jdks/openjdk-25/bin/javap.exe" -verbose "$f" | grep -m1 "major version"
 ```
 
 Expected: `major version: 65`（Java 21）。若为 52（Java 8）或 69（Java 25）说明配置未生效，回 Task 5 Step 3。
@@ -574,10 +574,9 @@ Expected: `major version: 65`（Java 21）。若为 52（Java 8）或 69（Java 
 - [ ] **Step 3: 依赖冲突预检（设计 §6.4）**
 
 ```bash
-cd "/mnt/d/GitHub/xiangmu/newbee-mall-ai/mall-backend"
-MVN="$USERPROFILE/.m2/wrapper/dists/apache-maven-3.9.6-bin/3311e1d4/apache-maven-3.9.6/bin/mvn"
-JAVA_HOME="/mnt/c/Users/22421/.jdks/openjdk-25" "$MVN" -q dependency:tree -Dincludes=redis.clients:jedis
-JAVA_HOME="/mnt/c/Users/22421/.jdks/openjdk-25" "$MVN" -q dependency:tree -Dincludes=org.springframework.session
+cd "/mnt/d/GitHub/xiangmu/newbee-mall-ai"
+bash ops/mvn.sh -q dependency:tree -Dincludes=redis.clients:jedis
+bash ops/mvn.sh -q dependency:tree -Dincludes=org.springframework.session
 ```
 
 Expected: jedis 版本被 Boot BOM 管理（M1 未引入 LangChain4j，暂不冲突）；`org.springframework.session` **无输出**（死依赖已删）
@@ -600,11 +599,9 @@ Expected: 干净（`target/` 已被 .gitignore 覆盖）
 - [ ] **Step 1: 启动应用**
 
 ```bash
-cd "/mnt/d/GitHub/xiangmu/newbee-mall-ai/mall-backend"
-export DB_PASSWORD='<向用户索取>'
-JAVA_HOME="/mnt/c/Users/22421/.jdks/openjdk-25" \
-  "$USERPROFILE/.m2/wrapper/dists/apache-maven-3.9.6-bin/3311e1d4/apache-maven-3.9.6/bin/mvn" \
-  spring-boot:run
+cd "/mnt/d/GitHub/xiangmu/newbee-mall-ai"
+export DB_PASSWORD='<向用户索取>'      # ops/mvn.sh 会自动转发给 Windows 侧进程
+bash ops/mvn.sh spring-boot:run
 ```
 
 Expected: 日志出现 `Tomcat started on port(s): 28089`，**无** `jakarta.servlet` 相关 NoClassDefFoundError

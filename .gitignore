@@ -10,10 +10,24 @@ target/
 .vscode/
 *.log
 
-# 本地配置与密钥
+# OS 噪声（Windows / macOS）
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 本地配置与密钥（必须覆盖 Spring 的实际命名约定，否则是「假防护」）
 .env
-*.local.properties
+.env.*
+!.env.example
+application-local.*
+*-local.yml
+*-local.properties
 
 # 运行时数据
 data/
+!data/.gitkeep
+
+# 数据导出：白名单制，只放行脱敏的 init.sql（设计决策 #20/#36）
+ops/*.sql
+!ops/init.sql
 ops/*.bak
