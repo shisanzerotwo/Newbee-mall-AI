@@ -106,9 +106,7 @@
 | 产物完整性 | 旧 100 java → 104 class；新 98 java → 102 class；集合差集 = 仅 `AgentApiController.class` + `AgentCsModelAdvice.class`（Task 3 删除所致），**无缺无多** |
 | 依赖健康 | `dependency:tree`：零 `omitted for conflict/duplicate`；spring-data-redis 3.5.13 + lettuce 6.6.0 + HikariCP 6.3.3 |
 | 运行 | `Tomcat started on port 28089`，`Started NewBeeMallApplication in 4.057 seconds`；容器由 **Tomcat 9.0.68 → 10.1.55** |
-| 项 | 证据 |
-|---|---|
-| **冒烟回归** | **升级前 11/11 → 升级后 14/14**（脚本已补强，见下方 D 节；通过项覆盖升级前全部路径） |
+| **冒烟回归** | **升级前 11/11 → 升级后 16/16**（脚本已两次补强：DB 断言 + 尾斜杠用例，见下方 C/D 节） |
 | 首页缓存 | `FLUSHDB` 后访问首页 → DBSIZE=5（`mall:index:carousel` / `mall:index:category` / `mall:index:goods:3,4,5`），`TTL mall:index:carousel` = **1798s**（≈30 分钟） |
 | 运行期异常 | 应用日志中 `exception\|error` 计数 = **0** |
 | 硬编码密钥 | `grep -rn "REDACTED_PASSWORD\|agent.api-key" mall-backend/src/` → **零命中** |
@@ -130,17 +128,33 @@
 
 Docker 未安装（本机实测），延后到 M3；镜像需装 `fontconfig` + 中文字体，并在冒烟清单加“容器内取一张验证码图肉眼确认可辨认”。
 
-### C. 尾斜杠行为（实测结论，无需改代码）
+### C. 尾斜杠行为（**升级引入的功能回退 → 已修复**）
 
-Spring 6 默认关闭尾斜杠匹配（DESIGN §6.3 有预测）。实测：
+**背景**：Spring Framework 6.0 起尾斜杠匹配默认值由 `true` 改为 `false`，6.2 更移除了 `PathMatchConfigurer#setUseTrailingSlashMatch` 开关。本项目原先运行在 Spring 5.3（Boot 2.7.5）上、默认匹配尾斜杠 —— 所以这是**升级引入的回退**，不是项目原有行为。
+
+**修复前实测**：
+
+| 路径 | 实测结果 | 说明 |
+|---|---|---|
+| `/search/` | **HTTP 200，但响应体是 `<title>系统异常</title>`** | ⚠️ 路由不匹配落到错误页，**状态码仍是 200** |
+| `/login/` | 同上 | 同上 |
+| `/goods/detail/10003/` | 302 → `/login` | 登录拦截，正常 |
+
+> ⚠️ **教训（同一个坑踩了第二次）**：第一次是 DB 失联（首页 200 但无数据），第二次是这里（200 但内容是错误页）。
+> 两次的共同点：**只看状态码会漏判**。手工验证同样必须看响应体，不能只看 `%{http_code}`。
+> （第一次已用“首页必须含 DB 数据”闸门拦住；第二次是因为错误页正则未覆盖“页面不存在/请求错误/服务异常”，已补全。）
+
+**修复**：新增 `config/TrailingSlashNormalizeFilter.java` —— 将 `GET /xxx/` 重定向到 `/xxx`（保留查询参数），仅处理 GET、不影响表单 POST。
+选重定向而非改 `PathPatternParser` 的理由：与项目内 `/admin/login/` 既有 302 行为一致，且不依赖 Spring 内部 bean。
+
+**修复后实测**：
 
 | 路径 | 结果 |
 |---|---|
-| `/search/`、`/login/` | **200**（正常） |
-| `/goods/detail/10003/` | 302 → `/login`（登录拦截，正常） |
-| `/admin/login/` | **302 → `/admin/login`**（自动规范化到无斜杠，**无害**，非 404） |
-
-结论：**无 404、无需开启 `setUseTrailingSlashMatch`**（Spring 6.2 已移除该选项）。
+| `/search/` | **302 → `/search`** ✅ |
+| `/login/` | **302 → `/login`** ✅ |
+| `/search/?keyword=phone` | **302 → `/search?keyword=phone`**（查询参数保留）✅ |
+| 跟随重定向后的内容 | `<title>新蜂商城 …</title>` 正常 ✅ |
 
 ### D. 冒烟断言强度与阳性/阴性对照（2026-09-17 补强）
 

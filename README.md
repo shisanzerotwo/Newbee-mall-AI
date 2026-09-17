@@ -46,7 +46,7 @@
               ┌────────────────────┼────────────────────┐
               ▼                    ▼                    ▼
         MySQL 9.7            Redis（缓存/ZSet/向量）  LLM 网关
-   （商城数据 + 记忆表）                          （OmniRoute/备用 key）
+   （商城数据 + 记忆表）                    （候选：Agnes 直连 / OmniRoute，以 M2 spike 为准）
 ```
 
 ---
@@ -91,7 +91,7 @@ bash ops/smoke.sh
 - [ ] （M3）容器内验证码字体：镜像需装 `fontconfig` + 中文字体
 
 **M2/M3 前置**：
-- [ ] **启动 OmniRoute 网关**并实测 function calling（M2 的模型通道；当前未运行）
+- [ ] **模型通道 spike**：在目标通道上实测 **function calling**（现状 `.env` 指向 Agnes AI Hub；OmniRoute 是候选、当前未运行）——**未通过不开写编排层**
 - [ ] **安装 Docker Desktop**（M3 的 `docker compose up -d`；当前未安装）
 
 ---

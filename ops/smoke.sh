@@ -31,8 +31,10 @@ else
   BODY_OUT="$BODY_FILE"
 fi
 
-# 错误页特征：命中任一即判失败（Spring 默认白标页 + 项目自定义错误页用词）
-ERROR_RE='Whitelabel Error|Internal Server Error|系统异常|系统错误|出错了'
+# 错误页特征：命中任一即判失败
+# （含项目自定义错误页用词；2026-09-17 补全 —— 初版只覆盖 Whitelabel/系统异常，
+#   漏掉了“页面不存在/请求错误/服务异常”，导致 /search/ 的错误页没被抓住）
+ERROR_RE='Whitelabel Error|Internal Server Error|系统异常|系统错误|出错了|页面不存在|请求错误|服务异常|NOT_FOUND'
 
 check() {  # check <名称> <路径> <期望状态码> [必须包含的关键字]
   local name="$1" path="$2" want="$3" kw="${4:-}"
@@ -76,6 +78,11 @@ echo "--- 基础设施 ---"
 check "验证码图片"    "/common/kaptcha"          200
 check "静态资源·CSS"  "/mall/styles/header.css"  200
 check "静态资源·JS"   "/mall/js/index.js"        200
+
+echo "--- 尾斜杠规范化（Spring 6 默认不匹配，由 TrailingSlashNormalizeFilter 重定向恢复）---"
+# 这些路径在修复前会返回【200 + 错误页内容】，单看状态码抓不到
+check "尾斜杠·搜索"  "/search/?keyword=phone"     302
+check "尾斜杠·登录"  "/login/"                    302
 
 echo "=== 通过 $PASS / 失败 $FAIL ==="
 rm -f "$BODY_FILE"
