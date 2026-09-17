@@ -27,6 +27,10 @@
         <maven.compiler.release>21</maven.compiler.release>
         <mybatis.start.version>3.0.5</mybatis.start.version>
         <hutool-captcha.version>5.8.47</hutool-captcha.version>
+        <!-- LangChain4j：core 与 open-ai 为稳定版（1.20.0）；
+             starter / embeddings / community-redis 目前只有 beta（1.20.0-beta30），
+             M2-1 先不引入，到 M2-3（RAG）再评估 -->
+        <langchain4j.version>1.20.0</langchain4j.version>
     </properties>
 
     <dependencies>
@@ -65,6 +69,18 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <!-- ===== AI 客服（M2-1）：LangChain4j 核心 + OpenAI 兼容客户端 ===== -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j</artifactId>
+            <version>${langchain4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai</artifactId>
+            <version>${langchain4j.version}</version>
         </dependency>
     </dependencies>
 

@@ -262,7 +262,7 @@ event: error    data: {"message":"模型调用失败，请稍后再试"}
 |---|---|---|
 | 运行时 | **Java 21** | 本机用 JDK 25 编译 `--release 21`；容器 `eclipse-temurin:21-jre` |
 | 框架 | **Spring Boot 3.5.x** | 官方支持 Java **17~25** |
-| AI 编排 | **LangChain4j** + 官方 **`langchain4j-spring-boot-starter`** | 最低 JDK 17；starter 需 **Boot 3.5+**；`@AiService` 为官方能力。⚠️ starter 版本线是 `1.x.y-betaN`（与核心库版本线不同步）；**`1.19.1` / `1.19.1-beta29` 是误发布版本（实际含 1.20 之后的提交），不可用**，取 `1.19.2-beta29` 或 `1.20.0-beta30` |
+| AI 编排 | **LangChain4j** + 官方 **`langchain4j-spring-boot-starter`** | 最低 JDK 17；starter 需 **Boot 3.5+**；`@AiService` 为官方能力。⚠️ starter 版本线是 `1.x.y-betaN`（与核心库版本线不同步）；**`1.19.1` / `1.19.1-beta29` 是误发布版本（实际含 1.20 之后的提交），不可用**，取 `1.19.2-beta29` 或 `1.20.0-beta30`。<br>⚠️ **M2-1 实际决定（2026-09-18）：暂不引入 starter** —— 因为 `langchain4j` / `langchain4j-open-ai` 已有 GA（1.20.0）而 starter / embeddings / community-redis 只有 beta（1.20.0-beta30）。M2-1 改用**稳定坐标 + 自写 `CsAgentConfig`**，避免 beta 自动配置的黑盒。后续若 starter 进入 GA（或需要 `@AiService` 的声明式能力），改用它的成本 = 删自写配置 + 补 starter 依赖（很小）。RAG 相关 beta 组件（embeddings / community-redis）在 **M2-3** 再评估 |
 | 嵌入（阶段1） | `langchain4j-embeddings-all-minilm-l6-v2` | **内置 ONNX，零外部文件** |
 | 嵌入（阶段2） | `bge-small-zh-v1.5` | 需自备 `model.onnx` + `tokenizer.json` |
 | 向量库 | `langchain4j-community-redis` + **Redis 8** | `langchain4j-redis` 自 1.0.0-beta1 迁至 community（旧坐标停在 0.36.2）；需 Query Engine（`FT.*`）。底层客户端是 **Jedis**，与 Boot BOM 存在版本冲突风险 → 见 §6.4 |
@@ -341,6 +341,12 @@ mvn dependency:tree -Dincludes=com.squareup.okhttp3     # LangChain4j 有已知 
 mvn dependency:tree -Dincludes=com.fasterxml.jackson.core
 ```
 
+> **M2-1 实测结果**（2026-09-18，引入 LangChain4j 后）：
+> - `dev.langchain4j:langchain4j` / `-core` / `-open-ai` / `-http-client` 均解析为 **1.20.0（稳定）**；`-http-client-jdk` 为 runtime
+> - 传递依赖含 `langchain4j-reactive-streaming:1.20.0-beta30` → **不排除**：它本就只有 beta、无 GA 可对齐；全树 `omitted for conflict/duplicate` = **0**；6 个类 vs core 560 个类，无 classpath 遮蔽；M2-5 做 SSE 时正好要用
+> - `redis.clients:jedis`：**未引入**（要等 M2-3 引入 `langchain4j-community-redis` 才出现 —— 那才是 R3 的真正触发点）
+> - `com.squareup.okhttp3` / `jackson`：**未引入冲突**
+
 - 处置：优先引入 `langchain4j-bom` / `langchain4j-community-bom` 统一锁版本；仍冲突则在 `<properties>` 显式覆盖 `jedis.version`。
 - 同时确认：Spring Data Redis 用 **Lettuce**、LangChain4j 用 **Jedis**，应用里会有**两个 Redis 客户端与两个连接池**，需分别配置并计入压测观察项。
 - **此项不过，不要开写编排层。**
@@ -386,7 +392,9 @@ mvn dependency:tree -Dincludes=com.fasterxml.jackson.core
 
 ### 7.3 编排与质检
 
-- `CsAgentService`：LangChain4j `AiServices` 声明式接口（优先走官方 starter 的 `@AiService`）+ `@Tool` + `ChatMemory`；客服人设沿用 Python 版 prompt（`CS_PROMPT` 实测 922 字符 / 5 段：人设 · 人味 · 推荐能力 · 模糊分级 · 数据铁律）。**注意**：Python 版对客服回答**没有任何输出格式硬约束**（不禁止 markdown/HTML）——若 Java 版要加，属新增约束，需在对照表中说明。
+- `CsAgentService`：LangChain4j `@Tool` + `ChatMemory`；客服人设沿用 Python 版 prompt（`CS_PROMPT` 实测 922 字符 / 5 段：人设 · 人味 · 推荐能力 · 模糊分级 · 数据铁律）。**注意**：Python 版对客服回答**没有任何输出格式硬约束**（不禁止 markdown/HTML）——若 Java 版要加，属新增约束，需在对照表中说明。
+  <br>⚠️ **M2-1 决定（2026-09-18）：不引入 `@AiService` / `langchain4j-spring-boot-starter`**（starter 只有 beta），改为**手写编排**（直接调 `ChatModel` + 工具循环）。若 starter 进入 GA，可切回声明式接口。
+- ⚠️ **M2-2 注入 `ChatModel` 时必须用 `@Qualifier("csChatModel")`** —— M2-4 将新增**质检用的第二个模型**，届时按类型注入会产生 Bean 歧义。（写进设计文档而非只留任务卡，避免“说好的后续处理”漂走）
 - `QaReviewer`：独立第二角色，只查**硬伤**（数据准确性 / 诚实性 / 合规性 / 推荐合理性），不挑表达风格
 - **默认 `gate`**（对齐 Python 基准实测：`QA_MODE` 默认 `gate` 且质检**同步阻塞**在回答返回之前）：同步把关，不合格追加质检反馈后**重答一次**（不循环、不再复核）
 - **`audit` 模式**：回答先流式返回，质检异步跑并通过 SSE `review` 事件推送结果 —— 此时 `done` **不是**终止事件，时序见 §4.2
