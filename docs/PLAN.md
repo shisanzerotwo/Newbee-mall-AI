@@ -108,29 +108,44 @@ git commit -m "chore: 统一行尾策略与忽略规则"
 
 ## Task 2: 基线差异审查（决定拷贝哪个版本）
 
-**背景：** `newbee-mall` 工作区有 **9 个真实改动 + 4 个未跟踪文件未提交**（实测 `git diff --numstat` 筛选所得），其余 300 个 M 是纯行尾噪声。**不能盲目拷工作区，也不能盲目拷 HEAD。**
+**背景：** `newbee-mall` 工作区有 **310 个 M + 4 个未跟踪**，但其中 **只有 18 个文件是真实内容改动**，其余全是 CRLF 行尾噪声（本机 `core.autocrlf=true` 所致；第三方 vendor 文件如 `adminlte.css`/`chart.js`/`select2` 不可能被改动）。**不能盲目拷工作区，也不能盲目拷 HEAD。**
 
 **Files:**
 - Read: `D:/GitHub/xiangmu/newbee-mall`（只读，不改动旧仓库）
 
-- [ ] **Step 1: 列出真实内容改动（排除纯行尾）**
+- [ ] **Step 1: 逐文件检测真实内容差异（剔除 CR 后比对）**
+
+> ⚠️ **不要用 `git diff --numstat` 的 `$1 != $2` 筛选**：那会漏掉「行内替换」（增删行数相等，如 CSS token 改名 `--bg-surface` → `--surface`）。本次实测就因此漏掉了 **9 个 CSS 文件**，直接后果是 9 个页面前台背景色错乱。
 
 ```bash
 cd "/mnt/d/GitHub/xiangmu/newbee-mall"
-git diff --numstat | awk '{if($1!=$2) print "改行数不同:",$0}'
+for f in $(git status --porcelain | grep "^ M" | awk '{print $2}'); do
+  if ! git show "HEAD:$f" 2>/dev/null | tr -d '\r' | diff -q - <(tr -d '\r' < "$f") >/dev/null 2>&1; then
+    echo "REAL: $f"
+  fi
+done
 ```
 
-Expected（实测基线）：
+Expected（2026-09-17 实测，共 **18 个**）：
 ```
-改行数不同: 29  0   docs/DESIGN.md
-改行数不同: 33  31  src/main/resources/application.properties
-改行数不同: 24  7   src/main/resources/static/mall/css/common.css
-改行数不同: 156 504 src/main/resources/static/mall/styles/header.css
-改行数不同: 213 211 src/main/resources/templates/mall/cart.html
-改行数不同: 102 87  src/main/resources/templates/mall/footer.html
-改行数不同: 126 83  src/main/resources/templates/mall/header.html
-改行数不同: 112 110 src/main/resources/templates/mall/login.html
-改行数不同: 128 126 src/main/resources/templates/mall/register.html
+REAL: docs/DESIGN.md
+REAL: src/main/resources/application.properties
+REAL: src/main/resources/static/mall/css/common.css
+REAL: src/main/resources/static/mall/styles/cart.css
+REAL: src/main/resources/static/mall/styles/detail.css
+REAL: src/main/resources/static/mall/styles/header.css
+REAL: src/main/resources/static/mall/styles/index.css
+REAL: src/main/resources/static/mall/styles/login.css
+REAL: src/main/resources/static/mall/styles/my-orders.css
+REAL: src/main/resources/static/mall/styles/order-detail.css
+REAL: src/main/resources/static/mall/styles/pay-select.css
+REAL: src/main/resources/static/mall/styles/personal.css
+REAL: src/main/resources/static/mall/styles/search.css
+REAL: src/main/resources/templates/mall/cart.html
+REAL: src/main/resources/templates/mall/footer.html
+REAL: src/main/resources/templates/mall/header.html
+REAL: src/main/resources/templates/mall/login.html
+REAL: src/main/resources/templates/mall/register.html
 ```
 
 - [ ] **Step 2: 列出未跟踪文件**
@@ -149,18 +164,27 @@ Expected:
 
 - [ ] **Step 3: 逐项决定（按下表勾选，写进 `docs/UPGRADE-BOOT3.md` 的「基线选择」节）**
 
-| 文件 | 用途判断 | 决定 | 理由 |
+| 文件 | 真实改动内容 | 决定 | 理由 |
 |---|---|---|---|
-| `application.properties` | 含 `agent.cs-url` 配置（未提交） | ✅ **带**（升级时改写） | 客服地址配置在 M3 仍需要 |
-| `common.css` / `header.css` | UI 重设计的后续调整 | ✅ **带** | 前台观感依赖它 |
-| `cart.html` / `login.html` / `register.html` | UI 重设计后续调整 | ✅ **带** | 同上 |
-| `header.html` | 含「智能客服」链接 | ⚠️ **带但改**（M3 改为浮窗入口） | M1 只保证升级后不报错 |
-| `footer.html` | 含 `nb-cs-widget` iframe 浮窗 | ⚠️ **带但改**（M3 重写为 Thymeleaf fragment） | 同上 |
-| `themes.css`（新） | UI 主题机制 | ✅ **带** | 前台样式依赖 |
-| `cs-widget.js` / `cs-widget.css`（新） | iframe 浮窗实现 | ❌ **不带** | 新设计改为原生融合，此实现将被废弃 |
-| `AgentCsModelAdvice.java`（新） | 注入 `agent.cs-url` | ❌ **不带** | 与 iframe 方案绑定，M3 重新实现 |
-| `AgentApiController.java`（已提交） | `/api/agent` 三接口 | ❌ **删除**（决策 #18） | 内部改直调 Service |
-| `docs/DESIGN.md`（改动） | 商城 UI 规格 | ✅ **带**（进新仓库 `docs/`） | UI 参考 |
+| **CSS 组（12 个，必须整组带）** | | |
+| `css/common.css` | CSS token 定义改名 | ✅ **带** | token 被下面 9 个 CSS 共享 |
+| `css/themes.css`（新增） | 主题 token 定义 | ✅ **带** | 同上 |
+| `styles/header.css` | 头部样式 v2 | ✅ **带** | 与 header.html v2 配套 |
+| `styles/cart.css`、`detail.css`、`index.css`、`login.css`、`my-orders.css`、`order-detail.css`、`pay-select.css`、`personal.css`、`search.css`（9 个） | 消费改名后的 token | ✅ **带（整组，不可拆）** | **拆开即破 9 个页面的背景色** |
+| **模板（5 个）** | | |
+| `templates/mall/header.html` | v2 头部 + 「智能客服」链接 | ⚠️ **带但改**（摘除客服链接） | M3 改为原生浮窗入口 |
+| `templates/mall/footer.html` | 含 `nb-cs-widget` iframe 浮窗块 | ⚠️ **带但改**（摘除浮窗块） | M3 用 Thymeleaf fragment 重写 |
+| `templates/mall/cart.html`、`login.html`、`register.html` | 各 +2 行 `themes.css` 引用 | ✅ **带** | 不带上会 404 |
+| **配置与文档（2 个）** | | |
+| `application.properties` | 仅 `agent.cs-url` 2 行 | ❌ **不带（用 HEAD 版）** | Task 5/7 基于 HEAD 升级，叠加未提交改动会让 diff 变脏；M3 走原生融合也不需要该配置 |
+| `docs/DESIGN.md` | 商城 UI v2 规格（+29 行） | ✅ **带，但改名 `docs/MALL-UI-SPEC.md`** | ⚠️ **绝不能**覆盖新仓库的 `docs/DESIGN.md`（那是 v1.1 设计规格） |
+| **未跟踪新增（4 个）** | | |
+| `css/themes.css` | 主题 token | ✅ **带** | 见上 |
+| `js/cs-widget.js` | iframe 浮窗实现 | ❌ **不带** | 决策 #7：M3 改原生融合 |
+| `styles/cs-widget.css` | 同上 | ❌ **不带** | 同上 |
+| `controller/agent/AgentCsModelAdvice.java` | 注入 `agentCsUrl` | ❌ **不带** | 与 iframe 方案绑定，M3 重新实现 |
+| **已提交但需删（1 个）** | | |
+| `controller/agent/AgentApiController.java` | `/api/agent` 三接口 | 🗑️ **删除** | 决策 #18：内部改直调 Service |
 
 - [ ] **Step 4: 把上面的决定表写入 `docs/UPGRADE-BOOT3.md` 草稿（Task 11 完善）**
 
@@ -196,17 +220,31 @@ Expected: 输出文件数（约 200+，不含 target/）
 ```bash
 SRC="/mnt/d/GitHub/xiangmu/newbee-mall"
 DST="/mnt/d/GitHub/xiangmu/newbee-mall-ai/mall-backend"
-# 带：UI 调整 + 配置（不含 cs-widget.* 与 AgentCsModelAdvice.java）
-cp "$SRC/src/main/resources/application.properties" "$DST/src/main/resources/"
-cp "$SRC/src/main/resources/static/mall/css/common.css" "$DST/src/main/resources/static/mall/css/"
-cp "$SRC/src/main/resources/static/mall/css/themes.css" "$DST/src/main/resources/static/mall/css/"
-cp "$SRC/src/main/resources/static/mall/styles/header.css" "$DST/src/main/resources/static/mall/styles/"
-cp "$SRC/src/main/resources/templates/mall/cart.html" "$DST/src/main/resources/templates/mall/"
-cp "$SRC/src/main/resources/templates/mall/login.html" "$DST/src/main/resources/templates/mall/"
-cp "$SRC/src/main/resources/templates/mall/register.html" "$DST/src/main/resources/templates/mall/"
-cp "$SRC/src/main/resources/templates/mall/header.html" "$DST/src/main/resources/templates/mall/"
-cp "$SRC/src/main/resources/templates/mall/footer.html" "$DST/src/main/resources/templates/mall/"
-cp "$SRC/docs/DESIGN.md" "/mnt/d/GitHub/xiangmu/newbee-mall-ai/docs/DESIGN-UI.md"
+R="/mnt/d/GitHub/xiangmu/newbee-mall-ai"
+
+# —— 主题 CSS 组：11 个真实改动 + 1 个新增，必须整组（token 改名跨文件耦合）——
+for f in common.css themes.css; do
+  cp "$SRC/src/main/resources/static/mall/css/$f" "$DST/src/main/resources/static/mall/css/"
+done
+for f in header.css cart.css detail.css index.css login.css my-orders.css \
+         order-detail.css pay-select.css personal.css search.css; do
+  cp "$SRC/src/main/resources/static/mall/styles/$f" "$DST/src/main/resources/static/mall/styles/"
+done
+
+# —— 模板（header/footer 随后手工摘除客服块）——
+for f in header.html footer.html cart.html login.html register.html; do
+  cp "$SRC/src/main/resources/templates/mall/$f" "$DST/src/main/resources/templates/mall/"
+done
+
+# —— 商城 UI 规格：改名，绝不可覆盖 docs/DESIGN.md ——
+cp "$SRC/docs/DESIGN.md" "$R/docs/MALL-UI-SPEC.md"
+
+# —— 明确不带 ——
+#   application.properties      保持 git archive 的 HEAD 版（Task 7 再改）
+#   cs-widget.js / cs-widget.css / AgentCsModelAdvice.java   决策 #7：M3 重写
+
+# —— 校验：应拷入 12 个 CSS ——
+echo "styles/ 下 CSS 数: $(find "$DST/src/main/resources/static/mall/styles" -name '*.css' | wc -l)"
 ```
 
 - [ ] **Step 3: 删除按设计应移除的接口（决策 #18）**

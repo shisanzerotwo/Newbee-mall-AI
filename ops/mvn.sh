@@ -21,11 +21,9 @@ if [ ! -d "$APP" ]; then
   exit 1
 fi
 
-# 转发 DB_PASSWORD（已设置时）到 Windows 侧进程环境
-PW=''
-if [ -n "${DB_PASSWORD:-}" ]; then
-  PW="\$env:DB_PASSWORD='$DB_PASSWORD'; "
-fi
+# 注意：DB_PASSWORD 由 PowerShell 从父进程环境变量自动继承，
+# 切勿把密码插值到命令行字符串里（含单引号会被撑破，形成注入面）。
+# 用法：export DB_PASSWORD='...' 后再调用本脚本。
 
 APP_WIN="$(wslpath -w "$APP")"
-powershell.exe -NoProfile -Command "cd '$APP_WIN'; \$env:JAVA_HOME='$JAVA_HOME_WIN'; $PW& '$MVN_WIN' $*"
+powershell.exe -NoProfile -Command "cd '$APP_WIN'; \$env:JAVA_HOME='$JAVA_HOME_WIN'; & '$MVN_WIN' $*"
