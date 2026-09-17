@@ -653,7 +653,11 @@ Expected: 干净（`target/` 已被 .gitignore 覆盖）
 
 ```bash
 cd "/mnt/d/GitHub/xiangmu/newbee-mall-ai"
-export DB_PASSWORD='<向用户索取>'      # ops/mvn.sh 会自动转发给 Windows 侧进程
+export DB_PASSWORD='<向用户索取>'
+# ⚠️ 关键：WSL 的环境变量【不会】自动传给 Windows 子进程，必须由 ops/mvn.sh 内的
+#    `export WSLENV="${WSLENV:+$WSLENV:}DB_PASSWORD/w"` 转发。
+#    漏掉这一层的症状极具迷惑性：应用【能启动、页面也返回 200】，
+#    但日志里有 CannotGetJdbcConnectionException、且首页缓存永远不写入。
 bash ops/mvn.sh spring-boot:run
 ```
 

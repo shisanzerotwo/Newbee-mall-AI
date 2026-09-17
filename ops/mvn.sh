@@ -13,6 +13,12 @@
 # 注意：参数会被逐个加单引号后传给 PowerShell（防二次解析拆散含 ':' 的参数）
 set -euo pipefail
 
+# DB_PASSWORD 必须经 WSLENV 才能跨过 WSL→Windows 边界。
+# 实测：不声明 WSLENV 时，Windows 子进程读到的 DB_PASSWORD 是空值（已用
+# `DB_PASSWORD=x powershell -Command '$env:DB_PASSWORD'` 对比验证）。
+# /w 表示仅传给 Windows 侧。切勿把密码插值到命令行（含单引号会撑破 PS 串）。
+export WSLENV="${WSLENV:+$WSLENV:}DB_PASSWORD/w"
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP="$ROOT/mall-backend"
 MVN_WIN='D:\tools\apache-maven-3.9.16\bin\mvn.cmd'
@@ -23,7 +29,7 @@ if [ ! -d "$APP" ]; then
   exit 1
 fi
 
-# 注意：DB_PASSWORD 由 PowerShell 从父进程环境变量自动继承，
+# 注意：DB_PASSWORD 由 WSLENV 转发给 Windows 子进程（见文件头注释）。
 # 切勿把密码插值到命令行字符串里（含单引号会被撑破，形成注入面）。
 # 用法：export DB_PASSWORD='...' 后再调用本脚本。
 
