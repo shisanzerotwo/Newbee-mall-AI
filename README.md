@@ -86,8 +86,8 @@ bash ops/smoke.sh
 
 ## 待办
 
-**M1 收尾（2 项需人工）**：
-- [ ] **订单超时链路验证**：浏览器登录 → 下单（不付款）→ `redis-cli -n 0 ZCARD mall:order:delay` 应为 1。步骤见 `docs/UPGRADE-BOOT3.md` §4-A
+**M1 收尾（已完成）**：
+- [x] **订单超时链路验证**：✅ 完整生命周期已验证（入队 → 到期 → 自动关闭 `status=-2` → 出队），见 `docs/UPGRADE-BOOT3.md` §4-A
 - [ ] （M3）容器内验证码字体：镜像需装 `fontconfig` + 中文字体
 
 **M2/M3 前置**：

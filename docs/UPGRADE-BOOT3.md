@@ -108,21 +108,29 @@
 | 运行 | `Tomcat started on port 28089`，`Started NewBeeMallApplication in 4.057 seconds`；容器由 **Tomcat 9.0.68 → 10.1.55** |
 | **冒烟回归** | **升级前 11/11 → 升级后 16/16**（脚本已两次补强：DB 断言 + 尾斜杠用例，见下方 C/D 节） |
 | 首页缓存 | `FLUSHDB` 后访问首页 → DBSIZE=5（`mall:index:carousel` / `mall:index:category` / `mall:index:goods:3,4,5`），`TTL mall:index:carousel` = **1798s**（≈30 分钟） |
+| **订单超时链路** | ✅ **完整生命周期已验证**（入队 → 到期 → 自动关闭 `status=-2` → 出队；age=652s/350s > 300s 阈值）—— 同时证明 `spring.data.redis.*` 迁移在 ZSet 读写方向生效，详见下方 §4-A |
 | 运行期异常 | 应用日志中 `exception\|error` 计数 = **0** |
 | 硬编码密钥 | `grep -rn "REDACTED_PASSWORD\|agent.api-key" mall-backend/src/` → **零命中** |
 
 **待人工/延后验证**：
 
-### A. 订单超时链路（DoD 明列，**需人工下单一次**）
+### A. 订单超时链路（✅ **已验证**，2026-09-17 23:16）
 
-`ZCARD mall:order:delay = 0` 只说明当前无待付订单，**不等于链路可用**。人工验证步骤：
+**为什么这项特别重要**：本次升级把 Redis 配置键从 `spring.redis.*` 迁到了 `spring.data.redis.*`，而该链路用的正是 `StringRedisTemplate.opsForZSet()` —— **它通，才证明配置迁移在 ZSet 读写方向上真的生效**（前面的缓存验证只覆盖了 String 键的读写）。
 
-1. 浏览器打开 `http://127.0.0.1:28089`，登录（验证码需人工识别）
-2. 任选一件在售商品 → 加入购物车 → 生成订单（选“支付宝/微信”但不付款）
-3. 执行 `redis-cli -n 0 ZCARD mall:order:delay` → **应变为 1**（新订单已入延迟队列）
-4. （可选）等超时任务调起后重查 → 应变回 0 且订单状态变“已取消”
+**完整生命周期证据**：
 
-证据请回填本节。
+| 环节 | 证据 |
+|---|---|
+| ① 下单入队 | 两笔订单落库（`23:05:43` / `23:10:45`），订单项 `insertBatch` 返回成功 → 触发 `NewBeeMallOrderServiceImpl:633` 的 `orderDelayQueue.add()`（无 try-catch，失败会抛异常） |
+| ② 到期 | 超时阈值 `ORDER_PAY_EXPIRE_SECONDS = 5 * 60`（源码注释：演示用 5 分钟，真实环境 30 分钟） |
+| ③ 自动关闭 | 两笔订单 `order_status` 均变为 **`-2`** = `ORDER_CLOSED_BY_EXPIRED`（超时关闭） |
+| ④ 出队 | `ZCARD mall:order:delay` = 0（关闭后 `removeProcessed` 已移除） |
+| ⑤ 存活时长 | 实测 age = **652s / 350s**，均 > 300s 阈值 |
+
+**结论**：入队 → 到期 → 关闭 → 出队 **四步全部验证通过** ✅
+
+> 💡 **复现提示**：若想亲眼看到 `ZCARD = 1`，必须在**下单后 5 分钟内**查询；超过阈值后订单会被关闭并出队，表现为 `ZCARD = 0`（不是故障）。
 
 ### B. 容器内验证码字体
 
