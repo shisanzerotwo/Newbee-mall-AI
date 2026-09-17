@@ -570,7 +570,7 @@ spring.data.redis.database=0
 
 ```properties
 # before
-spring.datasource.password=REDACTED_PASSWORD
+spring.datasource.password=<原明文密码，已改为环境变量注入>
 # after（本机开发用环境变量或 application-local.properties，已 gitignore）
 spring.datasource.password=${DB_PASSWORD:}
 ```
@@ -584,7 +584,7 @@ spring.datasource.password=${DB_PASSWORD:}
 
 ```properties
 # 整行删除
-agent.api-key=REDACTED_KEY
+agent.api-key=<原示例密钥，已删除>
 ```
 
 > 理由：死配置。它会拖累 DoD 的「无任何硬编码密钥（grep 核查）」——一个名为 `api-key` 的条目必然被 grep 命中，届时要么误报要么被迫人工豁免。
@@ -789,7 +789,7 @@ git log --oneline
 - [ ] 应用在 28089 启动，日志无 jakarta 相关异常
 - [ ] 冒烟脚本通过数 **≥ 升级前基线**（逐项对照）
 - [ ] 首页缓存命中 + ZSet 订单超时队列两项验证通过
-- [ ] 仓库无硬编码密码（`grep -rn "REDACTED_PASSWORD" .` 零命中）
+- [ ] 仓库无硬编码密码（`grep -rnE "password=[a-zA-Z0-9]+" mall-backend/src/` 零命中）
 - [ ] `docs/UPGRADE-BOOT3.md` 六节齐全，含证据与回退方式
 - [ ] `git log` 显示分层提交（骨架 / 基线 / 脚本 / pom / jakarta / 配置 / 文档）
 

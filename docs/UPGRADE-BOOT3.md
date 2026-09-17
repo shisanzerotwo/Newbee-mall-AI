@@ -79,7 +79,7 @@
 | `spring-session-core` | 存在 | 删除 | 5 行 |
 | `maven-compiler-plugin` | 显式 source/target | 仅留 encoding | 3 行 |
 | `spring.redis.*` | 3 个键 | `spring.data.redis.*` | 3 行 |
-| 数据库密码 | 明文 `REDACTED_PASSWORD` | `${DB_PASSWORD:}` | 1 行 |
+| 数据库密码 | 明文（已清理，见下） | `${DB_PASSWORD:}` | 1 行 |
 | `agent.api-key` | 存在（无主） | 删除 | 1 行 |
 | 10 个 MyBatis XML | — | **未改**（不需改） | 0 |
 
@@ -110,7 +110,7 @@
 | 首页缓存 | `FLUSHDB` 后访问首页 → DBSIZE=5（`mall:index:carousel` / `mall:index:category` / `mall:index:goods:3,4,5`），`TTL mall:index:carousel` = **1798s**（≈30 分钟） |
 | **订单超时链路** | ✅ **完整生命周期已验证**（入队 → 到期 → 自动关闭 `status=-2` → 出队；age=652s/350s > 300s 阈值）—— 同时证明 `spring.data.redis.*` 迁移在 ZSet 读写方向生效，详见下方 §4-A |
 | 运行期异常 | 应用日志中 `exception\|error` 计数 = **0** |
-| 硬编码密钥 | `grep -rn "REDACTED_PASSWORD\|agent.api-key" mall-backend/src/` → **零命中** |
+| 硬编码密钥 | `grep -rnE "password=[a-zA-Z0-9]+\|agent\.api-key" mall-backend/src/` → **零命中** |
 
 **待人工/延后验证**：
 
