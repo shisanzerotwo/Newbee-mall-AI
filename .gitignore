@@ -27,6 +27,9 @@ application-local.*
 data/
 !data/.gitkeep
 
+# 冒烟脚本临时文件
+ops/.smoke_body.tmp
+
 # 数据导出：白名单制，只放行脱敏的 init.sql（设计决策 #20/#36）
 ops/*.sql
 !ops/init.sql

@@ -8,7 +8,37 @@
 ### 1.2 javax 使用分布
 （待补）
 ### 1.3 冒烟基线
-（待补）
+
+**采集时间**：2026-09-17（旧仓库 HEAD 版本，`ops/smoke.sh`）
+**运行环境**：Spring Boot 2.7.5 + **JDK 25**（实测可运行，仅有 `restricted method` / `Unsafe` 警告，无错误）+ MySQL 9.7.1 + Redis 3.0.504
+**启动耗时**：`Started NewBeeMallApplication in 4.821 seconds`
+
+**结果：11/11 全部通过**
+
+```
+=== 冒烟回归 @ http://127.0.0.1:28089 ===
+--- 前台 ---
+✅ 首页        /                                    (200)
+✅ 商品搜索    /search?keyword=<URL编码的“化妆水”>    (200)
+✅ 商品详情    /goods/detail/10003                    (302)
+✅ 购物车页    /shop-cart                             (302)
+✅ 登录页      /login                                (200)
+✅ 注册页      /register                             (200)
+✅ 个人中心    /personal                             (302)
+--- 后台 ---
+✅ 后台登录    /admin/login                          (200)
+✅ 后台首页    /admin/index                          (302)
+--- 基础设施 ---
+✅ 验证码图片  /common/kaptcha                       (200)
+✅ 静态资源    /mall/styles/header.css                (200)
+=== 通过 11 / 失败 0 ===
+```
+
+**三条必须记录的行为特征（升级后必须保持一致）**：
+
+1. `/goods/detail/*`、`/shop-cart`、`/personal` 未登录时 **302 → /login**（登录拦截器所致），**不是故障**；升级后若变成 200/404，说明拦截器配置坏了。
+2. 中文搜索关键字必须 **URL 编码**：Windows `curl.exe` 直接传中文会被 codepage 破坏 → 实测返回 **400**。
+3. **WSL 无法访问 Windows 的 loopback**：实测 WSL 直连 `127.0.0.1:28089` 与「网关 IP `172.21.0.1:28089`」均返回 `000`，只有 Windows 自带的 `curl.exe` 能拿到 200。因此 `ops/smoke.sh` 优先使用 `/mnt/c/Windows/System32/curl.exe` 并将响应体落到仓库内临时文件。
 
 ## 2. 迁移清单
 （待补）
