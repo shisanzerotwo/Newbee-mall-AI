@@ -89,7 +89,7 @@
 | 26 | 容器运行时 | `eclipse-temurin:21-jre` + **`fontconfig`/字体**（验证码需要 AWT），**压测在容器内做** |
 | 27 | 升级基线 | Boot 3.5 升级在**新仓库**进行，旧仓库不动 |
 | 28 | 升级参考 | `upstream/spring-boot-3.x` 仅供参考，**不 merge**（差异 128 文件 / -13526 行） |
-| 29 | 迁移面 | `javax` → `jakarta` 共 **46 处**（21 `HttpServletRequest` + 14 `@Resource` + 7 `HttpSession` + 4 `HttpServletResponse`）；`javax.imageio.ImageIO` 1 处**不动** |
+| 29 | 迁移面 | `javax` → `jakarta` 共 **44 处**（20 `HttpServletRequest` + 13 `@Resource` + 7 `HttpSession` + 4 `HttpServletResponse`）；`javax.imageio.ImageIO` 1 处**不动**。注：最初估 46 处，Task 3 删除 `AgentApiController` 连带移除 2 处 import（已实测核实） |
 | 30 | 配置迁移 | `spring.redis.*` → `spring.data.redis.*` |
 | 31 | 质检时序 | 默认 `gate` 为**同步**（`review` 先于 `done`）；仅 `audit` 模式异步，此时 **`done` 不是终止事件**，时序约定见 §4.2 |
 | 32 | SSE 传输方式 | `POST` + `fetch` + `ReadableStream`（非 `EventSource`，以支持 POST 传参与上下文） |
@@ -306,7 +306,7 @@ event: error    data: {"message":"模型调用失败，请稍后再试"}
 |---|---|---|
 | 1 | 新建仓库 + 拷入源码（排除 `target/`、`.idea/`、`docs/obsidian/`）+ **基线提交** | 目录/文件数比对 |
 | 2 | pom 升级（Boot 3.5.x / java 21 / 依赖改名 / **删 `maven-compiler-plugin` 显式 source-target**） | `mvn compile` + `javap -v` 确认 class 版本 **65**（Java 21），不是 52 |
-| 3 | `javax` → `jakarta`（46 处）+ 配置键迁移 | `mvn compile` |
+| 3 | `javax` → `jakarta`（44 处）+ 配置键迁移 | `mvn compile` |
 | 4 | **冒烟回归**（前台 12 页 + 后台 8 页 + 缓存 + 订单超时） | `ops/smoke.md` 逐条 |
 | 5 | `.gitattributes`（LF）+ 清理行尾噪声 | `git status` 干净 |
 | 6 | 写 `docs/UPGRADE-BOOT3.md` | 文档产出 |

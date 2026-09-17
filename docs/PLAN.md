@@ -478,12 +478,12 @@ git commit -m "build: 升级 Spring Boot 3.5 + Java 21（依赖改名、删死�
 
 ---
 
-## Task 6: `javax` → `jakarta` 迁移（46 处）
+## Task 6: `javax` → `jakarta` 迁移（44 处）
 
 **Files:**
 - Modify: `mall-backend/src/main/java/**`（25 个文件）
 
-- [ ] **Step 1: 先确认待改范围（预期 46 处）**
+- [ ] **Step 1: 先确认待改范围（实测 44 处）**
 
 ```bash
 cd "/mnt/d/GitHub/xiangmu/newbee-mall-ai/mall-backend"
@@ -492,12 +492,14 @@ grep -rhoE "javax\.[a-z]+\.[a-zA-Z.]+" src/main/java | sort | uniq -c | sort -rn
 
 Expected:
 ```
-21 javax.servlet.http.HttpServletRequest
-14 javax.annotation.Resource
+20 javax.servlet.http.HttpServletRequest
+13 javax.annotation.Resource
  7 javax.servlet.http.HttpSession
  4 javax.servlet.http.HttpServletResponse
  1 javax.imageio.ImageIO      ← 不改（java.desktop，非 Jakarta EE）
 ```
+
+> 注：最初的 46 处估算含 `AgentApiController.java` 的 2 处 import；该文件已在 Task 3 删除（决策 #18），故实际为 **44 处**（已实测核实）。
 
 - [ ] **Step 2: 批量替换（只替换 Jakarta 相关的三类前缀）**
 
@@ -523,14 +525,14 @@ Expected: 只剩 1 行 `import javax.imageio.ImageIO;`
 grep -rn "jakarta\." src/main/java | wc -l
 ```
 
-Expected: `46`
+Expected: `44`
 
 - [ ] **Step 5: 提交**
 
 ```bash
 cd "/mnt/d/GitHub/xiangmu/newbee-mall-ai"
 git add -A mall-backend/src
-git commit -m "refactor: javax 迁移到 jakarta（46 处，ImageIO 保留）"
+git commit -m "refactor: javax 迁移到 jakarta（44 处，ImageIO 保留）"
 ```
 
 ---
@@ -737,7 +739,7 @@ Expected: 若输出 `NO FONTS`（或 `Fontconfig head is null`）→ 记入 `doc
 
 ## 1. 升级前的实测基线
 - 依赖清单（8 个直接依赖 + 版本）
-- javax 使用分布（46 处，附 grep 命令与输出）
+- javax 使用分布（44 处，附 grep 命令与输出）
 - 冒烟基线（通过 X / 失败 Y）
 
 ## 2. 迁移清单（做了什么）
@@ -802,7 +804,7 @@ git log --oneline
 
 | 设计条目 | 本计划覆盖 |
 |---|---|
-| §6.1 迁移清单 14 行 | Task 5（pom/依赖）、Task 6（46 处 javax）、Task 7（配置键）✅ |
+| §6.1 迁移清单 14 行 | Task 5（pom/依赖）、Task 6（44 处 javax）、Task 7（配置键）✅ |
 | §6.2 步骤 6 步 | Task 3/5/6/7/9/11 一一对应 ✅ |
 | §6.3 坑：compiler-plugin | Task 5 Step 3 ✅ |
 | §6.3 坑：spring-session 死依赖 | Task 5 Step 5 ✅ |
