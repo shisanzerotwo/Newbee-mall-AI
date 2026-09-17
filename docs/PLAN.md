@@ -544,10 +544,10 @@ git commit -m "refactor: javax 迁移到 jakarta（46 处，ImageIO 保留）"
 
 ```bash
 cd "/mnt/d/GitHub/xiangmu/newbee-mall-ai/mall-backend"
-grep -nE "spring\.redis|spring\.datasource\.driverClassName|spring\.session" src/main/resources/application.properties
+grep -nE "spring\.redis|spring\.datasource\.driverClassName|spring\.session|agent\.api-key" src/main/resources/application.properties
 ```
 
-Expected: 3-4 行（`spring.redis.host/port/database`）
+Expected: 4-5 行（`spring.redis.host/port/database` + `agent.api-key`）
 
 - [ ] **Step 2: 迁移 Redis 前缀**
 
@@ -576,13 +576,26 @@ spring.datasource.password=${DB_PASSWORD:}
 **注意**：改完必须设置环境变量 `DB_PASSWORD` 才能启动，否则连库失败。
 本机验证时：`export DB_PASSWORD='<向用户索取>'`
 
-- [ ] **Step 4: 提交**
+- [ ] **Step 4: 删除无主配置 `agent.api-key`（Task 3 的尾巴，与决策 #18 对齐）**
+
+`AgentApiController` 已删（决策 #18），模板里的 `agentCsUrl` / `nb-cs` 也已清干净，但 `application.properties:31` 仍留着：
+
+```properties
+# 整行删除
+agent.api-key=REDACTED_KEY
+```
+
+> 理由：死配置。它会拖累 DoD 的「无任何硬编码密钥（grep 核查）」——一个名为 `api-key` 的条目必然被 grep 命中，届时要么误报要么被迫人工豁免。
+
+- [ ] **Step 5: 提交**
 
 ```bash
 cd "/mnt/d/GitHub/xiangmu/newbee-mall-ai"
 git add mall-backend/src/main/resources/application.properties
-git commit -m "config: 迁移 Boot 3 配置键（spring.data.redis.*）并外置数据库密码"
+git commit -m "config: 迁移 Boot 3 配置键（spring.data.redis.*）、外置数据库密码、删除无主 agent.api-key"
 ```
+
+> **待定（P5，低优先级）**：Maven 坐标 `ltd.newbee.mall:newbee-mall` 仍是旧名，与新仓库 `newbee-mall-ai` 不一致。改名会改变构建产物文件名（`newbee-mall-1.0.0-SNAPSHOT.jar`），需同步 Dockerfile / compose 里的 jar 名。**本 M1 暂不改**，待 M3 容器化时一并决定。
 
 ---
 

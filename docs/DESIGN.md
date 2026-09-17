@@ -328,7 +328,11 @@ event: error    data: {"message":"模型调用失败，请稍后再试"}
 
 ### 6.4 M2 前置：依赖预检（别等装配失败）
 
-LangChain4j 的 Redis 模块底层用 **Jedis**，而父 POM 的 `<dependencyManagement>` 会**强制覆盖传递依赖版本**（已实测 Boot 2.7.5 的 BOM 确实管理 `redis.clients:jedis`，`jedis.version=3.8.0`）。Boot 3.5 管理的 Jedis 是 5.x 一线，而 `langchain4j-community-redis` 依赖 Jedis 7.x —— 一旦被降级，`RedisEmbeddingStore` 会在首次建索引时抛 `NoSuchMethodError`，**报错点离根因很远**。这是 R3「装配冲突」最可能的真实触发原因。
+LangChain4j 的 Redis 模块底层用 **Jedis**，而父 POM 的 `<dependencyManagement>` 会**强制覆盖传递依赖版本**（已实测 Boot 2.7.5 的 BOM 确实管理 `redis.clients:jedis`，`jedis.version=3.8.0`）。**Boot 3.5.16 管理的 Jedis 是 `6.0.0`**（实测 `spring-boot-dependencies-3.5.16.pom`：`<jedis.version>6.0.0</jedis.version>`），而 `langchain4j-community-redis` 依赖 Jedis **7.x** —— 一旦被降级，`RedisEmbeddingStore` 会在首次建索引时抛 `NoSuchMethodError`，**报错点离根因很远**。这是 R3「装配冲突」最可能的真实触发原因。
+
+> **Boot 3.5.16 实测管理的版本**（2026-09-17 由 `spring-boot-dependencies-3.5.16.pom` 核实，供 Task 7/Task 9 引用）：
+> `jedis 6.0.0`｜`lettuce 6.6.0.RELEASE`｜`mysql 9.7.0`｜`thymeleaf 3.1.5.RELEASE`｜`spring-framework 6.2.19`｜`maven-compiler-plugin 3.14.1`
+> 注：本机 Redis 服务端是 3.0.504（不支持 RESP3/HELLO），但**客户端 Lettuce 6.6 已实测可用**（RESP3 协商失败自动降级，连接与 SET/GET 均正常）。
 
 ```bash
 mvn dependency:tree -Dincludes=redis.clients:jedis

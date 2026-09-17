@@ -32,8 +32,24 @@ fi
 # （实测症状：No plugin found for prefix '.springframework.boot'）。
 QUOTED_ARGS=""
 for arg in "$@"; do
+  # cmd.exe 会展开 %VAR%，拒绝这类参数
+  case "$arg" in
+    *%*) echo "❌ 参数含 %（会被 cmd.exe 展开），已拒绝：$arg" >&2; exit 1 ;;
+  esac
+  # PowerShell 单引号串内，单引号需写成两个
+  arg="${arg//"'"/"''"}"
   QUOTED_ARGS="$QUOTED_ARGS '$arg'"
 done
 
-APP_WIN="$(wslpath -w "$APP")"
+# 路径转换：WSL 用 wslpath，Git Bash/MSYS 用 pwd -W
+if command -v wslpath >/dev/null 2>&1; then
+  APP_WIN="$(wslpath -w "$APP")"
+elif [ -n "${MSYSTEM:-}" ] || command -v cygpath >/dev/null 2>&1; then
+  APP_WIN="$(cd "$APP" && pwd -W)"
+else
+  echo "❌ 本脚本用于在 Windows 侧调用 Maven（需 WSL 的 wslpath 或 Git Bash 的 pwd -W）。" >&2
+  echo "   Linux / CI 环境请直接使用原生 mvn（不要经本脚本）。" >&2
+  exit 1
+fi
+
 powershell.exe -NoProfile -Command "cd '$APP_WIN'; \$env:JAVA_HOME='$JAVA_HOME_WIN'; & '$MVN_WIN'$QUOTED_ARGS"
