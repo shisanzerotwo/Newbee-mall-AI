@@ -26,6 +26,7 @@ application-local.*
 # 运行时数据
 data/
 !data/.gitkeep
+logs/
 
 # 冒烟脚本临时文件
 ops/.smoke_body.tmp

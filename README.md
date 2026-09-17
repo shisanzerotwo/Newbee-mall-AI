@@ -11,7 +11,7 @@
 
 | 里程碑 | 内容 | 状态 |
 |---|---|---|
-| **M1** | 新仓库 + **Spring Boot 2.7.5 → 3.5.16 / Java 8 → 21 升级** + 冒烟回归 | ✅ **已完成**（商城 11/11 通过，与升级前基线一致） |
+| **M1** | 新仓库 + **Spring Boot 2.7.5 → 3.5.16 / Java 8 → 21 升级** + 冒烟回归 | ✅ **主体完成**（冒烟 14/14；待 2 项人工验证，见下） |
 | **M2** | 客服核心：LangChain4j 装配 + RAG（Redis 向量） + 6 个 @Tool + 编排 + 质检 + SSE 流式 | ⬜ 未开始 |
 | **M3** | 前端原生融合（浮窗 + `/cs`） + Docker Compose + 虚拟线程压测 + 中文嵌入对比 + CI | ⬜ 未开始 |
 
@@ -71,8 +71,11 @@ bash ops/mvn.sh spring-boot:run
 
 ```bash
 bash ops/smoke.sh
-# 期望：通过 11 / 失败 0
+# 期望：通过 14 / 失败 0（含“首页必须有 DB 数据”“不得是错误页”两道闸门）
 ```
+
+> 脚本已做**阳性/阴性对照**：故意用错密码启动（DB 失联）时会报 `失败 2` 且退出码 1，
+> 正常时为 `通过 14 / 失败 0`。见 `docs/UPGRADE-BOOT3.md` §4-D。
 
 > ⚠️ **两个本机环境陷阱**（详见 `docs/UPGRADE-BOOT3.md` §3）：
 > 1. WSL 的环境变量**不会**自动传给 Windows 子进程 → 必须经 `WSLENV` 转发（已固化在 `ops/mvn.sh`）。
@@ -83,9 +86,13 @@ bash ops/smoke.sh
 
 ## 待办
 
-- [ ] **安装 Docker Desktop**（M3 的 `docker compose up -d` 前置；本机当前未安装）
-- [ ] **启动 OmniRoute 网关**并实测 function calling（M2 的模型通道前置；当前未运行）
-- [ ] M1 的两处待人工验证：订单超时链路下单验证、容器内验证码字体（见 `UPGRADE-BOOT3.md` §4）
+**M1 收尾（2 项需人工）**：
+- [ ] **订单超时链路验证**：浏览器登录 → 下单（不付款）→ `redis-cli -n 0 ZCARD mall:order:delay` 应为 1。步骤见 `docs/UPGRADE-BOOT3.md` §4-A
+- [ ] （M3）容器内验证码字体：镜像需装 `fontconfig` + 中文字体
+
+**M2/M3 前置**：
+- [ ] **启动 OmniRoute 网关**并实测 function calling（M2 的模型通道；当前未运行）
+- [ ] **安装 Docker Desktop**（M3 的 `docker compose up -d`；当前未安装）
 
 ---
 
