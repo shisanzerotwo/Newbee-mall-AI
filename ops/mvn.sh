@@ -9,6 +9,8 @@
 #   例：bash ops/mvn.sh -v
 #       bash ops/mvn.sh clean compile
 #       bash ops/mvn.sh spring-boot:run
+#       bash ops/mvn.sh dependency:tree -Dincludes=org.springframework.boot:spring-boot
+# 注意：参数会被逐个加单引号后传给 PowerShell（防二次解析拆散含 ':' 的参数）
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -25,5 +27,13 @@ fi
 # 切勿把密码插值到命令行字符串里（含单引号会被撑破，形成注入面）。
 # 用法：export DB_PASSWORD='...' 后再调用本脚本。
 
+# 逐参数用单引号包裹后再拼接：PowerShell 会对命令行做二次解析，
+# 形如 -Dincludes=a:b 的参数若不加引号会在 ':' 处被拆散
+# （实测症状：No plugin found for prefix '.springframework.boot'）。
+QUOTED_ARGS=""
+for arg in "$@"; do
+  QUOTED_ARGS="$QUOTED_ARGS '$arg'"
+done
+
 APP_WIN="$(wslpath -w "$APP")"
-powershell.exe -NoProfile -Command "cd '$APP_WIN'; \$env:JAVA_HOME='$JAVA_HOME_WIN'; & '$MVN_WIN' $*"
+powershell.exe -NoProfile -Command "cd '$APP_WIN'; \$env:JAVA_HOME='$JAVA_HOME_WIN'; & '$MVN_WIN'$QUOTED_ARGS"
