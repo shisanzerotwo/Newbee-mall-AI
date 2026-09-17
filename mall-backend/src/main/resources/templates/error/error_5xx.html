@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>服务异常 | 500</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f6f8f9;
+            font-family: -apple-system, "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+            color: #1f2328;
+            padding: 24px;
+        }
+        .box { text-align: center; }
+        .code {
+            font-size: 88px;
+            font-weight: 700;
+            line-height: 1;
+            color: #1baeae;
+            letter-spacing: 4px;
+        }
+        h1 { font-size: 22px; margin: 20px 0 8px; }
+        .lead { font-size: 14px; color: #8b949e; margin-bottom: 28px; }
+        .btn {
+            display: inline-block;
+            padding: 0 28px;
+            height: 42px;
+            line-height: 42px;
+            background: #0d7f7f;
+            color: #fff;
+            font-size: 14px;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: background-color 150ms ease-out;
+        }
+        .btn:hover { background: #0a6060; color: #fff; }
+    </style>
+</head>
+<body>
+<div class="box">
+    <div class="code">500</div>
+    <h1>服务暂时不可用</h1>
+    <p class="lead">服务器遇到了意外状况，我们正在全力恢复，请稍后再试。</p>
+    <a class="btn" href="/">返回首页</a>
+</div>
+</body>
+</html>

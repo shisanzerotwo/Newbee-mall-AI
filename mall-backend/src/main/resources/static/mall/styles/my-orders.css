@@ -1,0 +1,374 @@
+/* ============================================================
+   我的订单列表页（重设计版）
+   ============================================================ */
+
+#personal {
+    width: 100%;
+    height: auto;
+    background: transparent;
+    padding-top: 24px;
+}
+
+#personal .self-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+/* 左侧导航卡 */
+#personal .self-info .lfnav {
+    float: left;
+    width: 220px;
+    flex-shrink: 0;
+    height: auto;
+    min-height: 320px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 20px 0;
+}
+
+#personal .self-info .lfnav .nav_title {
+    width: auto;
+    height: auto;
+    line-height: 1.4;
+    font-size: 17px;
+    font-weight: 600;
+    margin: 0 24px 12px;
+    color: var(--text-1);
+}
+
+#personal .self-info .lfnav .title_list ul li {
+    display: block;
+    width: auto;
+    height: auto;
+    line-height: 1.5;
+    padding: 0;
+    margin: 2px 12px;
+}
+
+#personal .self-info .lfnav .title_list ul li a {
+    display: block;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    color: var(--text-2);
+    transition: color var(--ease-out), background-color var(--ease-out);
+}
+
+#personal .self-info .lfnav .title_list ul li a:hover {
+    color: var(--text-1);
+    background: var(--bg-page);
+}
+
+#personal .self-info .lfnav .title_list ul li a.active,
+#personal .self-info .lfnav .title_list ul li .active {
+    color: var(--brand-700);
+    font-weight: 600;
+    background: var(--brand-300);
+}
+
+/* 右侧内容卡 */
+#personal .self-info .intro {
+    float: left;
+    flex: 1;
+    min-width: 0;
+    width: auto;
+    height: auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 8px 0 24px;
+}
+
+/* ---------- 盒子头 ---------- */
+.uc-main-box {
+    padding: 0;
+}
+
+.uc-box {
+    background: transparent;
+}
+
+.uc-content-box {
+    margin: 0 24px;
+}
+
+.uc-content-box .box-hd .title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--text-1);
+    padding: 20px 0 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.uc-content-box .box-hd .title small {
+    margin-left: 10px;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.uc-content-box .box-hd small,
+.uc-content-box .box-hd small a {
+    color: var(--text-3);
+}
+
+.uc-content-box .box-hd small a:hover {
+    color: var(--brand-600);
+}
+
+.uc-content-box .box-hd .more {
+    border-bottom: 0;
+}
+
+/* 空订单提示 */
+.order-list-box .box-bd > img {
+    display: block;
+    margin: 24px auto 8px;
+    border-radius: var(--radius-md);
+}
+
+.order-list-box .box-bd > small {
+    display: block;
+    text-align: center;
+    padding-bottom: 16px;
+}
+
+.order-list-box .box-bd > small a {
+    color: var(--brand-600);
+}
+
+/* ---------- 订单卡片列表 ---------- */
+.order-list-box .order-list {
+    margin: 0;
+    padding: 16px 0 0;
+    list-style-type: none;
+}
+
+.order-list-box .uc-order-item {
+    position: relative;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: box-shadow var(--ease-out);
+}
+
+.order-list-box .uc-order-item:hover {
+    box-shadow: var(--shadow-sm);
+}
+
+.order-list-box .order-summary {
+    padding: 16px 20px 0;
+}
+
+.order-summary > div[class^="order-status"] {
+    display: inline-block;
+    padding: 0 10px;
+    height: 22px;
+    line-height: 22px;
+    font-size: 12px;
+    border-radius: 11px;
+}
+
+.uc-order-item-list .order-status-closed {
+    color: var(--text-3);
+    background: var(--bg-page);
+}
+
+.uc-order-item-list .order-status-need-pay {
+    color: var(--accent-500);
+    background: var(--accent-50);
+}
+
+.uc-order-item-list .order-status-success {
+    color: var(--success);
+    background: #e6f4ea;
+}
+
+.uc-order-item-list .order-desc {
+    color: var(--text-3);
+}
+
+.order-list-box .order-detail-table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.order-list-box .order-detail-table th {
+    height: auto;
+    padding: 12px 20px 8px;
+    border-bottom: 1px dashed var(--border);
+    font-weight: 400;
+    text-align: left;
+    color: var(--text-3);
+    vertical-align: bottom;
+}
+
+.order-list-box .order-detail-table th p {
+    margin: 0;
+    font-size: 12px;
+}
+
+.order-list-box .order-detail-table th .sep {
+    color: var(--border);
+    margin: 0 4px;
+}
+
+.order-list-box .order-detail-table th .num {
+    height: auto;
+    margin-right: 4px;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--accent-500);
+    font-variant-numeric: tabular-nums;
+}
+
+.order-list-box .order-detail-table th.col-sub {
+    width: 220px;
+    text-align: right;
+}
+
+.order-list-box .order-detail-table td {
+    padding: 8px 20px 12px;
+}
+
+/* 商品行 */
+.order-list-box .goods-list {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+}
+
+.order-list-box .goods-list li {
+    position: relative;
+    height: auto;
+    margin: 0;
+    padding: 10px 0 10px 88px;
+    min-height: 72px;
+    line-height: 1.5;
+    border-bottom: 1px dashed var(--bg-page);
+}
+
+.order-list-box .goods-list li:last-of-type {
+    border-bottom: none;
+}
+
+.order-list-box .goods-list .figure-thumb {
+    position: absolute;
+    left: 0;
+    top: 10px;
+}
+
+.order-list-box .goods-list .figure-thumb a {
+    display: block;
+}
+
+.order-list-box .goods-list .figure-thumb img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--bg-page);
+}
+
+.order-list-box .goods-list .name {
+    margin: 0;
+}
+
+.order-list-box .goods-list .name a {
+    color: var(--text-1);
+    font-size: 14px;
+    transition: color var(--ease-out);
+}
+
+.order-list-box .goods-list .name a:hover {
+    color: var(--brand-600);
+}
+
+.order-list-box .goods-list .price {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+}
+
+.order-list-box .order-detail-table .order-actions {
+    width: 150px;
+    padding-top: 12px;
+    text-align: right;
+    vertical-align: top;
+}
+
+.order-list-box .order-detail-table .order-actions .btn {
+    display: block;
+    margin: 0 0 10px auto;
+}
+
+/* ---------- 分页 ---------- */
+.newbee-pagenavi {
+    height: auto;
+    padding: 16px 0 8px;
+    text-align: center;
+}
+
+/* ---------- 响应式 ---------- */
+@media screen and (max-width: 767px) {
+    #personal .self-info {
+        flex-direction: column;
+    }
+
+    #personal .self-info .lfnav {
+        width: 100%;
+        min-height: 0;
+        padding: 12px 0;
+    }
+
+    #personal .self-info .lfnav .nav_title {
+        margin: 0 16px 8px;
+    }
+
+    #personal .self-info .lfnav .title_list ul {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 0 8px;
+    }
+
+    #personal .self-info .lfnav .title_list ul li {
+        margin: 2px 4px;
+    }
+
+    .uc-content-box {
+        margin: 0 16px;
+    }
+
+    .order-list-box .order-detail-table,
+    .order-list-box .order-detail-table tbody,
+    .order-list-box .order-detail-table tr,
+    .order-list-box .order-detail-table td,
+    .order-list-box .order-detail-table th {
+        display: block;
+        width: auto;
+    }
+
+    .order-list-box .order-detail-table th.col-sub {
+        text-align: left;
+        padding-top: 0;
+    }
+
+    .order-list-box .order-detail-table .order-actions {
+        text-align: left;
+    }
+
+    .order-list-box .order-detail-table .order-actions .btn {
+        display: inline-block;
+        margin: 0;
+    }
+}

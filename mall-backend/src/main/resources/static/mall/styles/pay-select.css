@@ -1,0 +1,153 @@
+/* ============================================================
+   选择支付方式页（重设计版）
+   ============================================================ */
+
+.page-main {
+    padding: 24px 0 40px;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+form {
+    margin: 0;
+}
+
+.section {
+    padding: 24px 32px;
+    margin-bottom: 16px;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-1);
+}
+
+.section h2,
+.section h3,
+.section p,
+.section li {
+    margin: 0;
+    padding: 0;
+}
+
+.section ul,
+.section li {
+    list-style: none;
+}
+
+/* 订单信息区 */
+.order-info {
+    padding: 4px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.order-info .title {
+    margin-bottom: 8px;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--text-1);
+}
+
+.order-info .order-time {
+    color: var(--text-3);
+    font-size: 13px;
+    line-height: 1.8;
+    font-variant-numeric: tabular-nums;
+}
+
+.order-info .total {
+    color: var(--text-2);
+    font-size: 14px;
+}
+
+.money {
+    color: var(--accent-500);
+    font-size: 14px;
+}
+
+.money em {
+    font-style: normal;
+    font-size: 26px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 支付方式分组 */
+.cash-title {
+    height: auto;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.payment-box {
+    margin-bottom: 24px;
+}
+
+.payment-box-last {
+    margin-bottom: 0;
+}
+
+.payment-box .payment-header {
+    margin-bottom: 12px;
+}
+
+.payment-box .payment-header .title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-1);
+}
+
+.payment-box .payment-header .desc {
+    margin-left: 10px;
+    font-size: 12px;
+    color: var(--text-3);
+}
+
+.payment-list {
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.payment-list li {
+    width: auto;
+    height: 60px;
+    line-height: 58px;
+    margin: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    text-align: center;
+    cursor: pointer;
+    overflow: hidden;
+    background: var(--surface);
+    transition: border-color var(--ease-out), box-shadow var(--ease-out);
+}
+
+.payment-list li:hover {
+    border-color: var(--brand-500);
+    box-shadow: 0 0 0 3px var(--brand-300);
+}
+
+.payment-list li input {
+    display: none;
+}
+
+.payment-list li img {
+    cursor: pointer;
+    max-width: 80%;
+    vertical-align: middle;
+}

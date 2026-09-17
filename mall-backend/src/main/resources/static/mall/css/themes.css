@@ -1,0 +1,69 @@
+/* ============================================================
+   NewBee Mall 主题系统（CSS 变量主题包）
+   默认 T0 现行青绿（token 定义在 common.css :root）
+   其余主题通过 html[data-theme=...] 覆盖变量，全站自动换肤
+   切换入口：顶栏「主题」，偏好存 localStorage("nb-theme")
+   ============================================================ */
+
+/* ---- T1 蜂巢暖金：蜂蜜意象 · 纸感 · 衬线标题 ---- */
+html[data-theme="t1"]{
+  --brand-300:#ecd9ae; --brand-500:#b98a2e; --brand-600:#a17722; --brand-700:#8a6516; --brand-800:#6e5011;
+  --accent:#c2542a; --accent-50:#faeadf;
+  --text-1:#3d3327; --text-2:#7a6f5d; --text-3:#b0a48c;
+  --bg-page:#faf6ef; --surface:#fffdf8; --border:#e8e0cf;
+  --radius:10px; --radius-sm:7px;
+  --shadow-sm:0 1px 2px rgba(90,70,30,.07); --shadow-md:0 8px 24px rgba(90,70,30,.12);
+}
+html[data-theme="t1"] .sec-h,
+html[data-theme="t1"] #content #flash > h2,
+html[data-theme="t1"] #content #recommend > h2,
+html[data-theme="t1"] #detail .dc .content .title,
+html[data-theme="t1"] .uc-content-box .box-hd .title,
+html[data-theme="t1"] #sitehead .logo{
+  font-family:"Noto Serif SC","Source Han Serif SC","STSong",serif;
+}
+
+/* ---- T2 靛蓝信任：数码专业 · 冷静克制 ---- */
+html[data-theme="t2"]{
+  --brand-300:#c3cdea; --brand-500:#4a5d85; --brand-600:#3f5075; --brand-700:#3b4a6b; --brand-800:#2e3a54;
+  --accent:#d9480f; --accent-50:#fdeee3;
+  --text-1:#1c2430; --text-2:#4e5a6e; --text-3:#8a97a8;
+  --bg-page:#f4f6fa; --surface:#ffffff; --border:#dfe4ec;
+  --radius:6px; --radius-sm:4px;
+  --shadow-sm:0 1px 2px rgba(30,42,66,.07); --shadow-md:0 6px 18px rgba(30,42,66,.12);
+}
+
+/* ---- T3 暗夜霓虹：dark-first 电商 ---- */
+html[data-theme="t3"]{
+  --brand-300:rgba(45,212,191,.35); --brand-500:#2dd4bf; --brand-600:#5eead4; --brand-700:#14b8a6; --brand-800:#0d9488;
+  --accent:#fb923c; --accent-50:rgba(251,146,60,.12);
+  --text-1:#e6edf6; --text-2:#9fb0c7; --text-3:#64748b;
+  --bg-page:#0b1220; --surface:#111c30; --border:#1f2d47;
+  --radius:10px; --radius-sm:8px;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4); --shadow-md:0 8px 24px rgba(0,0,0,.5);
+}
+/* 暗色下输入框/搜索占位色 */
+html[data-theme="t3"] .input::placeholder,
+html[data-theme="t3"] #q::placeholder{color:var(--text-3)}
+
+/* ---- T4 莓果活力：年轻美妆 · 大圆角 ---- */
+html[data-theme="t4"]{
+  --brand-300:#fcc2d7; --brand-500:#c2255c; --brand-600:#a61e4d; --brand-700:#a61e4d; --brand-800:#86123c;
+  --accent:#e8590c; --accent-50:#fef0e6;
+  --text-1:#341b26; --text-2:#71505e; --text-3:#a98d99;
+  --bg-page:#fff5f8; --surface:#ffffff; --border:#f3dce4;
+  --radius:16px; --radius-sm:12px;
+  --shadow-sm:0 2px 6px rgba(194,37,92,.06); --shadow-md:0 10px 28px rgba(194,37,92,.12);
+}
+
+/* ---- T5 墨绿植系：自然生活方式 ---- */
+html[data-theme="t5"]{
+  --brand-300:#bcd8cb; --brand-500:#3e7a63; --brand-600:#2f6350; --brand-700:#275444; --brand-800:#1d4136;
+  --accent:#c2542a; --accent-50:#f4e8dc;
+  --text-1:#28322c; --text-2:#5c6b60; --text-3:#93a297;
+  --bg-page:#f2f2ea; --surface:#fbfaf5; --border:#e2e2d4;
+  --radius:12px; --radius-sm:9px;
+  --shadow-sm:0 1px 3px rgba(40,70,55,.07); --shadow-md:0 8px 22px rgba(40,70,55,.12);
+}
+
+/* ===== 顶栏主题切换入口样式已并入 header.css（#sitehead 作用域） ===== */

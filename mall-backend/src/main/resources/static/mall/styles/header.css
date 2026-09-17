@@ -1,0 +1,159 @@
+/* ============================================================
+   公共头部/页脚样式（v2 排版：简洁丝滑）
+   结构：1.单一 sticky 头部  2.搜索  3.用户/购物车  4.页脚  5.响应式
+   规格见 docs/DESIGN.md v2（头部合并 + 动效规范）
+   ============================================================ */
+
+/* ---------- 1. 单一 sticky 头部 ---------- */
+#sitehead{
+  position:sticky;top:0;z-index:400;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  transition:box-shadow 250ms var(--ease, ease-out);
+}
+#sitehead.scrolled{box-shadow:var(--shadow-md)}
+#sitehead .head-inner{
+  max-width:1200px;margin:0 auto;padding:0 16px;
+  display:flex;align-items:center;gap:24px;height:64px;
+}
+#sitehead .logo{
+  flex-shrink:0;color:var(--brand-700);
+  font-size:19px;font-weight:800;line-height:1.1;letter-spacing:.5px;
+}
+#sitehead .logo small{display:block;font-size:9.5px;font-weight:500;color:var(--text-3);letter-spacing:2.5px;margin-top:2px}
+#sitehead .logo{transition:color var(--ease,150ms ease-out)}
+#sitehead .logo:hover{color:var(--brand-600)}
+
+#sitehead .admin-link{font-size:13px;color:var(--text-2);transition:color var(--ease,150ms ease-out)}
+#sitehead .admin-link:hover{color:var(--brand-600)}
+
+/* ---------- 2. 搜索 ---------- */
+#sitehead .search-box{display:flex;margin-left:auto;width:300px}
+#sitehead .search{position:relative;display:flex;flex:1}
+#sitehead .search .text{
+  flex:1;height:38px;padding:0 14px;font-size:13px;color:var(--text-1);
+  background:var(--bg-page);border:1px solid transparent;border-radius:var(--radius-sm) 0 0 var(--radius-sm);
+  outline:none;transition:border-color var(--ease,150ms ease-out),background-color var(--ease,150ms ease-out);
+}
+#sitehead .search .text::placeholder{color:var(--text-3)}
+#sitehead .search .text:focus{border-color:var(--brand-500);background:var(--surface)}
+#sitehead .search .search_hot{position:absolute;top:12px;right:12px}
+#sitehead .search .search_hot a{
+  float:left;margin-left:5px;padding:0 5px;font-size:12px;line-height:18px;
+  color:var(--text-3);background:var(--surface);border-radius:3px;transition:all 150ms ease-out;
+}
+#sitehead .search .search_hot a:hover{color:#fff;background:var(--brand-500)}
+#sitehead .search .keyword_list{
+  display:none;position:absolute;top:38px;left:0;z-index:100;width:100%;
+  background:var(--surface);border:1px solid var(--brand-500);border-radius:0 0 var(--radius-sm) var(--radius-sm);overflow:hidden;
+}
+#sitehead .search .keyword_list li a{display:block;padding:6px 14px;font-size:13px;color:var(--text-2)}
+#sitehead .search .keyword_list li:hover{background:var(--bg-page)}
+#sitehead .search .keyword_list li a .result{float:right;color:var(--text-3)}
+#sitehead .button{
+  flex-shrink:0;width:50px;height:38px;border:none;border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+  background:var(--brand-700);color:#fff;font-size:17px;cursor:pointer;
+  transition:background-color var(--ease,150ms ease-out);
+}
+#sitehead .button:hover{background:var(--brand-800)}
+
+/* ---------- 3. 头部右侧：链接 / 主题 / 用户 / 购物车 ---------- */
+#sitehead .head-links{display:flex;align-items:center;gap:14px;flex-shrink:0}
+
+#sitehead .theme-entry{position:relative;display:flex;align-items:center}
+#sitehead .theme-btn{
+  display:flex;align-items:center;gap:4px;height:28px;padding:0 12px;border:none;background:none;
+  color:var(--text-2);font-size:12.5px;border-radius:14px;transition:all 150ms ease-out;
+}
+#sitehead .theme-btn:hover{color:var(--brand-600);background:var(--bg-page)}
+.theme-menu{
+  position:absolute;right:0;top:34px;z-index:300;width:150px;display:none;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow-md);padding:5px;
+}
+.theme-menu.open{display:block}
+.theme-menu button{
+  display:flex;align-items:center;gap:8px;width:100%;border:none;background:none;
+  padding:7px 10px;font-size:12.5px;color:var(--text-1);border-radius:6px;text-align:left;
+}
+.theme-menu button:hover{background:var(--bg-page)}
+.theme-menu button.on{background:var(--brand-300);color:var(--brand-800);font-weight:600}
+.theme-menu .dotc{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:1px solid rgba(0,0,0,.1)}
+
+#sitehead .user{position:relative;height:38px;display:flex;align-items:center}
+#sitehead .user .username{
+  display:flex;align-items:center;gap:4px;padding:6px 10px;border-radius:var(--radius-sm);
+  color:var(--text-1);font-size:13px;position:relative;z-index:201;transition:color 150ms ease-out,background-color 150ms ease-out;
+  max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+#sitehead .user .username .iconfont{font-size:11px}
+#sitehead .user:hover .username{color:var(--brand-600);background:var(--bg-page)}
+#sitehead .user .selector{
+  position:absolute;right:0;top:40px;z-index:200;min-width:128px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow-md);padding:4px;
+  opacity:0;visibility:hidden;transform:translateY(-4px);
+  transition:opacity 150ms ease-out,transform 150ms ease-out,visibility 150ms;
+}
+#sitehead .user:hover .selector{opacity:1;visibility:visible;transform:translateY(0)}
+#sitehead .user .selector li a{
+  display:block;padding:7px 12px;border-radius:6px;font-size:13px;color:var(--text-2);
+  transition:color 150ms ease-out,background-color 150ms ease-out;
+}
+#sitehead .user .selector li a:hover{color:var(--brand-600);background:var(--bg-page)}
+
+#sitehead .login{display:flex;align-items:center}
+#sitehead .login li a{display:block;padding:6px 10px;font-size:13px;color:var(--text-2);border-radius:var(--radius-sm);transition:color 150ms ease-out,background-color 150ms ease-out}
+#sitehead .login li a:hover{color:var(--brand-600);background:var(--bg-page)}
+
+#sitehead .shopcart a{
+  display:flex;align-items:center;gap:5px;height:30px;padding:0 14px;
+  background:var(--brand-700);color:#fff;font-size:12.5px;border-radius:15px;
+  transition:background-color var(--ease,150ms ease-out);
+}
+#sitehead .shopcart a:hover{background:var(--brand-800);color:#fff}
+#sitehead .shopcart .iconfont{font-size:14px}
+
+/* ---------- 4. 页脚 ---------- */
+.site-footer{
+  font-size:13px;line-height:1.8;color:var(--text-2);
+  background:var(--surface);border-top:1px solid var(--border);margin-top:48px;
+}
+.w1100{width:100%;max-width:1100px;margin:0 auto;padding:0 16px}
+.site-footer a{color:var(--text-2);transition:color var(--ease,150ms ease-out)}
+.site-footer a:hover{color:var(--brand-600) !important}
+.site-footer .footer-article{padding:32px 0 16px;overflow:hidden}
+.site-footer .contact{float:left;width:280px}
+.site-footer .contact dt{width:90px}
+.site-footer .contact .iconfont{width:66px;height:66px;display:block;float:left;background:url(../image/tel.png) center center no-repeat;background-size:55px}
+.site-footer .contact .text{font-size:14px;line-height:30px;color:var(--text-1)}
+.site-footer .contact .tel{padding:3px 0 15px;font-size:20px;color:var(--text-1);font-variant-numeric:tabular-nums}
+.site-footer .contact a{display:block;width:90px;font-size:13px;line-height:30px;text-align:center;color:var(--text-2);border:1px solid var(--border);border-radius:var(--radius-sm);transition:all 150ms ease-out}
+.site-footer .contact a:hover{color:var(--brand-600) !important;border-color:var(--brand-500)}
+.site-footer .col-article{float:left;width:160px}
+.site-footer .col-article dt{margin-bottom:12px;font-size:14px;font-weight:600;color:var(--text-1)}
+.site-footer .col-article dd{margin-bottom:6px;overflow:hidden}
+.site-footer .col-article dd a{font-size:12px;color:var(--text-3);text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
+.site-footer .wx{float:left;width:135px;margin-right:0}
+.site-footer .wx dt{margin-bottom:12px;font-size:14px;font-weight:600;color:var(--text-1)}
+.site-footer .wx dd{margin-bottom:12px}
+.site-footer .wx dd img{display:block;width:110px;height:110px;margin:5px 0;border-radius:var(--radius-sm);border:1px solid var(--border)}
+.site-footer .wx dd.other{margin-bottom:0;line-height:18px}
+.site-footer .wx dd.other span{display:block;font-size:12px}
+.site-footer .wx dd.other a{display:inline-block;margin-right:5px;font-size:12px;line-height:18px;vertical-align:top}
+.footer-links{padding:10px 0;border-top:1px solid var(--border)}
+.footer-links p{font-size:13px;color:var(--text-2)}
+.footer-links a{margin-right:20px;font-size:12px;color:var(--text-3)}
+.footer-info .info-text{padding:16px 0 24px;font-size:12px;text-align:center;color:var(--text-3)}
+
+/* ---------- 5. 响应式 ---------- */
+@media (max-width:900px){
+  #sitehead .head-inner{flex-wrap:wrap;height:auto;padding-top:10px;padding-bottom:10px;row-gap:10px}
+  #sitehead .logo{font-size:17px}
+  #sitehead .search-box{order:3;width:100%;margin-left:0}
+  #sitehead .admin-link{display:none}
+  #sitehead .head-links{margin-left:auto;gap:8px}
+  .site-footer .contact,.site-footer .col-article,.site-footer .wx{float:left;width:50%}
+  .site-footer .contact .iconfont{display:none}
+  .footer-links a{margin-right:12px}
+}

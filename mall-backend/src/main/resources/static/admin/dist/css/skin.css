@@ -1,0 +1,248 @@
+/* ============================================================
+   NewBee Admin 后台换肤层（重设计版）
+   规格见 docs/DESIGN.md · 本文件在 adminlte.min.css 之后加载
+   只做配色/圆角/阴影/字体的覆盖，不改 DOM 结构与插件行为
+   ============================================================ */
+
+:root {
+  --brand-300: #8ad6d6;
+  --brand-500: #1baeae;
+  --brand-700: #0d7f7f;
+  --brand-800: #0a6060;
+  --text-1: #1f2328;
+  --text-2: #57606a;
+  --text-3: #8b949e;
+  --bg-page: #f6f8f9;
+  --border: #e4e8eb;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+}
+
+/* ---------- 全局 ---------- */
+body {
+  font-family: -apple-system, "PingFang SC", "HarmonyOS Sans SC",
+    "Microsoft YaHei", "Segoe UI", sans-serif;
+  color: var(--text-1);
+}
+
+.content-wrapper {
+  background-color: var(--bg-page);
+}
+
+.main-header {
+  border-bottom: 1px solid var(--border);
+  box-shadow: none;
+}
+
+.main-header .nav-link {
+  color: var(--text-2);
+}
+
+/* ---------- 侧栏（浅色主题） ---------- */
+.main-sidebar {
+  background-color: #ffffff;
+  border-right: 1px solid var(--border);
+}
+
+.main-sidebar .brand-link {
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--border);
+  border-right: none;
+}
+
+.main-sidebar .brand-text {
+  color: var(--text-1);
+  font-weight: 600;
+}
+
+.sidebar-light-primary .nav-header {
+  color: var(--text-3);
+  font-size: 11px;
+  letter-spacing: 0.4px;
+}
+
+.sidebar-light-primary .nav-sidebar > .nav-item > .nav-link {
+  color: var(--text-2);
+  border-radius: var(--radius-sm);
+  margin: 2px 8px;
+  padding: 8px 12px;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+
+.sidebar-light-primary .nav-sidebar > .nav-item > .nav-link:hover {
+  color: var(--text-1);
+  background-color: var(--bg-page);
+}
+
+/* 激活态：品牌青绿底白字 */
+.sidebar-light-primary .nav-sidebar > .nav-item > .nav-link.active {
+  color: #ffffff;
+  background-color: var(--brand-700);
+}
+
+.sidebar-light-primary .nav-sidebar > .nav-item > .nav-link.active .nav-icon {
+  color: #ffffff;
+}
+
+/* ---------- 卡片 ---------- */
+.card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+.card-header {
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--border);
+  border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
+}
+
+.card-primary.card-outline {
+  border-top: 3px solid var(--brand-500);
+}
+
+.card-title {
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+/* ---------- 按钮与链接：替换 Bootstrap 蓝 ---------- */
+.btn-primary {
+  background-color: var(--brand-700);
+  border-color: var(--brand-700);
+  color: #fff;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active,
+.btn-primary:not(:disabled):not(.disabled):active {
+  background-color: var(--brand-800);
+  border-color: var(--brand-800);
+  color: #fff;
+}
+
+.btn-primary:focus {
+  box-shadow: 0 0 0 0.2rem rgba(26, 174, 174, 0.35);
+}
+
+.btn-outline-primary {
+  color: var(--brand-700);
+  border-color: var(--brand-700);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--brand-700);
+  border-color: var(--brand-700);
+  color: #fff;
+}
+
+.bg-primary {
+  background-color: var(--brand-700) !important;
+}
+
+a {
+  color: var(--brand-700);
+}
+
+a:hover {
+  color: var(--brand-800);
+}
+
+/* ---------- 表格（含 jqGrid 容器内表格） ---------- */
+.table thead th {
+  background-color: var(--bg-page);
+  color: var(--text-2);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+}
+
+.table td,
+.table th {
+  border-top-color: var(--border);
+}
+
+.table-hover tbody tr:hover {
+  background-color: var(--bg-page);
+}
+
+/* jqGrid bootstrap4 皮肤协调 */
+.ui-jqgrid {
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.ui-jqgrid .ui-jqgrid-hbox th {
+  background: var(--bg-page);
+}
+
+/* ---------- 分页 ---------- */
+.pagination .page-item.active .page-link {
+  background-color: var(--brand-700);
+  border-color: var(--brand-700);
+  color: #fff;
+}
+
+.pagination .page-link {
+  color: var(--text-2);
+  border-color: var(--border);
+}
+
+.pagination .page-link:hover {
+  color: var(--brand-700);
+  border-color: var(--brand-500);
+  background-color: var(--bg-page);
+}
+
+/* ---------- 表单 ---------- */
+.form-control:focus {
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px var(--brand-300);
+}
+
+/* ---------- 提示弹窗（SweetAlert2） ---------- */
+.swal2-container .swal2-confirm {
+  background-color: var(--brand-700) !important;
+}
+
+.swal2-container .swal2-styled.swal2-confirm:hover {
+  background-color: var(--brand-800) !important;
+}
+
+/* ---------- 后台登录页 ---------- */
+.login-page {
+  background-color: var(--bg-page);
+}
+
+.login-box .login-logo h1 {
+  color: var(--brand-700);
+  font-weight: 600;
+}
+
+.login-card-body {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+}
+
+.login-card-body .form-control:focus {
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px var(--brand-300);
+}
+
+.login-card-body .btn-primary {
+  background-color: var(--brand-700);
+  border-color: var(--brand-700);
+}
+
+.login-card-body .btn-primary:hover {
+  background-color: var(--brand-800);
+  border-color: var(--brand-800);
+}
+
+/* 登录卡片内的验证码图 */
+.login-card-body img[src*="kaptcha"] {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  cursor: pointer;
+}

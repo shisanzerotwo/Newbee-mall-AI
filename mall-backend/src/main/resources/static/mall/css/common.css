@@ -1,0 +1,331 @@
+/* ============================================================
+   NewBee Mall 前台公共样式（重设计版）
+   设计规格见 docs/DESIGN.md · 视觉方向：清爽极简电商
+   结构：1.设计token  2.Reset  3.排版  4.旧工具类(保留类名换实现)
+         5.组件层(按钮/表单/标签)  6.分页  7.响应式
+   ============================================================ */
+
+/* ---------- 1. 设计 token ---------- */
+:root {
+  /* 品牌色：沿用 #1baeae 青绿演进 */
+  --brand-300: #8ad6d6;
+  --brand-500: #1baeae;
+  --brand-600: #119a9a;
+  --brand-700: #0d7f7f;
+  --brand-800: #0a6060;
+  /* 强调色：价格/促销 */
+  --accent-500: #e8590c;
+  --accent-50: #fef0e6;
+  /* 中性色 */
+  --text-1: #1f2328;
+  --text-2: #57606a;
+  --text-3: #8b949e;
+  --bg-page: #f6f8f9;
+  --surface: #ffffff;
+  --border: #e4e8eb;
+  --danger: #d1242f;
+  --success: #1a7f37;
+  /* 形状与阴影：统一语言 */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow-md: 0 8px 24px rgba(16, 24, 40, 0.1);
+  /* 动效 */
+  --ease: cubic-bezier(.2,.6,.2,1);
+  --ease-out: 150ms ease-out;
+}
+
+/* ---------- 2. Reset ---------- */
+* {
+  margin: 0;
+  padding: 0;
+  text-decoration: none;
+  list-style-type: none;
+  box-sizing: border-box;
+}
+img {
+  border: none;
+  max-width: 100%;
+  max-height: 100%;
+}
+a {
+  color: inherit;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* ---------- 3. 排版基线 ---------- */
+body {
+  font-family: -apple-system, "PingFang SC", "HarmonyOS Sans SC",
+    "Microsoft YaHei", "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-1);
+  background-color: var(--bg-page);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4 {
+  line-height: 1.3;
+  font-weight: 600;
+}
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}
+::selection {
+  background: var(--brand-300);
+  color: var(--text-1);
+}
+
+/* ---------- 4. 旧工具类：保留类名，换新实现 ---------- */
+.border {
+  border: 1px solid var(--border);
+}
+.center {
+  margin-left: auto;
+  margin-right: auto;
+}
+/* 流式容器：替换原固定 1226px */
+.w {
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+.fl {
+  float: left;
+}
+.fr {
+  float: right;
+}
+.clear {
+  clear: both;
+}
+.clearfix::after {
+  content: "";
+  height: 0;
+  display: block;
+  clear: both;
+  visibility: hidden;
+}
+.mt20 {
+  margin-top: 20px;
+}
+.mt10 {
+  margin-top: 10px;
+}
+.ml20 {
+  margin-left: 20px;
+}
+.ml40 {
+  margin-left: 40px;
+}
+.mr40 {
+  margin-right: 40px;
+}
+.mb20 {
+  margin-bottom: 20px;
+}
+.pr {
+  padding-right: 40px;
+}
+.ft20 {
+  font-size: 18px;
+}
+/* 品牌强调（原 #ff6700 橙改为品牌青绿，价格场景请用 .price） */
+.border2 {
+  border: 2px solid var(--brand-500);
+}
+.ftbc {
+  color: var(--brand-600);
+  font-weight: 600;
+}
+.h3 {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+/* ---------- 5. 组件层 ---------- */
+/* 按钮：订单页等此前无样式的 .btn 体系补齐 */
+.btn {
+  display: inline-block;
+  padding: 0 20px;
+  height: 36px;
+  line-height: 34px;
+  font-size: 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-1);
+  cursor: pointer;
+  text-align: center;
+  transition: background-color var(--ease-out), border-color var(--ease-out),
+    color var(--ease-out);
+  user-select: none;
+}
+.btn:hover {
+  border-color: var(--brand-500);
+  color: var(--brand-600);
+}
+.btn-primary {
+  background: var(--brand-700);
+  border-color: var(--brand-700);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--brand-800);
+  border-color: var(--brand-800);
+  color: #fff;
+}
+.btn-success {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+.btn-success:hover {
+  opacity: 0.9;
+  color: #fff;
+}
+.btn-default {
+  background: var(--surface);
+}
+.btn-line-gray {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text-2);
+}
+.btn-small {
+  height: 30px;
+  line-height: 28px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+/* 表单控件（个人中心/结算弹窗等 Bootstrap 语义类） */
+.form-group {
+  margin-bottom: 16px;
+}
+.control-label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+.form-control {
+  display: block;
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  font-size: 14px;
+  color: var(--text-1);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--ease-out), box-shadow var(--ease-out);
+}
+.form-control:focus {
+  outline: none;
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px var(--brand-300);
+}
+/* 状态标签 */
+.tag {
+  display: inline-block;
+  padding: 0 8px;
+  height: 20px;
+  line-height: 20px;
+  font-size: 12px;
+  border-radius: 10px;
+  background: var(--brand-300);
+  color: var(--brand-800);
+}
+.tag:empty {
+  display: none;
+}
+
+/* ---------- 6. 分页 ---------- */
+.page_wrap a,
+.newbee-pagenavi a {
+  display: inline-block;
+  min-width: 32px;
+  height: 32px;
+  line-height: 30px;
+  padding: 0 10px;
+  margin: 0 4px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: color var(--ease-out), border-color var(--ease-out);
+}
+.page_wrap a:hover,
+.newbee-pagenavi a:hover {
+  color: var(--brand-600);
+  border-color: var(--brand-500);
+}
+.page_wrap a.active,
+.newbee-pagenavi a.current {
+  color: #fff;
+  background: var(--brand-700);
+  border-color: var(--brand-700);
+}
+
+/* ---------- 7. 滚动浮现（简洁丝滑 · v2） ---------- */
+html{scroll-behavior:smooth}
+.reveal{opacity:0;transform:translateY(16px);transition:opacity 400ms var(--ease),transform 400ms var(--ease)}
+.reveal.in{opacity:1;transform:none}
+.reveal .gcard{opacity:0;transform:translateY(12px);transition:opacity 400ms var(--ease),transform 400ms var(--ease)}
+.reveal.in .gcard{opacity:1;transform:none}
+.reveal.in .gcard:nth-child(2){transition-delay:60ms}
+.reveal.in .gcard:nth-child(3){transition-delay:120ms}
+.reveal.in .gcard:nth-child(4){transition-delay:180ms}
+.reveal.in .gcard:nth-child(5){transition-delay:240ms}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  .reveal,.reveal .gcard{opacity:1 !important;transform:none !important;transition:none !important}
+  *{animation:none !important;transition:none !important}
+}
+
+/* ---------- 8. 响应式 ---------- */
+@media screen and (max-width: 991px) {
+  .ml40 {
+    margin-left: 24px;
+  }
+  .mr40 {
+    margin-right: 24px;
+  }
+  .pr {
+    padding-right: 24px;
+  }
+}
+@media screen and (max-width: 767px) {
+  .ml20,
+  .ml40 {
+    margin-left: 0;
+  }
+  .mr40 {
+    margin-right: 0;
+  }
+  .pr {
+    padding-right: 0;
+  }
+  .fl,
+  .fr {
+    float: none;
+  }
+  .ft20 {
+    font-size: 16px;
+  }
+}

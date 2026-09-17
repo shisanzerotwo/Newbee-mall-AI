@@ -1,0 +1,197 @@
+/* ============================================================
+   个人中心（重设计版）· 侧栏 + 内容卡布局
+   ============================================================ */
+
+#personal {
+    width: 100%;
+    height: auto;
+    background: transparent;
+    padding-top: 24px;
+}
+
+#personal .self-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+/* 左侧导航卡 */
+#personal .self-info .lfnav {
+    float: left;
+    width: 220px;
+    flex-shrink: 0;
+    height: auto;
+    min-height: 320px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 20px 0;
+}
+
+#personal .self-info .lfnav .nav_title {
+    width: auto;
+    height: auto;
+    line-height: 1.4;
+    font-size: 17px;
+    font-weight: 600;
+    margin: 0 24px 12px;
+    color: var(--text-1);
+}
+
+#personal .self-info .lfnav .title_list ul li {
+    display: block;
+    width: auto;
+    height: auto;
+    line-height: 1.5;
+    padding: 0;
+    margin: 2px 12px;
+}
+
+#personal .self-info .lfnav .title_list ul li a {
+    display: block;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    color: var(--text-2);
+    transition: color var(--ease-out), background-color var(--ease-out);
+}
+
+#personal .self-info .lfnav .title_list ul li a:hover {
+    color: var(--text-1);
+    background: var(--bg-page);
+}
+
+#personal .self-info .lfnav .title_list ul li a.active,
+#personal .self-info .lfnav .title_list ul li .active {
+    color: var(--brand-700);
+    font-weight: 600;
+    background: var(--brand-300);
+}
+
+/* 右侧内容卡 */
+#personal .self-info .intro {
+    float: left;
+    flex: 1;
+    min-width: 0;
+    width: auto;
+    height: auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 8px 0 24px;
+}
+
+#personal .self-info .intro .grzlbt {
+    width: auto;
+    height: auto;
+    line-height: 1.4;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-1);
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--bg-page);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+#personal .self-info .intro .grzlbt a {
+    color: var(--brand-600);
+    font-size: 14px;
+    font-weight: 400;
+    margin-left: 0;
+}
+
+#personal .self-info .intro .grzlbt a:hover {
+    color: var(--brand-800);
+}
+
+/* 资料行 */
+#personal .self-info .intro .info_item {
+    display: flex;
+    align-items: baseline;
+    height: auto;
+    line-height: 1.6;
+    width: auto;
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed var(--border);
+    border-radius: 0;
+    margin: 0 24px;
+    padding: 14px 0;
+}
+
+#personal .self-info .intro .info_item:last-of-type {
+    border-bottom: none;
+}
+
+#personal .self-info .intro .info_item span:nth-of-type(1) {
+    display: inline-block;
+    flex: 0 0 90px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-3);
+    width: auto;
+    height: auto;
+    line-height: inherit;
+    padding-left: 0;
+}
+
+#personal .self-info .intro .info_item span:nth-of-type(2) {
+    display: inline-block;
+    flex: 1;
+    font-size: 14px;
+    color: var(--text-1);
+    width: auto;
+    height: auto;
+    line-height: inherit;
+    padding-left: 0;
+    word-break: break-all;
+}
+
+#personal .self-info .intro .info_item span:nth-of-type(3) {
+    display: inline-block;
+    width: auto;
+    height: auto;
+    line-height: inherit;
+    text-align: right;
+    font-size: 13px;
+}
+
+#personal .self-info .intro .info_item span a {
+    color: var(--brand-600);
+}
+
+#personal .self-info .intro .info_item span a:hover {
+    color: var(--brand-800);
+}
+
+/* ---------- 响应式 ---------- */
+@media screen and (max-width: 767px) {
+    #personal .self-info {
+        flex-direction: column;
+    }
+
+    #personal .self-info .lfnav {
+        width: 100%;
+        min-height: 0;
+        padding: 12px 0;
+    }
+
+    #personal .self-info .lfnav .nav_title {
+        margin: 0 16px 8px;
+    }
+
+    #personal .self-info .lfnav .title_list ul {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 0 8px;
+    }
+
+    #personal .self-info .lfnav .title_list ul li {
+        margin: 2px 4px;
+    }
+}

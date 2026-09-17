@@ -1,0 +1,73 @@
+/**
+ * 严肃声明：
+ * 开源版本请务必保留此注释头信息，若删除我方将保留所有法律责任追究！
+ * 本系统已申请软件著作权，受国家版权局知识产权以及国家计算机软件著作权保护！
+ * 可正常分享和学习源码，不得用于违法犯罪活动，违者必究！
+ * Copyright (c) 2019-2020 十三 all rights reserved.
+ * 版权所有，侵权必究！
+ */
+package ltd.newbee.mall.controller.vo;
+
+import java.io.Serializable;
+
+/**
+ * @apiNote 首页配置商品VO对象
+ *         用于首页推荐位（热销/新品/推荐）展示的商品信息
+ */
+public class NewBeeMallIndexConfigGoodsVO implements Serializable {
+
+    private Long goodsId;            // 商品ID
+    private String goodsName;        // 商品名称
+    private String goodsIntro;       // 商品简介
+    private String goodsCoverImg;    // 商品封面图片URL
+    private Integer sellingPrice;    // 销售价格（单位：分）
+    private String tag;              // 标签（如"热销"、"新品"等）
+
+    public Long getGoodsId() {
+        return goodsId;
+    }
+
+    public void setGoodsId(Long goodsId) {
+        this.goodsId = goodsId;
+    }
+
+    public String getGoodsName() {
+        return goodsName;
+    }
+
+    public void setGoodsName(String goodsName) {
+        this.goodsName = goodsName;
+    }
+
+    public String getGoodsIntro() {
+        return goodsIntro;
+    }
+
+    public void setGoodsIntro(String goodsIntro) {
+        this.goodsIntro = goodsIntro;
+    }
+
+    public String getGoodsCoverImg() {
+        return goodsCoverImg;
+    }
+
+    public void setGoodsCoverImg(String goodsCoverImg) {
+        this.goodsCoverImg = goodsCoverImg;
+    }
+
+    public Integer getSellingPrice() {
+        return sellingPrice;
+    }
+
+    public void setSellingPrice(Integer sellingPrice) {
+        this.sellingPrice = sellingPrice;
+    }
+
+    public String getTag() {
+        return tag;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
+    }
+}

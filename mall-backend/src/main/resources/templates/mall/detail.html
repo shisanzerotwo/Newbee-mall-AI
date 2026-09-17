@@ -1,0 +1,264 @@
+<!-- Copyright (c) 2019-2020 十三 all rights reserved. -->
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="mall/header::head-fragment('NewBee商城-商品详情','detail')">
+</head>
+<body>
+<header th:replace="mall/header::header-fragment"></header>
+
+<div id="detail">
+    <!-- nav -->
+    <nav th:replace="mall/header::nav-fragment"></nav>
+
+    <div class="dc">
+        <div class="content clearfix">
+            <div class="title fl">商品详情</div>
+            <div class="clear"></div>
+        </div>
+    </div>
+
+    <div class="intro clearfix">
+        <div class="left fl" style="position: relative;">
+            <div class="swiper-container fl">
+                <img th:src="@{${goodsDetail.goodsCoverImg}}">
+            </div>
+        </div>
+        <div class="right fr">
+            <div class="h3 ml20 mt20" th:text="${goodsDetail.goodsName}">NewBeeMall</div>
+            <div class="sub_title mr40 ml20 mt10" th:text="${goodsDetail.goodsIntro}">NewBeeMall</div>
+            <div class="item_price mr40 ml20 mt10">
+                <th:block th:text="${goodsDetail.sellingPrice}+'.00 元'"></th:block>
+                <del>
+                    <th:block th:text="${goodsDetail.originalPrice}+'.00 元'"></th:block>
+                </del>
+            </div>
+
+            <div class="order">
+                <input class="car" type="button" th:onclick="'saveAndGoCart('+${goodsDetail.goodsId}+')'" value="立即选购"/>
+                <input class="car" type="button" th:onclick="'saveToCart('+${goodsDetail.goodsId}+')'" value="加入购物车"/>
+            </div>
+            <div class="tb-extra ml20" id="J_tbExtra">
+                <dl>
+                    <dt>承诺</dt>
+                    <dd><a class="J_Cont" title="满足7天无理由退换货申请的前提下，包邮商品需要买家承担退货邮费，非包邮商品需要买家承担发货和退货邮费。" href="#"
+                           target="_blank"><img th:src="@{/mall/image/7d.jpg}">7天无理由</a></dd>
+                </dl>
+                <dl>
+                    <dt>支付</dt>
+                    <dd><a href="##" target="_blank"><img th:src="@{/mall/image/hua.png}">蚂蚁花呗</a><a href="##"
+                                                                                                     target="_blank"><img
+                            th:src="@{/mall/image/card.png}">信用卡支付</a><a href="##" target="_blank"><img
+                            th:src="@{/mall/image/ji.png}">集分宝</a></dd>
+                </dl>
+                <dl>
+                    <dt>支持</dt>
+                    <dd>折旧变现，买新更省钱。<a style="float:none;text-decoration: underline;" href="##">详情</a></dd>
+                </dl>
+
+            </div>
+        </div>
+        <div class="clear"></div>
+    </div>
+    <!-- 这里使用的是 th:utext 标签，用 th:text 不会解析 html，用 th:utext 会解析 html -->
+    <div class="goods clearfix" th:utext="${goodsDetail.goodsDetailContent}">
+    </div>
+
+    <!-- ============ 商品评价区(新增) ============ -->
+    <div class="goods clearfix" id="reviewSection">
+        <div class="review-head">
+            用户评价(<span class="review-count" th:text="${#lists.size(reviews)}">0</span>)
+        </div>
+
+        <!-- 发表评论框 -->
+        <div class="review-form">
+            <div class="review-score-row">
+                <span>评分：</span>
+                <select id="reviewScore">
+                    <option value="5">★★★★★ 非常满意</option>
+                    <option value="4">★★★★ 满意</option>
+                    <option value="3">★★★ 一般</option>
+                    <option value="2">★★ 不满意</option>
+                    <option value="1">★ 非常不满意</option>
+                </select>
+            </div>
+            <textarea id="reviewContent" rows="3"
+                      placeholder="说说你的使用感受吧(不超过 200 字)"></textarea>
+            <div class="review-submit">
+                <button type="button" class="btn"
+                        th:onclick="'saveReview('+${goodsDetail.goodsId}+')'">发表评价</button>
+            </div>
+        </div>
+
+        <!-- 评论列表(Thymeleaf 直出) -->
+        <div id="reviewList" th:if="${#lists.isEmpty(reviews) == false}">
+            <div class="review-item" th:each="review : ${reviews}">
+                <div class="review-meta">
+                    <span class="review-stars"
+                          th:text="${'★'.repeat(review.reviewScore)}">★★★★★</span>
+                    <span class="review-nick" th:text="${review.nickName}">昵称</span>
+                    <span class="review-time" th:text="${#temporals.format(review.createTime, 'yyyy-MM-dd HH:mm')}">时间</span>
+                </div>
+                <div class="review-content" th:text="${review.reviewContent}">评论内容</div>
+            </div>
+        </div>
+        <div class="review-empty" id="reviewEmpty" th:if="${#lists.isEmpty(reviews)}">
+            暂无评价,快来抢沙发～
+        </div>
+    </div>
+</div>
+
+<div th:replace="mall/footer::footer-fragment"></div>
+
+<!-- jQuery -->
+<script th:src="@{/admin/plugins/jquery/jquery.min.js}"></script>
+<script th:src="@{/admin/plugins/sweetalert2/sweetalert2.all.min.js}"></script>
+<script th:src="@{/mall/js/search.js}" type="text/javascript"></script>
+<script type="text/javascript">
+    /**
+     * 添加到购物车
+     */
+    function saveToCart(id) {
+        var goodsCount = 1;
+        var data = {
+            "goodsId": id,
+            "goodsCount": goodsCount
+        };
+        $.ajax({
+            type: 'POST',
+            url: '/shop-cart',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function (result) {
+                if (result.resultCode == 200) {
+                    Swal.fire({
+                        title: "确认框",
+                        text: "添加成功",
+                        icon: "success",iconColor:"#1d953f",
+                        showCancelButton: true,
+                        confirmButtonText: '确认',
+                        cancelButtonText: '取消'
+                    }).then((flag) => {
+                           if (flag.value) {
+                                window.location.reload();
+                            }
+                        }
+                    );
+                } else {
+                    Swal.fire({
+                        text: result.message,
+                        icon: "error",iconColor:"#f05b72",
+                    });
+                }
+            },
+            error: function () {
+                Swal.fire({
+                    text: "操作失败",
+                    icon: "error",iconColor:"#f05b72",
+                });
+            }
+        });
+    }
+
+    /**
+     * 添加到购物车并跳转至购物车页面
+     */
+    function saveAndGoCart(id) {
+        var goodsCount = 1;
+        var data = {
+            "goodsId": id,
+            "goodsCount": goodsCount
+        };
+        $.ajax({
+            type: 'POST',
+            url: '/shop-cart',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function (result) {
+                if (result.resultCode == 200) {
+                    Swal.fire({
+                        title: "确认框",
+                        text: "已将商品加入购物车",
+                        icon: "success",iconColor:"#1d953f",
+                        showCancelButton: true,
+                        confirmButtonText: '去购物车结算',
+                        cancelButtonText: '留在当前页'
+                    }).then((flag) => {
+                            if (flag.value) {
+                                window.location.href = '/shop-cart';
+                            }
+                        }
+                    );
+                } else {
+                    Swal.fire({
+                        text: result.message,
+                        icon: "error",iconColor:"#f05b72",
+                    });
+                }
+            },
+            error: function () {
+                Swal.fire({
+                    text: "操作失败",
+                    icon: "error",iconColor:"#f05b72",
+                });
+            }
+        });
+    }
+
+    /**
+     * 发表商品评价(AJAX 提交)
+     * @param goodsId 商品id
+     */
+    function saveReview(goodsId) {
+        var score = $("#reviewScore").val();
+        var content = $("#reviewContent").val();
+        if (!content || content.trim().length == 0) {
+            Swal.fire({
+                text: "请填写评价内容",
+                icon: "warning",iconColor:"#dea32c",
+            });
+            return;
+        }
+        if (content.trim().length > 200) {
+            Swal.fire({
+                text: "评价内容不能超过 200 字",
+                icon: "warning",iconColor:"#dea32c",
+            });
+            return;
+        }
+        var data = {
+            "goodsId": goodsId,
+            "reviewScore": score,
+            "reviewContent": content.trim()
+        };
+        $.ajax({
+            type: 'POST',
+            url: '/goods/review/save',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function (result) {
+                if (result.resultCode == 200) {
+                    Swal.fire({
+                        title: "评价成功",
+                        text: "感谢你的评价!",
+                        icon: "success",iconColor:"#1d953f",
+                    }).then(function () {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        text: result.message,
+                        icon: "error",iconColor:"#f05b72",
+                    });
+                }
+            },
+            error: function () {
+                Swal.fire({
+                    text: "操作失败",
+                    icon: "error",iconColor:"#f05b72",
+                });
+            }
+        });
+    }
+</script>
+</body>
+</html>

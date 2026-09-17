@@ -1,0 +1,233 @@
+/* ============================================================
+   扫码支付页（轻量翻新）· alipay.html / wxpay.html 共用
+   保留原有类名与品牌图标资产，仅统一字体/圆角/色板
+   ============================================================ */
+
+html {
+    font-size: 62.5%;
+    font-family: -apple-system, "PingFang SC", "HarmonyOS Sans SC",
+        "Microsoft YaHei", "Segoe UI", sans-serif;
+}
+
+body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, code, form, fieldset, legend, input, button, textarea, p, blockquote, th, td, hr {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    line-height: 1.5;
+    font-size: 13px;
+    color: #1f2328;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-size: 100%;
+}
+
+input, textarea, select, button {
+    font-size: 13px;
+    font-weight: normal;
+}
+
+li {
+    list-style: none;
+}
+
+img {
+    border: 0;
+}
+
+a {
+    color: #0d7f7f;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #0a6060;
+    text-decoration: none;
+}
+
+/* 页面主体：居中窄栏 */
+body, .body {
+    background: #f6f8f9;
+    height: 100%;
+    max-width: 640px;
+    min-width: 300px;
+    min-height: 100%;
+    margin: 0 auto;
+    padding: 24px 16px;
+    box-sizing: border-box;
+}
+
+/* 支付渠道标题 */
+.mod-title {
+    height: 64px;
+    line-height: 64px;
+    text-align: center;
+    background: transparent;
+    border-bottom: none;
+}
+
+.ico_log {
+    display: inline-block;
+    width: 130px;
+    height: 38px;
+    vertical-align: middle;
+    margin-right: 7px;
+}
+
+.icon-ali-pay {
+    background: url("../image/pay/alipay_logo.jpg") no-repeat;
+    background-size: cover;
+}
+
+.icon-wx-pay {
+    background: url("../image/pay/wx_logo.jpg") no-repeat;
+    background-size: cover;
+}
+
+.mod-title .text {
+    font-size: 20px;
+    color: #1f2328;
+    font-weight: 600;
+    vertical-align: middle;
+}
+
+/* 支付卡片 */
+.mod-ct {
+    min-width: 300px;
+    margin: 12px auto;
+    padding-bottom: 16px;
+    background: #fff;
+    text-align: center;
+    color: #1f2328;
+    border: 1px solid #e4e8eb;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+    overflow: hidden;
+}
+
+.mod-ct .order {
+    font-size: 16px;
+    color: #57606a;
+    padding-top: 20px;
+}
+
+.mod-ct .amount {
+    font-size: 40px;
+    margin-top: 8px;
+    color: #e8590c;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.mod-ct .qr-image {
+    margin-top: 24px;
+}
+
+.mod-ct .qr-image img {
+    width: 230px;
+    height: 230px;
+}
+
+/* 二维码容器 */
+.qrcode-img-wrapper {
+    margin-top: 20px;
+}
+
+.qrcode-img-area {
+    display: inline-block;
+}
+
+.qrcode-loading {
+    display: none;
+}
+
+/* 订单信息 */
+.time-item {
+    padding-top: 12px;
+}
+
+.time-item h1 {
+    font-size: 14px;
+    font-weight: 400;
+    color: #57606a;
+    margin: 6px 0;
+    letter-spacing: 0;
+    font-family: inherit;
+}
+
+/* 扫码提示 */
+.mod-ct .tip {
+    margin-top: 20px;
+    border-top: 1px dashed #e4e8eb;
+    padding: 16px 0 8px;
+    position: relative;
+}
+
+.mod-ct .tip .ico-scan-wx {
+    display: inline-block;
+    width: 56px;
+    height: 55px;
+    background: url("../image/pay/scan-wx.png") no-repeat;
+    vertical-align: middle;
+}
+
+.mod-ct .tip .ico-scan-ali {
+    display: inline-block;
+    width: 56px;
+    height: 55px;
+    background: url("../image/pay/scan-alipay.png") no-repeat;
+    vertical-align: middle;
+}
+
+.mod-ct .tip .tip-text {
+    display: inline-block;
+    vertical-align: middle;
+    text-align: left;
+    margin-left: 20px;
+    font-size: 15px;
+    line-height: 28px;
+}
+
+/* 支付成功按钮 */
+.btn {
+    display: inline-block;
+    padding: 0 24px;
+    height: 38px;
+    line-height: 36px;
+    font-size: 14px;
+    border-radius: 6px;
+    border: 1px solid #e4e8eb;
+    background: #fff;
+    color: #1f2328;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 150ms ease-out;
+}
+
+.btn-small {
+    width: auto;
+    height: 38px;
+    font-size: 14px;
+    line-height: 36px;
+    padding: 0 24px;
+}
+
+.btn-success {
+    background: #0d7f7f;
+    border-color: #0d7f7f;
+    color: #fff;
+}
+
+.btn-success:hover {
+    background: #0a6060;
+}
+
+.foot {
+    text-align: center;
+    margin: 24px auto;
+    color: #8b949e;
+    font-size: 12px;
+    line-height: 20px;
+}
