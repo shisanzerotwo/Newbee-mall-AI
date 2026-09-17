@@ -388,4 +388,43 @@
       update_time = #{updateTime,jdbcType=TIMESTAMP}
     where goods_id = #{goodsId,jdbcType=BIGINT}
   </update>
+
+    <!-- ===== 以下两条供 AI 客服工具（MallTools）使用，均为只读 =====
+         注意：商品表与分类表都有 create_time/update_time 等同名列，
+         故显式写出带表别名的列，不 include Base_Column_List。 -->
+
+    <!-- 按分类名查商品（支持部分匹配，一/二/三级分类均可命中） -->
+    <select id="selectByCategoryNameLike" resultMap="BaseResultMap">
+        select g.goods_id, g.goods_name, g.goods_intro, g.goods_category_id,
+               g.goods_cover_img, g.goods_carousel, g.original_price, g.selling_price,
+               g.stock_num, g.tag, g.goods_sell_status,
+               g.create_user, g.create_time, g.update_user, g.update_time
+        from tb_newbee_mall_goods_info g
+        inner join tb_newbee_mall_goods_category c on g.goods_category_id = c.category_id
+        where c.is_deleted = 0
+          and c.category_name like CONCAT('%', #{categoryName}, '%')
+        order by g.goods_id
+        limit #{limit}
+    </select>
+
+    <!-- 推荐：在售优先（goods_sell_status=0 为在售，同 Constants.SELL_STATUS_UP）
+         + 可选价格排序。orderBy 用 <choose> 做白名单，不用 ${}，避免 SQL 注入。 -->
+    <select id="selectForRecommend" resultMap="BaseResultMap">
+        select g.goods_id, g.goods_name, g.goods_intro, g.goods_category_id,
+               g.goods_cover_img, g.goods_carousel, g.original_price, g.selling_price,
+               g.stock_num, g.tag, g.goods_sell_status,
+               g.create_user, g.create_time, g.update_user, g.update_time
+        from tb_newbee_mall_goods_info g
+        left join tb_newbee_mall_goods_category c on g.goods_category_id = c.category_id
+        where (g.goods_name like CONCAT('%', #{keyword}, '%')
+            or g.goods_intro like CONCAT('%', #{keyword}, '%')
+            or c.category_name like CONCAT('%', #{keyword}, '%'))
+        order by (g.goods_sell_status = 0) desc,
+        <choose>
+            <when test="orderBy == 'price_asc'">g.selling_price asc</when>
+            <when test="orderBy == 'price_desc'">g.selling_price desc</when>
+            <otherwise>g.goods_id asc</otherwise>
+        </choose>
+        limit #{limit}
+    </select>
 </mapper>

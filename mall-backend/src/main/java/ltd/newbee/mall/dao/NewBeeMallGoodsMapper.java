@@ -50,4 +50,23 @@ public interface NewBeeMallGoodsMapper {
 
     int batchUpdateSellStatus(@Param("orderIds")Long[] orderIds,@Param("sellStatus") int sellStatus);
 
+    // ===== 以下两个方法供 AI 客服工具（MallTools）使用，均为只读 =====
+
+    /**
+     * 客服工具用：按分类名查询商品（支持部分匹配，JOIN 分类表）。
+     * 注：商品表与分类表都有 create_time/update_time 等同名列，
+     * 故 XML 里必须写显式别名列，不能直接 include Base_Column_List。
+     */
+    List<NewBeeMallGoods> selectByCategoryNameLike(@Param("categoryName") String categoryName,
+                                                  @Param("limit") int limit);
+
+    /**
+     * 客服工具用：商品推荐——在售优先，可选价格排序。
+     * keyword 同时匹配 商品名 / 简介 / 分类名。
+     * orderBy 只接受 price_asc / price_desc，其余走默认（XML 里用 choose 白名单，不用 ${}）。
+     */
+    List<NewBeeMallGoods> selectForRecommend(@Param("keyword") String keyword,
+                                            @Param("orderBy") String orderBy,
+                                            @Param("limit") int limit);
+
 }

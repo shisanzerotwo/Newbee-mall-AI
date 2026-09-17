@@ -45,7 +45,8 @@
 | 安全隐患 | MySQL root 明文密码硬编码于 `db_tools.py` / `kb_build.py` / `hard_tests.py` |
 | **模型通道** | `.env` 实测指向 **Agnes AI Hub**（`apihub.agnes-ai.com/v1`）+ `agnes-2.0-flash`；**全仓（排除 venv）零 OmniRoute 引用**；`.env.example` 仍写 DeepSeek 官方端点 —— 三处不一致 |
 | **质检模式** | `QA_MODE` 默认 **`gate`**，且质检 LLM 调用**同步阻塞**在回答返回之前（`cs_agent.py:162,216-223`）；`audit` 仅表示"不打回重答"，**并非旁路执行** |
-| **语料实况** | 609 片段中 **575 段正文写死「价格：X 元 / 库存：N 件」**（模板 `kb_build.py:70-76`），注入 prompt 时截断 200 字符恰好覆盖这两行；快照建于 8/13，实测**在售 2 / 下架 573** |
+| **语料实况** | 609 片段中 **575 段正文写死「价格：X 元 / 库存：N 件」**（模板 `kb_build.py:70-76`），注入 prompt 时截断 200 字符恰好覆盖这两行；快照建于 8/13 |
+| **⚠️ Python 版存在上下架判断反转的 bug（M2-2 发现）** | `db_tools.py:103/121` 写 `"在售" if goods_sell_status == 1`，但商城权威定义是 **`Constants.SELL_STATUS_UP = 0`**（注释：“搜索和详情页面都只展示 SELL_STATUS_UP 的商品”；购买链路 `where ... and goods_sell_status = 0`）。数据库实际分布：**`0` → 573（在售）；`1` → 2（下架）**。即 Python 版把 573 个在售标成“已下架”、2 个下架标成“在售”，其**商品状态类回答系统性错误**。<br>**据此确立基准原则：凡冲突，以商城源码为准，不以 Python 版为行为基准。** Python 版仅作为“实现思路参照”，不作为“正确性参照” |
 | 客服侧记忆 | **无**：`cs_agent.py:185` 每次提问重建 messages；`10_memory_rag/memory.py` 的 `(user_id,key)` KV 表从未被客服使用 |
 
 ### 1.3 已发现的关键缺口
@@ -359,7 +360,7 @@ mvn dependency:tree -Dincludes=com.fasterxml.jackson.core
 
 - **建库**：启动时**异步**检查 Redis 索引，缺失则从 MySQL 读 575 商品 → 清洗 HTML → **剔除价格/库存/上下架字段** → 分块（size 400 / overlap 80）→ 嵌入 → 写入 `RedisEmbeddingStore`。**不得阻塞启动**；索引就绪前 `/api/cs/chat` 走"仅工具、无 RAG"的降级路径。
 - **语料红线（v1.1 新增，与 Python 版的有意偏离）**：chunk 文本**只含稳定语义**（名称 / 分类 / 标签 / 简介 / 详情），**不含价格、库存、上下架状态**。
-  - 依据：Python 版实测 609 片段中 **575 段**正文写死「价格：X 元 / 库存：N 件」（`kb_build.py:70-76`），注入时截断 200 字符**恰好覆盖这两行**；快照停在 8/13，实测当前在售 2 / 下架 573。照搬"对齐 Python 版分块"会让**静态旧价**进入 prompt，与工具结果并列冲突 —— 这正是对「数据铁律」的反例。
+  - 依据：Python 版实测 609 片段中 **575 段**正文写死「价格：X 元 / 库存：N 件」（`kb_build.py:70-76`），注入时截断 200 字符**恰好覆盖这两行**；快照停在 8/13。照搬“对齐 Python 版分块”会让**静态旧价**进入 prompt，与工具结果并列冲突 —— 这正是对「数据铁律」的反例。
   - 验收：语料构建后断言 **0 个 chunk 命中价格/库存字样**；并对同一问题（如"这个多少钱"）在"语料含价格 / 不含价格"两种情况下各跑一次，比较是否引用旧值。
 - **重建**：`@Scheduled(cron="0 0 3 * * ?")`，**全量重建**。LangChain4j 层**没有别名 API**（`RedisEmbeddingStore` 只暴露 `indexName`，"双写 + 原子切换"无法照做），实现方式二选一：
   - (a) `FT.DROPINDEX <idx> DD` + 重建 —— 609 片段重建很快，接受秒级窗口；
@@ -371,14 +372,18 @@ mvn dependency:tree -Dincludes=com.fasterxml.jackson.core
 
 ### 7.2 工具层（`MallTools`，6 个 `@Tool`）
 
-| 工具 | 参数 | 数据来源 |
+| 工具 | 参数 | 数据来源（**已按 M2-2 实现校准**） |
 |---|---|---|
-| `searchGoods` | keyword, limit | `GoodsService.searchNewBeeMallGoods` |
-| `getGoodsDetail` | goodsId | `GoodsService.getNewBeeMallGoodsById` + 分类 |
+| `searchGoods` | keyword, limit | `NewBeeMallGoodsMapper.findNewBeeMallGoodsListBySearch`（复用商城查询，其 SQL **无 ORDER BY** —— 见 `MallTools` javadoc） |
+| `getGoodsDetail` | goodsId | `NewBeeMallGoodsMapper.selectByPrimaryKey`（**不含分类名** —— 实体未映射，与原表不符，已按实际校准） |
 | `checkStock` | goodsId | 同上（库存/上下架） |
-| `queryOrder` | orderNo（阶段2：当前用户） | `OrderService` |
-| `searchByCategory` | categoryName, limit | `GoodsCategoryMapper` |
-| `recommendGoods` | keyword, sort, limit | 商品查询（在售优先 + 价格排序；`sort` 仅识别 `price_asc`/`price_desc`，其它值落到 `goods_id asc` —— 对齐 Python 版） |
+| `queryOrder` | orderNo（阶段2：当前用户归属校验） | `NewBeeMallOrderMapper`（返回 `userAddress`，**比 Python 版更敏感** —— 见下方阶段2 待办） |
+| `searchByCategory` | categoryName, limit | **新增** `NewBeeMallGoodsMapper.selectByCategoryNameLike`（商品侧 JOIN 分类名，功能等价于 `GoodsCategoryMapper` 但更直接） |
+| `recommendGoods` | keyword, sort, limit | **新增** `NewBeeMallGoodsMapper.selectForRecommend`（在售优先 + `<choose>` 白名单排序；`sort` 仅识别 `price_asc`/`price_desc`，其它值落到 `goods_id asc`） |
+
+> **与实现校准说明**：原表写的 `GoodsService.*` / `GoodsCategoryMapper` 与实现有两处不同（实现直接走 Mapper、并新增了 2 条只读 SQL）。已按实际校准。
+>
+> ⚠️ **阶段2 待办（P4）**：`queryOrder` 目前返回完整 `userAddress`（收货人 + 电话 + 地址），**比 Python 版（仅 `user_name`）更敏感**。阶段2 除「订单归属校验」外，还需**复核 `userAddress` 是否应脱敏**。
 
 > **行为对齐**：Python 版 `search_goods` 返回的 VO **不含库存与上下架状态**，并在工具描述里要求模型继续调 `check_stock` / `get_goods_detail`（`api_tools.py:64-67`）——那是有意的"双跳"。Java 版若把库存直接塞进 `searchGoods` 返回，模型会少调一次工具、行为契约随之改变，需在 Java vs Python 对照表中显式说明。
 
