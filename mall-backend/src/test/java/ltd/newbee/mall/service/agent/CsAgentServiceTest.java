@@ -1,0 +1,293 @@
+package ltd.newbee.mall.service.agent;
+
+import dev.langchain4j.agent.tool.ToolExecutionRequest;
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.request.ChatRequest;
+import dev.langchain4j.model.chat.response.ChatResponse;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+/**
+ * M2-4 验收测试：客服编排（RAG 上下文 + 工具循环 + 质检双模式）。
+ *
+ * <p><b>全部用 Mock，不调真实模型</b>：这里要验证的是<b>编排逻辑</b>
+ * （工具循环、轮次上限、打回与否），不是模型能力 —— 后者由 function calling spike 单独验证。
+ * 因此不依赖 MySQL / Redis / OmniRoute，可在 CI 里稳定跑。
+ *
+ * <p>质检双模式（audit 不打回 / gate 打回一次）的用例放在本类：模式开关与打回逻辑
+ * 都在 {@link CsAgentService} 里（对话历史由它持有），质检员本身只负责"出结论"。
+ */
+class CsAgentServiceTest {
+
+    private static final int MAX_ROUNDS = 3;
+
+    private ChatModel csModel;
+    private MallTools mallTools;
+    private RagService ragService;
+    private QaReviewer qaReviewer;
+    private CsAgentService service;
+
+    @BeforeEach
+    void setUp() {
+        csModel = mock(ChatModel.class);
+        mallTools = mock(MallTools.class);
+        ragService = mock(RagService.class);
+        qaReviewer = mock(QaReviewer.class);
+        when(ragService.asPrompt(anyString(), anyInt())).thenReturn("");
+        when(qaReviewer.review(anyString(), anyString(), anyString()))
+                .thenReturn(new QaReviewer.QaResult(true, "合格\n数据与工具结果一致"));
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (service != null) {
+            service.shutdown();   // 关掉质检旁路用的虚拟线程执行器，避免测试间残留
+        }
+    }
+
+    private CsAgentService newService(String qaMode) {
+        service = new CsAgentService(csModel, mallTools, ragService, qaReviewer,
+                MAX_ROUNDS,   // maxToolRounds
+                3,            // ragTopK
+                3,            // maxModelRetries（模型调用重试次数，见 cs.agent.max-model-retries）
+                qaMode);
+        return service;
+    }
+
+    private static ChatResponse response(AiMessage aiMessage) {
+        return ChatResponse.builder().aiMessage(aiMessage).build();
+    }
+
+    private static AiMessage toolCallMessage(String name, String argumentsJson) {
+        return AiMessage.builder()
+                .toolExecutionRequests(List.of(ToolExecutionRequest.builder()
+                        .id("call_" + name)
+                        .name(name)
+                        .arguments(argumentsJson)
+                        .build()))
+                .build();
+    }
+
+    // ------------------------------------------------------------------
+    // 工具循环
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("工具循环：模型先请求工具，拿到真实结果后再产出回答")
+    void shouldRunToolLoopThenReturnModelText() {
+        when(mallTools.searchGoods(eq("化妆水"), eq(3)))
+                .thenReturn("找到 1 个相关商品：[10003] 无印良品化妆水｜库存 1000");
+        when(csModel.chat(any(ChatRequest.class))).thenReturn(
+                response(toolCallMessage("searchGoods", "{\"keyword\":\"化妆水\",\"limit\":3}")),
+                response(AiMessage.from("「无印良品化妆水」在售，库存 1000 件。")));
+
+        CsAgentService.CsAnswer answer = newService("audit").answer("化妆水有货吗？");
+
+        verify(mallTools).searchGoods("化妆水", 3);
+        assertEquals("「无印良品化妆水」在售，库存 1000 件。", answer.answer());
+        assertEquals(1, answer.toolCalls().size(), "应记录 1 次工具调用");
+        assertEquals("searchGoods", answer.toolCalls().get(0).name());
+        assertTrue(answer.toolCalls().get(0).result().contains("库存 1000"),
+                "工具轨迹要保留真实结果（质检与可观测面板都要用）");
+        assertEquals(QaReviewer.QaMode.AUDIT, answer.qaMode());
+    }
+
+    @Test
+    @DisplayName("工具循环上限：模型反复请求工具时，编排在 MAX 轮后停下并给出兜底答复（不死循环）")
+    void shouldStopToolLoopAtMaxRounds() {
+        when(mallTools.checkStock(anyInt())).thenReturn("「化妆水」库存 1000 件，当前在售。");
+        // 模型每轮都要工具、永不产出文本 —— Python 教学版在这里会无限循环
+        when(csModel.chat(any(ChatRequest.class)))
+                .thenReturn(response(toolCallMessage("checkStock", "{\"goodsId\":10003}")));
+
+        CsAgentService.CsAnswer answer = newService("audit").answer("这个有货吗");
+
+        // 1 次首轮 + MAX_ROUNDS 轮工具循环，此后必须停手
+        verify(csModel, times(MAX_ROUNDS + 1)).chat(any(ChatRequest.class));
+        verify(mallTools, times(MAX_ROUNDS)).checkStock(anyInt());
+        assertEquals(MAX_ROUNDS, answer.toolCalls().size(),
+                "工具调用次数应被上限截断（而不是一直调下去）");
+        assertFalse(answer.answer().isBlank(), "超限时应返回兜底答复，而不是空字符串");
+    }
+
+    @Test
+    @DisplayName("工具循环超限后再被打回：对话仍合法（为未执行的 tool_calls 补了占位结果）")
+    void truncationShouldKeepConversationValidForRetry() {
+        when(mallTools.checkStock(anyInt())).thenReturn("「化妆水」库存 1000 件，当前在售。");
+        // 模型永远只要工具 → 必然触发上限
+        when(csModel.chat(any(ChatRequest.class)))
+                .thenReturn(response(toolCallMessage("checkStock", "{\"goodsId\":10003}")));
+        // 质检判不合格 → gate 模式会打回重答
+        when(qaReviewer.review(anyString(), anyString(), anyString()))
+                .thenReturn(new QaReviewer.QaResult(false, "不合格\n没答上问题"));
+
+        newService("gate").answer("这个有货吗");
+
+        ArgumentCaptor<ChatRequest> captor = ArgumentCaptor.forClass(ChatRequest.class);
+        verify(csModel, times(MAX_ROUNDS + 2)).chat(captor.capture());
+        String lastRequest = captor.getAllValues()
+                .get(captor.getAllValues().size() - 1).messages().toString();
+        assertTrue(lastRequest.contains("已达单次问答的工具调用上限"),
+                "打回重答的对话里，未执行的 tool_calls 必须有对应占位结果；"
+                        + "否则 OpenAI 兼容接口会报 400（tool_calls must be followed by tool messages）");
+    }
+
+    @Test
+    @DisplayName("未知工具：把提示回传给模型，不静默丢弃、不崩溃")
+    void shouldReportUnknownToolBackToModel() {        when(csModel.chat(any(ChatRequest.class))).thenReturn(
+                response(toolCallMessage("noSuchTool", "{}")),
+                response(AiMessage.from("抱歉，我换个方式帮您查。")));
+
+        CsAgentService.CsAnswer answer = newService("audit").answer("帮我查点东西");
+
+        assertEquals(1, answer.toolCalls().size());
+        assertTrue(answer.toolCalls().get(0).result().contains("未知工具"),
+                "未知工具要把可用工具清单回传给模型，而不是返回空");
+    }
+
+    @Test
+    @DisplayName("工具参数是 JSON 字符串：数字/字符串都能解析，缺省时用默认值")
+    void shouldParseToolArguments() {
+        when(mallTools.recommendGoods(eq("洗面奶"), eq("default"), eq(3)))
+                .thenReturn("推荐「洗面奶」相关商品 1 款：...");
+        when(csModel.chat(any(ChatRequest.class))).thenReturn(
+                // limit 传成字符串、sort 缺省 —— 都要能兜住
+                response(toolCallMessage("recommendGoods", "{\"keyword\":\"洗面奶\",\"limit\":\"3\"}")),
+                response(AiMessage.from("给您推荐这几款～")));
+
+        newService("audit").answer("推荐个洗面奶");
+
+        verify(mallTools).recommendGoods("洗面奶", "default", 3);
+    }
+
+    // ------------------------------------------------------------------
+    // 质检双模式
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("gate：质检合格 → 不打回，结论同步返回")
+    void gateShouldNotRetryWhenQualified() {
+        when(csModel.chat(any(ChatRequest.class))).thenReturn(response(AiMessage.from("原回答")));
+        when(qaReviewer.review(anyString(), anyString(), anyString()))
+                .thenReturn(new QaReviewer.QaResult(true, "合格\n数据与工具一致"));
+
+        CsAgentService.CsAnswer answer = newService("gate").answer("有货吗");
+
+        verify(csModel, times(1)).chat(any(ChatRequest.class));
+        assertEquals("原回答", answer.answer());
+        assertNotNull(answer.review(), "gate 模式应同步带回质检结论");
+        assertTrue(answer.review().qualified());
+        assertNull(answer.pendingReview(), "gate 模式不挂 future");
+    }
+
+    @Test
+    @DisplayName("gate：质检不合格 → 追加质检意见给客服，重答一次（只一次）")
+    void gateShouldRetryExactlyOnceWhenUnqualified() {
+        when(csModel.chat(any(ChatRequest.class))).thenReturn(
+                response(AiMessage.from("第一版回答（推荐了已下架商品）")),
+                response(AiMessage.from("修正后回答（只推荐在售商品）")));
+        when(qaReviewer.review(anyString(), anyString(), anyString()))
+                .thenReturn(new QaReviewer.QaResult(false, "不合格\n推荐了已下架商品"));
+
+        CsAgentService.CsAnswer answer = newService("gate").answer("推荐个洗面奶");
+
+        verify(csModel, times(2)).chat(any(ChatRequest.class));   // 生成 1 次 + 打回重答 1 次，不再循环
+        assertEquals("修正后回答（只推荐在售商品）", answer.answer());
+        assertNotNull(answer.review());
+        assertFalse(answer.review().qualified());
+
+        ArgumentCaptor<ChatRequest> captor = ArgumentCaptor.forClass(ChatRequest.class);
+        verify(csModel, times(2)).chat(captor.capture());
+        String secondRequest = captor.getAllValues().get(1).messages().toString();
+        assertTrue(secondRequest.contains("质检员反馈"), "第二次请求要带上质检反馈");
+        assertTrue(secondRequest.contains("推荐了已下架商品"), "反馈内容要真的进对话");
+    }
+
+    @Test
+    @DisplayName("audit：质检不合格也不打回，结论经 future 异步返回（不阻塞回答）")
+    void auditShouldNotRetryAndExposeReviewAsFuture() throws Exception {
+        when(csModel.chat(any(ChatRequest.class))).thenReturn(response(AiMessage.from("原回答")));
+        when(qaReviewer.review(anyString(), anyString(), anyString()))
+                .thenReturn(new QaReviewer.QaResult(false, "不合格\n推荐了已下架商品"));
+
+        CsAgentService.CsAnswer answer = newService("audit").answer("推荐个洗面奶");
+
+        verify(csModel, times(1)).chat(any(ChatRequest.class));   // 不打回
+        assertEquals("原回答", answer.answer());
+        assertNull(answer.review(), "audit 模式返回时质检还没跑完（这正是「不阻塞」）");
+        assertNotNull(answer.pendingReview(), "audit 模式结论经 future 回给调用方");
+        assertFalse(answer.pendingReview().get(5, TimeUnit.SECONDS).qualified());
+    }
+
+    @Test
+    @DisplayName("质检上下文：工具调用记录会传给质检员（供核对数字来源）")
+    void toolSummaryShouldBePassedToQa() {
+        when(mallTools.checkStock(anyInt())).thenReturn("「化妆水」库存 1000 件，当前在售。");
+        when(csModel.chat(any(ChatRequest.class))).thenReturn(
+                response(toolCallMessage("checkStock", "{\"goodsId\":10003}")),
+                response(AiMessage.from("有货，1000 件")));
+
+        newService("gate").answer("有货吗");
+
+        ArgumentCaptor<String> summary = ArgumentCaptor.forClass(String.class);
+        verify(qaReviewer).review(anyString(), anyString(), summary.capture());
+        assertTrue(summary.getValue().contains("checkStock"), "质检应看到调用过哪个工具");
+        assertTrue(summary.getValue().contains("10003"), "质检应看到工具参数");
+    }
+
+    // ------------------------------------------------------------------
+    // 降级路径
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("RAG 抛异常时降级为「仅工具」，不拖垮整次问答（且不打回）")
+    void ragFailureShouldDegradeToToolOnly() {
+        when(ragService.asPrompt(anyString(), anyInt()))
+                .thenThrow(new IllegalStateException("redis down"));
+        when(csModel.chat(any(ChatRequest.class))).thenReturn(response(AiMessage.from("您好～我是小蜂")));
+
+        CsAgentService.CsAnswer answer = newService("audit").answer("你好");
+
+        assertEquals("您好～我是小蜂", answer.answer());
+        assertTrue(answer.toolCalls().isEmpty());
+    }
+
+    @Test
+    @DisplayName("模型返回空文本：给兜底答复，不留空字符串")
+    void blankModelTextShouldFallBack() {
+        when(csModel.chat(any(ChatRequest.class))).thenReturn(response(AiMessage.from("")));
+
+        CsAgentService.CsAnswer answer = newService("audit").answer("你好");
+
+        assertFalse(answer.answer().isBlank(), "模型空文本时应给客服口吻的兜底答复");
+    }
+
+    @Test
+    @DisplayName("空问题：直接拒绝，不发起任何模型调用")
+    void blankQuestionShouldBeRejected() {
+        assertThrows(IllegalArgumentException.class, () -> newService("audit").answer("  "));
+        verify(csModel, times(0)).chat(any(ChatRequest.class));
+    }
+}

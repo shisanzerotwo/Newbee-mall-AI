@@ -1,5 +1,6 @@
 package ltd.newbee.mall.config;
 
+import dev.langchain4j.http.client.okhttp.OkHttpClientBuilder;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import org.slf4j.Logger;
@@ -75,6 +76,20 @@ public class CsAgentConfig {
                 .modelName(modelName)
                 .temperature(temperature)
                 .timeout(Duration.ofSeconds(timeoutSeconds))
+                // ⚠️ 必须显式指定 OkHttp：LangChain4j 默认的 JDK HttpClient 调 OmniRoute 网关会报
+                //   java.io.IOException: HTTP/1.1 header parser received no bytes
+                // （同参数同 key 用 curl 正常；JdkHttpClient.Builder 无可配项，只能换客户端）
+                .httpClientBuilder(new OkHttpClientBuilder())
+                // 关闭 LangChain4j 的「内置重试」（HTTP 层）：Builder 的 maxRetries 默认是 2
+                //   （javap 反编译构造器实测：Utils.getOrDefault(builder.maxRetries, 2)
+                //     -> 单次调用最多 3 个 HTTP 请求），且是**指数退避、不可控**的。
+                //   本项目的模型通道（OmniRoute -> agnes 免费额度）会高频 429（reset after 3s），
+                //   我们自实现了更贴合的线性退避（cs.agent.max-model-retries，见 CsAgentService）。
+                //   这里设为 0 把内置那层关掉，避免两者**叠加**（最坏 3 x 3 = 9 个请求）。
+                //   行为证据：OpenAiRetryBehaviorTest（实测请求数 默认 3 / maxRetries(0) 1 / maxRetries(1) 2）。
+                //   ⚠️ 历史教训：初版注释曾断言「Builder 没有 maxRetries」——那是错的，
+                //     根因是 javap 过滤正则写成 retry|Retry 而方法名是 maxRetries（含 Retries）。
+                .maxRetries(0)
                 .build();
     }
 }

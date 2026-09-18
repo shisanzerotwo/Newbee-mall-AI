@@ -42,6 +42,9 @@ class CsAgentConfigTest {
     @Autowired
     private ChatModel csChatModel;
 
+    @Autowired
+    private org.springframework.core.env.Environment environment;
+
     @Test
     void chatModelBeanShouldBeCreated() {
         assertNotNull(csChatModel, "csChatModel Bean 应被创建（装配正确即可，不要求模型可达）");
@@ -52,9 +55,14 @@ class CsAgentConfigTest {
         ChatRequestParameters params =
                 ((OpenAiChatModel) csChatModel).defaultRequestParameters();
 
-        assertEquals("auto", params.modelName(),
-                "cs.model.name 应绑定为 ${CS_MODEL_NAME:auto} 的默认值 auto "
-                        + "（若为 null 或其它值，说明键名写错或环境变量被设置）");
+        // 期望值取「Spring Environment 解析出的同一属性」而非写死字面量：
+        // cs.model.name = ${CS_MODEL_NAME:auto}，默认值只在环境变量未设置时成立。
+        // 若写死 "auto"，一旦 shell 里 export 了 CS_MODEL_NAME（真实模型调用所必需，
+        // 见 CsAgentRealCallIT / ops/mvn.sh 的 WSLENV 转发），本测试就会**恒定失败**
+        // —— 测试不该依赖调用者的环境（2026-09-18 实测到的确定性冲突）。
+        String expected = environment.getProperty("cs.model.name");
+        assertEquals(expected, params.modelName(),
+                "Bean 里的 modelName 应与 Environment 解析出的 cs.model.name 一致");
         assertEquals(0.2, params.temperature(),
                 "cs.model.temperature 应绑定为 0.2（若静默回落到其它值，说明键名写错）");
     }

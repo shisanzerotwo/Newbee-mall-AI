@@ -110,6 +110,18 @@
             <artifactId>langchain4j-embeddings-all-minilm-l6-v2</artifactId>
             <version>${langchain4j.beta.version}</version>
         </dependency>
+
+        <!-- ⚠️ 必须换掉默认的 JDK HttpClient。实测（2026-09-18）：用默认的
+             langchain4j-http-client-jdk 调 OmniRoute 网关会报
+             java.io.IOException: HTTP/1.1 header parser received no bytes
+             （同参数同 key 用 curl 就正常；怀疑是 JDK 客户端的 HTTP/2 升级尝试
+               不被 Node 网关支持）。JdkHttpClient.Builder 没有可配项，
+             而 OpenAiChatModel.Builder 暴露了 httpClientBuilder(...) → 改用 OkHttp。 -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-http-client-okhttp</artifactId>
+            <version>${langchain4j.beta.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

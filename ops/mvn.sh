@@ -17,7 +17,7 @@ set -euo pipefail
 # 注意：CS_MODEL_NAME 必须是**真实 model id**（如 agnes/agnes-2.0-flash），
 # 不能用网关里的显示名（如 "Agnes 2.0 Flash"）—— 后者会报
 # "not available in the active live catalog"（本项目踩过）。
-export WSLENV="${WSLENV:+$WSLENV:}DB_PASSWORD/w:CS_MODEL_API_KEY/w:CS_MODEL_NAME/w:CS_MODEL_BASE_URL/w"; export WSLENV="${WSLENV#;}"
+export WSLENV="${WSLENV:+$WSLENV:}DB_PASSWORD/w:CS_MODEL_API_KEY/w:CS_MODEL_NAME/w:CS_MODEL_BASE_URL/w"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP="$ROOT/mall-backend"

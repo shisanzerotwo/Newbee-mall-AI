@@ -78,7 +78,7 @@
 | 14 | 性能目标 | 首字 <1.5s、完整回答 <8s、并发 10；产出 Java vs Python 对比表 |
 | 15 | 商城功能 | **全保留**（前台全部 + 后台全部） |
 | 16 | 会话记忆 | 落库 MySQL（LangChain4j ChatMemory + JDBC） |
-| 17 | 质检 | 默认 **`gate`**（对齐 Python 基准：同步把关、不合格重答一次）；`cs.qa.mode=audit` 可切为旁路记录 |
+| 17 | 质检 | 默认 **`audit`**（旁路记录：回答不等质检、更快，适配 SSE 流式）；`cs.qa.mode=gate` 可切为同步把关 + 不合格重答一次。<br>**变更说明（2026-09-18）**：原设计写“默认 gate（对齐 Python 基准）”，但 M2-4 实现选 `audit` —— 理由：① `gate` 会显著拉长响应（Python 版实测同步阻塞在回答返回前）；② `audit` 与 M2-5 的流式输出更契合。Python 版仍是 `gate`，属**有意差异**，M3 对照表需说明 |
 | 18 | `/api/agent` | **删除**（需要时从 git 历史取回），内部工具改直调 Service |
 | 19 | 前端细节 | 浮窗 380×560 + 3 条 chips；`/cs` 保留三栏与上下文面板六区块 |
 | 20 | 初始化数据 | 从现有库 `mysqldump` → `ops/init.sql`（含 575 商品） |
@@ -92,7 +92,7 @@
 | 28 | 升级参考 | `upstream/spring-boot-3.x` 仅供参考，**不 merge**（差异 128 文件 / -13526 行） |
 | 29 | 迁移面 | `javax` → `jakarta` 共 **44 处**（20 `HttpServletRequest` + 13 `@Resource` + 7 `HttpSession` + 4 `HttpServletResponse`）；`javax.imageio.ImageIO` 1 处**不动**。注：最初估 46 处，Task 3 删除 `AgentApiController` 连带移除 2 处 import（已实测核实） |
 | 30 | 配置迁移 | `spring.redis.*` → `spring.data.redis.*` |
-| 31 | 质检时序 | 默认 `gate` 为**同步**（`review` 先于 `done`）；仅 `audit` 模式异步，此时 **`done` 不是终止事件**，时序约定见 §4.2 |
+| 31 | 质检时序 | **默认 `audit` 为异步**（`review` 后于 `done`）→ **`done` 不是终止事件**；`gate` 模式同步（`review` 先于 `done`）。时序约定见 §4.2（**M2-5 必须照此实现**） |
 | 32 | SSE 传输方式 | `POST` + `fetch` + `ReadableStream`（非 `EventSource`，以支持 POST 传参与上下文） |
 | 33 | 工具层 | `MallTools` 的 6 个 `@Tool` 方法**直调 Service/Mapper**（无 HTTP、无 JDBC 直连） |
 | 34 | 混合检索 | 向量 + 关键词 2-gram → RRF 融合（对齐 Python 版，便于对照） |
@@ -222,9 +222,9 @@ CsAgentService
   │             queryOrder / searchByCategory / recommendGoods
   │       └→ 直调 GoodsService / OrderService（同进程）
   ├─ ③ 组织回答 → TokenStream → SSE delta 逐字推送
-  └─ ④ 质检（**默认 gate：同步把关**，不合格追加反馈后重答一次）
+  └─ ④ 质检（**默认 audit：异步旁路**，不阻塞回答）
         QaReviewer 复核数字/诚实/合规 → SSE review 事件
-        （cs.qa.mode=audit 时改为异步旁路，此时 review 在 done 之后到达，见 §4.2）
+        （cs.qa.mode=gate 时改为同步把关，不合格追加反馈后重答一次，见 §4.2）
 
 【数据铁律】价格 / 库存 / 订单状态一律以工具结果为准；RAG 仅作语义参考。
           结构性保障是 §7.1 的**语料红线**（chunk 文本不含价格/库存），不是靠 prompt 单点兜底。
@@ -243,8 +243,8 @@ event: error    data: {"message":"模型调用失败，请稍后再试"}
 
 **时序约定（必须实现，否则必踩坑）**
 
-- `gate` 模式（默认）：质检在服务端同步完成，**`review` 必然先于 `done`**。
-- `audit` 模式：`done` 先发，`review` 后到 —— 因此 **`done` 不是终止事件**，服务端**不得**在发完 `done` 后立即 `SseEmitter.complete()`，否则异步 `review` 到达时 `send()` 会抛 `IllegalStateException`。
+- **`audit` 模式（默认）**：`done` 先发，`review` 后到 —— 因此 **`done` 不是终止事件**，服务端**不得**在发完 `done` 后立即 `SseEmitter.complete()`，否则异步 `review` 到达时 `send()` 会抛 `IllegalStateException`。**M2-5 必须照此实现。**
+- `gate` 模式：质检在服务端同步完成，**`review` 必然先于 `done`**。
 - 终止条件：收到 `review` 即结束；**兜底超时 3s**（质检未按时返回时发一条 `review{qualified:null,reason:"质检超时"}` 并 complete）。客户端只在 `review` 或连接关闭后停止读取。
 
 ### 4.3 上下文带入（修掉当前断链）
@@ -401,8 +401,9 @@ mvn dependency:tree -Dincludes=com.fasterxml.jackson.core
   <br>⚠️ **M2-1 决定（2026-09-18）：不引入 `@AiService` / `langchain4j-spring-boot-starter`**（starter 只有 beta），改为**手写编排**（直接调 `ChatModel` + 工具循环）。若 starter 进入 GA，可切回声明式接口。
 - ⚠️ **M2-2 注入 `ChatModel` 时必须用 `@Qualifier("csChatModel")`** —— M2-4 将新增**质检用的第二个模型**，届时按类型注入会产生 Bean 歧义。（写进设计文档而非只留任务卡，避免“说好的后续处理”漂走）
 - `QaReviewer`：独立第二角色，只查**硬伤**（数据准确性 / 诚实性 / 合规性 / 推荐合理性），不挑表达风格
-- **默认 `gate`**（对齐 Python 基准实测：`QA_MODE` 默认 `gate` 且质检**同步阻塞**在回答返回之前）：同步把关，不合格追加质检反馈后**重答一次**（不循环、不再复核）
-- **`audit` 模式**：回答先流式返回，质检异步跑并通过 SSE `review` 事件推送结果 —— 此时 `done` **不是**终止事件，时序见 §4.2
+- **默认 `audit`**（M2-4 实现决定，2026-09-18 变更）：回答**不等质检**，质检在**虚拟线程**上异步复核并通过 SSE `review` 事件推送结果 —— 此时 `done` **不是**终止事件，时序见 §4.2
+- **`gate` 模式**（`cs.qa.mode=gate`）：同步把关，不合格追加质检反馈后**重答一次**（不循环、不再复核）—— 会显著拉长响应
+> ⚠️ **与 Python 基准的有意差异**：Python 版 `QA_MODE` 默认 `gate` 且同步阻塞在回答返回前；Java 版默认 `audit`（理由见决策 #17）
 - 质检判定沿用 Python 版口径（"合格"字样且无"不合格"），但**建议改为结构化输出**（`合格|不合格` + 理由字段），避免中文子串匹配带来的误判
 
 ### 7.4 会话记忆
@@ -609,6 +610,16 @@ v1.0 经独立技术评审，核实两处真实仓库（`newbee-mall`、`ai开�
 | 8 | 「双写新索引 + 原子切换」在 LangChain4j 层不可实现 | §7.1 改为两选一的可行方案；补维度变更代价 | 该 store 只暴露 `indexName`，无别名 API |
 | 9 | Redis Stack 镜像已停更（2025-12） | §2#5/#8、§5、§9.1、§13.1 全部改为 **`redis:8`** | Redis 官方停更公告 + Redis 8 内置 Query Engine |
 | 10 | 容器访问不到宿主网关；DoD 记忆要求与 session 载体冲突；现状表缺模型通道 | §9.2 补 `host.docker.internal`；§7.4 改用前端 `conversationId`；§1.2 补三行现状 | WSL 亦连不通宿主 20128；未启用 Spring Session |
+
+**实施期补充修订（M2-4 实现期间发现，2026-09-18）**
+
+> 与上表「评审发现 #」是两回事：下面是**实现阶段**才暴露的偏差，编号用 `补-N` 以示区分（避免与 1-10 混淆）。
+
+| # | 修订内容 | 涉及位置 | 理由 / 证据 |
+|---|---|---|---|
+| 补-1 | 质检默认值又从 `gate` **改回 `audit`** | 决策 #17/#31、§4 数据流图、§4.2 时序、§7.3（共 5 处） | 上表 #3 定的 `gate` 是**对齐 Python 基准**；实测 `gate` 同步阻塞会拉长首字响应，`audit` 更适合 SSE 流式。属于"实现后推翻设计取舍"，非评审失误 |
+| 补-2 | 重试策略：关闭 LangChain4j **内置重试**（`maxRetries(0)`），只留自实现线性退避 | `CsAgentConfig`、`CsAgentService`、`application.properties` | 初版误断言"Builder 无 maxRetries"（javap 正则漏了 `Retries`）；实测默认 **2** 次且**可关闭**，不关会与自实现叠加（最坏 9 个请求）。证据：`OpenAiRetryBehaviorTest` 实测请求数 3 / 1 / 2 |
+| 补-3 | 模型调用必须换 **OkHttp** 客户端 | `CsAgentConfig` | LangChain4j 默认 JDK HttpClient 调 OmniRoute 报 `HTTP/1.1 header parser received no bytes`（同参同 key 用 curl 正常） |
 
 **被证伪的 v1.0 断言**（引用时不要再沿用）：① 「无官方 Boot starter」；② Hutool issue #3985「5.8.25 仍存」（实为 **5.8.40 已修复**，报告版本 5.8.33）；③ 「仅 6 个直接依赖」（实为 8 个）。
 
