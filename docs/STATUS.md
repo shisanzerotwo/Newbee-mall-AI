@@ -125,20 +125,20 @@
 # 编译 / 测试
 cd /mnt/d/GitHub/xiangmu/newbee-mall-ai
 bash ops/mvn.sh -q compile
-export DB_PASSWORD=<redacted> && bash ops/mvn.sh test -Dtest=MallToolsTest
+export DB_PASSWORD=<你的MySQL密码> && bash ops/mvn.sh test -Dtest=MallToolsTest
 
 # 冒烟（升级前后对照；自动用 Windows curl.exe）
 bash ops/smoke.sh                      # 默认 http://127.0.0.1:28089
 bash ops/smoke.sh http://127.0.0.1:28090   # 容器实例
 
 # 本机起应用（需 DB_PASSWORD）
-export DB_PASSWORD=<redacted> && bash ops/mvn.sh spring-boot:run
+export DB_PASSWORD=<你的MySQL密码> && bash ops/mvn.sh spring-boot:run
 
 # 容器化
 cd /mnt/d/GitHub/xiangmu/newbee-mall-ai
 docker compose up -d          # 3 容器；首次构建较慢
 docker compose ps             # 期望均 healthy
-docker compose exec -T mysql mysql -uroot -p<redacted> -e "USE newbee_mall_db; SELECT COUNT(*) FROM tb_newbee_mall_goods_info;"
+docker compose exec -T mysql mysql -uroot -p<你的MySQL密码> -e "USE newbee_mall_db; SELECT COUNT(*) FROM tb_newbee_mall_goods_info;"
 ```
 
 ## 7. 模型通道（✅ 已打通，2026-09-18）
