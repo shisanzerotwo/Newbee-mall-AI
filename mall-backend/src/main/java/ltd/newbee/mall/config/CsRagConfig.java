@@ -3,6 +3,7 @@ package ltd.newbee.mall.config;
 import dev.langchain4j.community.store.embedding.redis.RedisEmbeddingStore;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.allminilml6v2.AllMiniLmL6V2EmbeddingModel;
+import dev.langchain4j.model.embedding.onnx.bgesmallzhv15.BgeSmallZhV15EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.data.segment.TextSegment;
 import org.slf4j.Logger;
@@ -38,8 +39,20 @@ public class CsRagConfig {
 
     private static final Logger log = LoggerFactory.getLogger(CsRagConfig.class);
 
-    /** 内置 ONNX 模型 all-MiniLM-L6-v2 的维度 */
-    public static final int EMBEDDING_DIMENSION = 384;
+    /** 内置 ONNX 模型 all-MiniLM-L6-v2 的维度（英文模型，中文弱） */
+    public static final int EMBEDDING_DIMENSION_MINILM = 384;
+
+    /** 中文嵌入模型 bge-small-zh-v15 的维度 */
+    public static final int EMBEDDING_DIMENSION_BGE_ZH = 512;
+
+    /**
+     * 兼容旧引用：默认维度（= MiniLM）。
+     *
+     * <p>实际维度由 {@code cs.rag.embedding-model} 决定（见 {@link #currentDimension()}）——
+     * 因为两个模型的维度不同（384 vs 512），**换模型必须同时重建索引**，
+     * 否则 Redis 侧维度不匹配。
+     */
+    public static final int EMBEDDING_DIMENSION = EMBEDDING_DIMENSION_MINILM;
 
     @Value("${cs.rag.redis-host:localhost}")
     private String host;
@@ -49,6 +62,28 @@ public class CsRagConfig {
 
     @Value("${cs.rag.index-name:goods_kb}")
     private String indexName;
+
+    /**
+     * 嵌入模型选择：{@code bge-zh}（**默认**，中文 512 维）或 {@code minilm}（英文 384 维）。
+     *
+     * <p>做成可切换是为了能做 A/B 对比（{@code RagChineseQualityTest} 会打印 Top3 关键词命中率）：
+     * 实测 all-MiniLM 中文命中率 40% —— 而它是**英文模型**，中文语义区分度本来就差。
+     *
+     * <p>⚠️ 两个模型维度不同（384 / 512），**切换后必须重建索引**
+     * （删掉 Redis 里的 {@code goods_kb} 索引，让 {@link KnowledgeBuilder} 重建），
+     * 否则向量维度不匹配会直接报错。
+     */
+    @Value("${cs.rag.embedding-model:bge-zh}")
+    private String embeddingModelName;
+
+    /** 当前选中的嵌入维度 —— 与 {@link #goodsEmbeddingModel()} 保持同一个判据。 */
+    public int currentDimension() {
+        return isBgeZh() ? EMBEDDING_DIMENSION_BGE_ZH : EMBEDDING_DIMENSION_MINILM;
+    }
+
+    private boolean isBgeZh() {
+        return "bge-zh".equalsIgnoreCase(embeddingModelName);
+    }
 
     @Bean(destroyMethod = "close")
     @Lazy
@@ -61,18 +96,24 @@ public class CsRagConfig {
     @Bean
     @Lazy
     public EmbeddingModel goodsEmbeddingModel() {
-        log.info("加载内置 ONNX 嵌入模型 all-MiniLM-L6-v2（首次需下载 ~90MB，之后走本地缓存）");
+        if (isBgeZh()) {
+            log.info("加载内置 ONNX 嵌入模型 bge-small-zh-v15（中文，512 维；首次需下载，之后走本地缓存）");
+            return new BgeSmallZhV15EmbeddingModel();
+        }
+        log.info("加载内置 ONNX 嵌入模型 all-MiniLM-L6-v2（英文，384 维；首次需下载 ~90MB）");
         return new AllMiniLmL6V2EmbeddingModel();
     }
 
     @Bean
     @Lazy
     public EmbeddingStore<TextSegment> goodsEmbeddingStore(UnifiedJedis ragJedis) {
-        log.info("装配 RedisEmbeddingStore：indexName={} dimension={}", indexName, EMBEDDING_DIMENSION);
+        int dimension = currentDimension();
+        log.info("装配 RedisEmbeddingStore：indexName={} dimension={} model={}",
+                indexName, dimension, embeddingModelName);
         return RedisEmbeddingStore.builder()
                 .unifiedJedis(ragJedis)
                 .indexName(indexName)
-                .dimension(EMBEDDING_DIMENSION)
+                .dimension(dimension)
                 // 必须把商品标识写进 Redis 索引：否则向量侧返回的 TextSegment 拿不到 metadata，
                 // 检索结果无法回填商品（实测：不加时 goodsId 为空，导致 RRF 合并错乱、分数虚高）
                 .metadataKeys(List.of("goodsId", "title"))

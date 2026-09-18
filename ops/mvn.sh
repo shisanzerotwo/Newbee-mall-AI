@@ -17,7 +17,10 @@ set -euo pipefail
 # 注意：CS_MODEL_NAME 必须是**真实 model id**（如 agnes/agnes-2.0-flash），
 # 不能用网关里的显示名（如 "Agnes 2.0 Flash"）—— 后者会报
 # "not available in the active live catalog"（本项目踩过）。
-export WSLENV="${WSLENV:+$WSLENV:}DB_PASSWORD/w:CS_MODEL_API_KEY/w:CS_MODEL_NAME/w:CS_MODEL_BASE_URL/w"
+# CS_RAG_EMBEDDING_MODEL：M3 起用于 A/B 对比嵌入模型（minilm=英文 384 维 / bge-zh=中文 512 维）。
+# ⚠️ 漏掉它会出现「以为切了模型、其实没切」—— 实测踩过：跑 bge 评测时日志仍打印 all-MiniLM，
+#    命中率 0/10，一度怀疑索引坏了；根因只是环境变量没被白名单转发到 Windows 子进程。
+export WSLENV="${WSLENV:+$WSLENV:}DB_PASSWORD/w:CS_MODEL_API_KEY/w:CS_MODEL_NAME/w:CS_MODEL_BASE_URL/w:CS_RAG_EMBEDDING_MODEL/w"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP="$ROOT/mall-backend"

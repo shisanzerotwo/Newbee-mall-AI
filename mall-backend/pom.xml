@@ -111,6 +111,15 @@
             <version>${langchain4j.beta.version}</version>
         </dependency>
 
+        <!-- M3 实验：中文嵌入模型（bge-small-zh-v15，512 维）。
+             all-MiniLM-L6-v2 是英文模型，实测中文查询 Top3 关键词命中率仅 40%；
+             这里引入中文模型做 A/B 对比（见 docs/PERF-M3.md 的 RAG 小节 / RagChineseQualityTest）。 -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-embeddings-bge-small-zh-v15</artifactId>
+            <version>${langchain4j.beta.version}</version>
+        </dependency>
+
         <!-- ⚠️ 必须换掉默认的 JDK HttpClient。实测（2026-09-18）：用默认的
              langchain4j-http-client-jdk 调 OmniRoute 网关会报
              java.io.IOException: HTTP/1.1 header parser received no bytes
