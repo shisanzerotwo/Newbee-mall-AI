@@ -1,0 +1,93 @@
+name: CI
+
+# 为什么这样写（本案的特殊约束，改之前先读）：
+#  1. 本项目**需要** MySQL 与带 Query Engine 的 Redis（向量检索用 FT.* 命令）。
+#     所以用 services 起 mysql:9.7 + redis:8，而不是 mock 掉。
+#  2. 知识库构建（KnowledgeBuilder）是**异步**的，且首次会加载 ONNX 嵌入模型
+#     （现在默认是 bge-small-zh-v15，需下载模型文件）→ 因此给测试较宽松的超时。
+#  3. 不跑真实模型调用：CI 里**没有** agnes key，
+#     所以只跑单测 + 需要 DB/Redis 的集成测试（这些不依赖上游模型）。
+#     真实模型端到端（CsAgentRealCallIT）**必须**手动跑，不在 CI 里 ——
+#     否则会因上游限流把 CI 变成随机红灯。
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: build + tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      mysql:
+        image: mysql:9.7
+        env:
+          MYSQL_ROOT_PASSWORD: ci-root-pw
+          MYSQL_DATABASE: newbee_mall_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci-root-pw"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+
+      redis:
+        # 必须是 redis:8 —— 本项目用 FT.CREATE ... VECTOR（Query Engine），
+        # 老版本/普通 redis 镜像没有这些命令
+        image: redis:8
+        ports:
+          - 16379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Wait for MySQL and import schema
+        run: |
+          set -e
+          # 等 MySQL 真正可用（healthcheck 有时先于初始化完成）
+          for i in $(seq 1 30); do
+            if mysqladmin ping -h 127.0.0.1 -P 3306 -uroot -pci-root-pw --silent 2>/dev/null; then
+              echo "MySQL ready after ${i} tries"; break
+            fi
+            sleep 5
+          done
+          # 导入初始化数据（ops/init.sql 含建表 + 商品数据 + cs_chat_memory）
+          mysql -h 127.0.0.1 -P 3306 -uroot -pci-root-pw < ops/init.sql
+
+      - name: Run tests
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: '3306'
+          DB_NAME: newbee_mall_db
+          DB_PASSWORD: ci-root-pw
+          # RAG 必须指向带 Query Engine 的 redis:8
+          CS_RAG_REDIS_PORT: '16379'
+        run: |
+          cd mall-backend
+          mvn -B -q test
+
+      - name: Upload surefire reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: mall-backend/target/surefire-reports/
+          if-no-files-found: ignore
