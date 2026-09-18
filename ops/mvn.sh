@@ -13,11 +13,11 @@
 # 注意：参数会被逐个加单引号后传给 PowerShell（防二次解析拆散含 ':' 的参数）
 set -euo pipefail
 
-# DB_PASSWORD 必须经 WSLENV 才能跨过 WSL→Windows 边界。
-# 实测：不声明 WSLENV 时，Windows 子进程读到的 DB_PASSWORD 是空值（已用
-# `DB_PASSWORD=x powershell -Command '$env:DB_PASSWORD'` 对比验证）。
-# /w 表示仅传给 Windows 侧。切勿把密码插值到命令行（含单引号会撑破 PS 串）。
-export WSLENV="${WSLENV:+$WSLENV:}DB_PASSWORD/w"
+# 需跨边界传的环境变量一律写进 WSLENV（/w = 仅 Windows 侧）。
+# 注意：CS_MODEL_NAME 必须是**真实 model id**（如 agnes/agnes-2.0-flash），
+# 不能用网关里的显示名（如 "Agnes 2.0 Flash"）—— 后者会报
+# "not available in the active live catalog"（本项目踩过）。
+export WSLENV="${WSLENV:+$WSLENV:}DB_PASSWORD/w:CS_MODEL_API_KEY/w:CS_MODEL_NAME/w:CS_MODEL_BASE_URL/w"; export WSLENV="${WSLENV#;}"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP="$ROOT/mall-backend"

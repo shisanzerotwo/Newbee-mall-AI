@@ -91,17 +91,37 @@ docker compose ps             # 期望均 healthy
 docker compose exec -T mysql mysql -uroot -p<redacted> -e "USE newbee_mall_db; SELECT COUNT(*) FROM tb_newbee_mall_goods_info;"
 ```
 
-## 7. 当前阻塞
+## 7. 模型通道（✅ 已打通，2026-09-18）
 
-**模型通道不可用**（M2-4 的硬前置）。实测：
-- kilocode（`kc`）：`credits_exhausted` → 402
-- kimi-coding（`kmc`）：月度配额尽 → 403
-- cursor（`cu`）：`unavailable` → 约 3.8 天后恢复
-- **agnes / huggingchat**（用户新增，`providers list` 可见，`oauth status` **看不到**）：
-  静态目录有模型，但调用报 `Model 'X' is not available in the active live catalog`（400）
-- cline / openference：active 但**无模型目录**
+**M2-4 的硬前置已满足**（实测 function calling 成功返回 `tool_calls`）。
 
-→ **已交给 herdr 里的 codex（agent 名 `modelfix`，pane `wG:p6`）去查"live catalog"机制并跑通 function calling spike。**
+| provider | 状态 |
+|---|---|
+| **agnes** | ✅ **可用**（实测 `finish_reason: tool_calls`，参数正确） |
+| huggingchat | active（未实测） |
+| kilocode / kimi-coding / cursor / cline / openference | ❌ 额度耗尽 / 配额尽 / 无模型目录 |
+
+### ⭐ 关键结论（踩过的坑，别再踩）
+
+1. **OmniRoute 的 `/v1/models` 同时返回 `id` 与 `name`**：
+   - `id` = **真实 model id**（如 `agnes/agnes-2.0-flash`）← **请求必须用这个**
+   - `name` = 显示名（如 `Agnes 2.0 Flash`）← **用它请求会报** `not available in the active live catalog`
+   - ⚠️ `omniroute models <provider>` 列的是**显示名**，极具误导性
+2. **免费用户有限流**：HTTP 429（提示 `reset after 3s`）→ 调用需要**重试**
+3. **`oauth status` 只显示 OAuth 类型** provider；**API key 类型的要看 `providers list`**
+   （agnes / huggingchat 都是 API key 类型，在 `oauth status` 里根本看不到）
+4. **herdr 里启动 codex 会先弹「目录信任确认」**（`Do you trust the contents of this directory?`）
+   → 不回答就会表现为"启动后立即退出"，且 herdr 标记为 `blocked`。回答 `1. Yes, continue` 即可。
+
+### 应用侧配置（`newbee-mall-ai/.env`，已被 gitignore）
+
+```
+CS_MODEL_BASE_URL=http://localhost:20128/v1
+CS_MODEL_API_KEY=
+CS_MODEL_NAME=agnes/agnes-2.0-flash
+```
+
+`ops/mvn.sh` 的 `WSLENV` 已扩展到 `DB_PASSWORD` + `CS_MODEL_API_KEY` + `CS_MODEL_NAME` + `CS_MODEL_BASE_URL`（否则 WSL 启动应用时这些变量传不到 Windows 侧）。
 
 ## 8. 下一步
 
