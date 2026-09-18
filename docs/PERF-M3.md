@@ -138,3 +138,22 @@ M2-3 记过一条**印象**：`all-MiniLM-L6-v2` 是英文模型，中文查询�
 2. **环境变量没被转发**：`ops/mvn.sh` 的 WSLENV 白名单里没有 `CS_RAG_EMBEDDING_MODEL`，
    导致"以为切了模型、其实还在用 MiniLM"（日志里打印的模型名戳穿了它）。
    → 已加入白名单。**教训：切模型这类实验，第一件事是确认"真的切过去了"**（看日志里的模型名）。
+
+## 附注：换嵌入模型时重建索引的正确顺序（踩过）
+
+**错误做法**（我第一次就是这么干的）：
+应用**运行中**直接 `FT.DROPINDEX goods_kb` → 应用仍在往一个**已不存在的索引**写 →
+`hash_indexing_failures = 588`（全部失败）、`num_records` 只有应有值的一半 ——
+但**检索居然还能返回结果**，于是很容易误判成"索引是好的，那个计数器大概是历史累计"。
+
+**正确顺序**：
+```bash
+# 1) 先停应用（否则它会在你删索引后继续写）
+# 2) 再删索引
+docker exec newbee-mall-redis redis-cli FT.DROPINDEX goods_kb
+# 3) 最后启动应用 → KnowledgeBuilder 会用新模型的维度重建
+```
+重建后应当看到：`dim=512`、`num_docs=588`、`num_records=12544`、**`hash_indexing_failures=0`**。
+
+**判据**：不要只看 `num_docs`（它可能在部分失败时仍接近预期）；要看
+**`hash_indexing_failures` 是否为 0** + `num_records` 是否达到应有量级。
