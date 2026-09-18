@@ -45,12 +45,14 @@ echo "=============================================="
 echo
 
 # 先确认目标活着（否则后面所有数字都是噪声）
-code="$($CURL -s -o /dev/null -w '%{http_code}' "$BASE/" || echo 000)"
-if [ "$code" != "200" ]; then
-    echo "❌ 目标未就绪：GET / 返回 $code（先启动应用）" >&2
-    exit 3
-fi
-echo "✅ 目标就绪（GET / = 200）"
+# 注意：不要把 "|| echo 000" 接在 -w 后面 —— WSL 调 Windows curl.exe 时退出码传递
+# 与输出会混在一起，结果是 "200000"（我第一版就这么错的），改用单独的探测请求。
+code="$($CURL -s -o /dev/null -w '%{http_code}' "$BASE/" 2>/dev/null)"
+code="${code:0:3}"   # 只取前 3 位（防退出码/其他输出串进来）
+case "$code" in
+    2*|3*) echo "✅ 目标就绪（GET / = $code）" ;;
+    *)     echo "❌ 目标未就绪：GET / 返回 '$code'（先启动应用）" >&2; exit 3 ;;
+esac
 echo
 
 run_phase() {
@@ -110,7 +112,8 @@ for _ in $(seq 1 8); do
     code="$($CURL -s -o /dev/null -m 10 -w '%{http_code}' \
         -X POST "${BASE}/api/cs/chat" \
         -H 'Content-Type: application/json' \
-        -d '{"question":"并发可用性探测","conversationId":"loadtest"}' || echo 000)"
+        -d '{"question":"并发可用性探测","conversationId":"loadtest"}' 2>/dev/null)"
+    code="${code:0:3}"
     if [ "$code" = "200" ]; then sse_ok=$((sse_ok + 1)); else sse_fail=$((sse_fail + 1)); fi
 done
 echo "  SSE 建立成功 $sse_ok ／ 失败 $sse_fail（失败常见原因：上游 429 限流，不代表应用有问题）"
