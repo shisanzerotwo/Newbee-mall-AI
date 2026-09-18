@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>newbee-mall-ai 进度可视化</title>
+<style>
+  :root{--brand:#0d7f7f;--brand-d:#0a6060;--accent:#e8590c;--ok:#1a7f37;--warn:#b45309;
+        --text:#1f2328;--text2:#57606a;--text3:#8b949e;--bg:#f6f8f9;--surface:#fff;--border:#e4e8eb}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);
+       color:var(--text);line-height:1.65;padding:32px 16px}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:26px;font-weight:700;margin-bottom:6px}
+  h2{font-size:17px;font-weight:600;margin:28px 0 12px;padding-left:10px;border-left:4px solid var(--brand)}
+  .sub{color:var(--text3);font-size:13px;margin-bottom:20px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:16px}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border)}
+  th{background:#fafbfc;color:var(--text2);font-weight:600;font-size:12.5px}
+  tr:last-child td{border-bottom:none}
+  .ok{color:var(--ok);font-weight:600}.warn{color:var(--warn);font-weight:600}.bad{color:#d1242f;font-weight:600}
+  .pill{display:inline-block;font-size:12px;padding:2px 9px;border-radius:10px;background:#e6f4ea;color:var(--ok)}
+  .pill.gray{background:#eef1f3;color:var(--text2)}
+  .pill.amber{background:#fef3c7;color:var(--warn)}
+  .bar{height:9px;background:#eef1f3;border-radius:5px;overflow:hidden;margin-top:5px}
+  .bar>i{display:block;height:100%;background:var(--brand)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+  .kpi .n{font-size:23px;font-weight:700;color:var(--brand-d);font-variant-numeric:tabular-nums}
+  .kpi .l{font-size:12.5px;color:var(--text3);margin-top:2px}
+  img{width:100%;border:1px solid var(--border);border-radius:8px;display:block;margin-bottom:14px}
+  .shot-title{font-size:13px;color:var(--text2);margin:14px 0 6px;font-weight:600}
+  pre{background:#0d1117;color:#c9d1d9;padding:14px 16px;border-radius:8px;overflow:auto;font-size:12.5px;line-height:1.6}
+  code{font-family:ui-monospace,Consolas,monospace}
+  .muted{color:var(--text3);font-size:12.5px}
+  .flex{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+  .flex>*{flex:1 1 340px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>newbee-mall-ai · 进度可视化</h1>
+  <div class="sub">生成时间 2026-09-18 · 项目：把 Java 电商（newbee-mall）与 AI 智能客服融合为**一个 Spring Boot 应用**</div>
+
+  <h2>核心指标</h2>
+  <div class="grid">
+    <div class="kpi"><div class="n">26</div><div class="l">git 提交（分层可回退）</div></div>
+    <div class="kpi"><div class="n">16/16</div><div class="l">商城冒烟回归通过</div></div>
+    <div class="kpi"><div class="n">14/14</div><div class="l">M2-3 RAG 测试通过</div></div>
+    <div class="kpi"><div class="n">3 healthy</div><div class="l">Docker 容器（app/mysql/redis）</div></div>
+    <div class="kpi"><div class="n">588</div><div class="l">RAG 向量片段（575 商品）</div></div>
+    <div class="kpi"><div class="n">0</div><div class="l">语料红线违规（价格/库存泄漏）</div></div>
+  </div>
+
+  <h2>里程碑进度</h2>
+  <div class="card">
+    <table>
+      <tr><th style="width:110px">里程碑</th><th>内容</th><th style="width:230px">状态</th></tr>
+      <tr>
+        <td><b>M1</b></td>
+        <td>Spring Boot 2.7.5 → <b>3.5.16</b>；Java 8 → <b>21</b>；javax → jakarta 44 处；配置迁移</td>
+        <td><span class="pill">✅ 完成</span><div class="bar"><i style="width:100%"></i></div></td>
+      </tr>
+      <tr>
+        <td><b>M2-1</b></td>
+        <td>LangChain4j 1.20.0 引入 + <code>ChatModel</code> 装配</td>
+        <td><span class="pill">✅ 完成</span><div class="bar"><i style="width:100%"></i></div></td>
+      </tr>
+      <tr>
+        <td><b>M2-2</b></td>
+        <td><code>MallTools</code> 6 个只读 <code>@Tool</code> + 2 条 Mapper SQL</td>
+        <td><span class="pill">✅ 完成</span><div class="bar"><i style="width:100%"></i></div></td>
+      </tr>
+      <tr>
+        <td><b>M2-3</b></td>
+        <td>RAG：知识库构建（588 片段）+ 混合检索（关键词 + 向量 → RRF）</td>
+        <td><span class="pill">✅ 完成</span><div class="bar"><i style="width:100%"></i></div></td>
+      </tr>
+      <tr>
+        <td><b>M2-4</b></td>
+        <td>编排 <code>CsAgentService</code> + 质检 <code>QaReviewer</code>（audit/gate）</td>
+        <td><span class="pill amber">🔄 进行中</span><div class="bar"><i style="width:60%"></i></div></td>
+      </tr>
+      <tr>
+        <td><b>M2-5</b></td>
+        <td>SSE 流式接口 + 会话记忆落库</td>
+        <td><span class="pill gray">⬜ 待做</span><div class="bar"><i style="width:0"></i></div></td>
+      </tr>
+      <tr>
+        <td><b>M3</b></td>
+        <td>前端原生融合（浮窗 + <code>/cs</code>）+ 容器化 + 压测 + CI</td>
+        <td><span class="pill amber">容器化 ✅ / 前端待做</span><div class="bar"><i style="width:35%"></i></div></td>
+      </tr>
+    </table>
+  </div>
+
+  <h2>运行状态（Docker，实测）</h2>
+  <div class="card">
+    <table>
+      <tr><th>容器</th><th>状态</th><th>端口</th></tr>
+      <tr><td>newbee-mall-app</td><td class="ok">Up (healthy)</td><td>宿主 <code>28090</code> → 容器 28089</td></tr>
+      <tr><td>newbee-mall-mysql</td><td class="ok">Up (healthy)</td><td>仅内网（不映射宿主，避免与本机 MySQL 冲突）</td></tr>
+      <tr><td>newbee-mall-redis</td><td class="ok">Up (healthy)</td><td>宿主 <code>16379</code> → 容器 6379（<b>redis:8</b>，Query Engine 可用）</td></tr>
+    </table>
+    <p class="muted" style="margin-top:10px">
+      容器内数据来自 <code>ops/init.sql</code>（脱敏）：575 商品 / 92 分类 / 3 管理员 / <b>0 用户</b>。
+    </p>
+  </div>
+
+  <h2>商城前端（升级后 · 容器实例 28090）</h2>
+  <div class="card">
+    <div class="shot-title">① 首页（UI 重设计 + 商品数据来自数据库）</div>
+    <img src="./screenshots/mall-home.png" alt="商城首页">
+    <div class="shot-title">② 搜索页（关键词 phone）</div>
+    <img src="./screenshots/mall-search.png" alt="搜索页">
+    <div class="shot-title">③ 后台登录页</div>
+    <img src="./screenshots/admin-login.png" alt="后台登录页">
+    <p class="muted">注：商品详情 / 购物车 / 个人中心属<b>登录拦截</b>路径，未登录访问会 302 跳转登录页（这是商城的正常行为，已在冒烟基线的「行为特征」里记录）。</p>
+  </div>
+
+  <h2>AI 客服能力（M2 已建）</h2>
+  <div class="flex">
+    <div class="card">
+      <h3 style="font-size:14px;margin-bottom:10px">6 个只读工具（直调 Mapper，无 HTTP/JDBC 直连）</h3>
+      <table>
+        <tr><th>工具</th><th>能力</th></tr>
+        <tr><td><code>searchGoods</code></td><td>名称/简介模糊搜索（标注上下架）</td></tr>
+        <tr><td><code>getGoodsDetail</code></td><td>价格/库存/标签/分类/详情</td></tr>
+        <tr><td><code>checkStock</code></td><td>库存 + 在售状态</td></tr>
+        <tr><td><code>queryOrder</code></td><td>订单状态/金额/收货信息</td></tr>
+        <tr><td><code>searchByCategory</code></td><td>按分类名查商品</td></tr>
+        <tr><td><code>recommendGoods</code></td><td>推荐（在售优先 + 价格排序）</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3 style="font-size:14px;margin-bottom:10px">RAG 检索样例（实测输出）</h3>
+      <pre>查询「保湿」
+ [1] 无印良品 MUJI 保湿化妆液   (goodsId=10143, RRF=0.0312)
+ [2] 无印良品 MUJI 基础润肤乳液 (goodsId=10146, RRF=0.0308)
+ [3] 迪奥烈艳蓝金唇膏520#      (goodsId=10243, RRF=0.0167)
+
+查询「化妆水」
+ [1] 无印良品 MUJI 基础润肤化妆水 (10085)
+ [2] 无印良品 MUJI 凝胶墨水圆珠笔 (10033)  ← 英文模型对中文专名区分弱
+ [3] 无印良品 MUJI 基础润肤化妆水 (10080)</pre>
+      <p class="muted" style="margin-top:8px">
+        阶段 2 计划换中文嵌入（bge-small-zh）并产出对比报告 —— 见 <code>docs/RAG-EVAL.md</code>（待写）。
+      </p>
+    </div>
+  </div>
+
+  <h2>关键决策与踩坑（择要）</h2>
+  <div class="card">
+    <table>
+      <tr><th style="width:230px">事项</th><th>结论</th></tr>
+      <tr><td>基准原则</td><td>凡冲突<b>以商城源码为准</b>：Python 教学版把上下架判断写反了（<code>==1</code> 判在售，实际 <code>Constants.SELL_STATUS_UP=0</code> 才在售）</td></tr>
+      <tr><td>语料红线</td><td>写入向量库的 chunk <b>不含价格/库存/上下架</b>（价格类一律以工具为准，RAG 只作语义参考）</td></tr>
+      <tr><td>Jedis 冲突</td><td>community-redis 要 7.2.1，Boot BOM 强制降到 6.0.0 → pom 显式覆盖（DESIGN §6.4 预警的真实触发点）</td></tr>
+      <tr><td>模型通道</td><td>OmniRoute 的 <code>/v1/models</code> 同时返回 <code>id</code> 与 <code>name</code>；<b>请求必须用 id</b>（<code>agnes/agnes-2.0-flash</code>），用显示名会报 not available in live catalog</td></tr>
+      <tr><td>WSL 边界</td><td>WSL 访问不到 Windows 的 localhost（需 Windows <code>curl.exe</code>）；环境变量不会自动跨界（需 <code>WSLENV</code> 转发）</td></tr>
+      <tr><td>验证纪律</td><td>冒烟脚本做过<b>阳性/阴性对照</b>：故意用错 DB 密码启动 → 报「失败 2 + 退出码 1」；正常时 16/16</td></tr>
+    </table>
+  </div>
+
+  <h2>下一步</h2>
+  <div class="card">
+    <p style="font-size:13.5px">
+      1. <b>M2-4</b>（进行中）→ claude 检查 → 提交<br>
+      2. <b>M2-5</b>：SSE 流式接口 + 会话记忆落库<br>
+      3. <b>M3 前端融合</b>：浮窗 + <code>/cs</code> 完整页 + 上下文面板（这才是"界面割裂"的最终解决）<br>
+      4. M3 其余：虚拟线程压测（容器内）、中文嵌入对比报告、Testcontainers + CI<br>
+      5. 全部完成后推 GitHub（远程仓库尚未创建）
+    </p>
+  </div>
+
+  <p class="muted" style="margin-top:24px">
+    文档索引：<code>docs/DESIGN.md</code>（设计规格）· <code>docs/PLAN.md</code>（M1 计划）·
+    <code>docs/UPGRADE-BOOT3.md</code>（升级实战）· <code>docs/STATUS.md</code>（状态快照）
+  </p>
+
+</div>
+</body>
+</html>
