@@ -36,14 +36,14 @@
 | **M3 容器化** | Dockerfile + docker-compose + init.sql | ✅ 完成且**真机验证**（3 容器 healthy） |
 | **M2-4** | 编排 `CsAgentService`（工具循环 + RAG）+ 质检 `QaReviewer`（audit/gate） | ✅ **完成**（测试 51/51；**真实模型端到端已跑通**；claude 三轮复核：终审「可以提交」） |
 | **M2-5** | SSE 流式接口 + 会话记忆落库 | ✅ **完成**（测试 **106/106**；claude 6 项审查全过「可以提交」；真机时序红线验证通过） |
-| M2-6 | 收尾测试与 CI | ⬜ 未做（用例已累积到 **143** 个；CI 需 GitHub，推送暂缓） |
+| **M2-6** | 收尾测试与 CI | ✅ CI 配置完成（`.github/workflows/ci.yml`：services 起 mysql:9.7 + **redis:8**，导入 init.sql 后跑全量测试；**刻意不跑真实模型调用**以免上游限流致随机红灯） |
 | **M3-A** | 前端原生融合第一步：`/cs` 完整页 + 共用 SSE 客户端（`cs-core.js`）+ 六区块面板 | ✅ 完成（`217c96e`） |
 | **M3-B** | 浮窗（全站唤起）+ 详情页/订单页「问客服」入口 | ✅ 完成（`f8d7481`；**至此「界面割裂」原始痛点闭环**） |
 | **M3 虚拟线程** | 启用虚拟线程 + 并发压测（含 VT ON/OFF 对照） | ✅ 完成（`3cf42a4`/`c8673e0`/`cb494a2`；**结论：本场景无收益** —— 瓶颈不在线程，见 `docs/PERF-M3.md`） |
 | **M3 中文嵌入** | all-MiniLM（英文）vs bge-small-zh-v15（中文）A/B 对比 | ✅ 完成（`fc82255`/`667a697`；**语义查询命中率 20%→40% 翻倍，默认切 BGE**） |
 | M3 其余 | Testcontainers / CI（需 GitHub，暂缓）、§8.3 增强项（拖拽/抽屉/重生成） | ⬜ |
 
-**提交数**：41（最近：`667a697` 索引重建顺序记录；`fc82255` BGE 对比；`cb494a2` VT 对照）
+**提交数**：45（已推送 GitHub：`github.com/shisanzerotwo/Newbee-mall-AI`，`master` 与本地 SHA 一致）
 
 > ✅ **M2-5 时序红线已验证守住**（DESIGN §4.2）：真机实测 `stage → tool(checkStock×2) → delta → done` →
 > **`review` 在 `done` 之后仍能送达**，且 complete 只发生一次（claude 已复核代码 + 端到端测试双重证据）。
@@ -118,6 +118,17 @@
 | **模型环境变量必须 export** | Maven **不读 `.env`**！`CS_MODEL_BASE_URL` / `CS_MODEL_API_KEY` / `CS_MODEL_NAME` 都要 export（经 `ops/mvn.sh` 的 WSLENV 转发），否则 `cs.model.name` 取默认 `auto` → 路由到不可用 provider |
 | **OmniRoute 会过度拉黑** | 连续 429 会把 provider 标成 `unavailable`，但**实测此时直接 curl 反而成功** → 先重启网关再判定（`Stop-Process node` + `Start-Process omniroute.cmd serve`） |
 | **并行工具调用** | 同一批次里 `edit/write` 与 `git commit` **并行执行** → 提交会漏掉刚改的文件（已踩两次） |
+
+## 5b. 仓库与推送（2026-09-18）
+
+- 远程：`https://github.com/shisanzerotwo/Newbee-mall-AI`（GitHub 已推送，`master` 与本地 SHA 一致）
+- **推送必须走 Windows 侧 git**：本机 hosts 被 Steam++ 接管（66 条 github 域名 → 127.0.0.1），
+  WSL 里 `git push` 连不上；Steam++ 代理了 `github.com`（git 通路可用），但**没代理 `api.github.com`**，
+  所以 `gh repo create` 这类 API 操作不可用 —— 建仓库只能在浏览器做。
+- **⚠️ 推送前必须做密钥扫描**：本次验收时才发现 `docs/STATUS.md` 的示例命令里写着 MySQL 明文密码，
+  从 `5be5b05` 起被之后所有提交继承（19 个历史版本）。已用
+  `git filter-branch --tree-filter` 重写全部提交 + 删 `refs/original` + `reflog expire` + `gc --prune=now` 清除；
+  全对象扫描（1095 个）复检为 0。**这类扫描应成为推送前的固定动作，而不是等想起来才做。**
 
 ## 6. 常用命令
 
