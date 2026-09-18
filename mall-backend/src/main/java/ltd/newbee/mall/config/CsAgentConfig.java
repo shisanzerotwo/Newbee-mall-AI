@@ -62,9 +62,12 @@ public class CsAgentConfig {
     public ChatModel csChatModel() {
         // 显式告警：“未配置密钥”不应静默到 M2-2 首次调用时才在网关侧报 401。
         // （同一模式在 M1 已踩过三次：DB 失联页面 200、尾斜杠错误页 200、compile 静默产出旧字节码）
-        if (PLACEHOLDER_API_KEY.equals(apiKey)) {
-            log.warn("CS_MODEL_API_KEY 未配置（当前为占位值 {}）—— 应用能启动，但任何模型调用都会失败。"
-                    + "本机开发请用环境变量注入（WSL 下经 ops/mvn.sh 的 WSLENV 转发）。", PLACEHOLDER_API_KEY);
+        // 注意：判断必须覆盖【未设置】与【空串】两种情形 —— 环境变量设为空串时
+        // ${cs.model.api-key:not-configured} 会得到 "" 而非占位串（实测确认）。
+        if (apiKey == null || apiKey.isBlank() || PLACEHOLDER_API_KEY.equals(apiKey)) {
+            log.warn("CS_MODEL_API_KEY 未配置或为空（当前值 {}）—— 应用能启动，但任何模型调用都会失败。"
+                    + "本机开发请用环境变量注入（WSL 下经 ops/mvn.sh 的 WSLENV 转发）。",
+                    apiKey == null ? "(null)" : "[" + apiKey + "]");
         }
         return OpenAiChatModel.builder()
                 .baseUrl(baseUrl)

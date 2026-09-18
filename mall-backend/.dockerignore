@@ -1,0 +1,10 @@
+# 构建产物（宿主机的 target 别拷进镜像，镜像内会重新构建）
+target/
+# 日志
+logs/
+# IDE
+.idea/
+*.iml
+.vscode/
+# 测试产物
+*.log

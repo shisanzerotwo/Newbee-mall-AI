@@ -1,0 +1,84 @@
+# newbee-mall-ai 一键启动（M3 容器化）
+#
+# 用法：
+#   1. 复制 .env.example → .env，填好 DB_PASSWORD（必填）与模型通道（可选）
+#   2. docker compose up -d
+#   3. 访问 http://127.0.0.1:28089
+#
+# 注意：
+#   - mysql / redis **不映射宿主端口**（避免与本机已有服务“port already allocated”）；
+#     应用容器经服务名互通，调试用 `docker compose exec mysql mysql -uroot -p`
+#   - app 的宿主端口可配：本机应用在跑时用 `APP_PORT=28090 docker compose up -d` 避让
+#   - redis 用官方 `redis:8`（Redis 8 已把 Query Engine 并入核心），
+#     不再用已停更的 redis/redis-stack（见 docs/DESIGN.md §5）
+
+services:
+  mysql:
+    image: mysql:9.7
+    container_name: newbee-mall-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?必须设置 DB_PASSWORD（见 .env）}
+      MYSQL_DATABASE: newbee_mall_db
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    # ⚠️ 不映射宿主端口：本机已有 MySQL(3306) 在跑，映射会报
+    #    "Bind for 0.0.0.0:3306 failed: port is already allocated"。
+    #    应用容器经服务名 mysql 互通即可；需调试时用：
+    #    docker compose exec mysql mysql -uroot -p
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # 首次启动时自动导入脱敏数据（决策 #20/#36）
+      - ./ops/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  redis:
+    image: redis:8
+    container_name: newbee-mall-redis
+    # ⚠️ 不映射宿主端口：本机已有 Redis(6379) 在跑（同理见 mysql 注释）
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  mall-backend:
+    build:
+      context: ./mall-backend
+    container_name: newbee-mall-app
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # 数据库（application.properties 已改为可被这些变量覆盖）
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: newbee_mall_db
+      # Redis 容器内主机名
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      # 模型通道：容器内 localhost 指向容器自身，宿主的 OmniRoute 必须走 host.docker.internal
+      CS_MODEL_BASE_URL: ${CS_MODEL_BASE_URL:-http://host.docker.internal:20128/v1}
+      CS_MODEL_API_KEY: ${CS_MODEL_API_KEY:-}
+      CS_MODEL_NAME: ${CS_MODEL_NAME:-auto}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # Linux 上也能解析宿主
+    ports:
+      # 可配置：本机已有应用在跑时，用 APP_PORT=28090 docker compose up -d 避让
+      - "${APP_PORT:-28089}:28089"
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+  redis-data:
