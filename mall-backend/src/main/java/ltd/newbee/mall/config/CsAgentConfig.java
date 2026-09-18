@@ -2,7 +2,9 @@ package ltd.newbee.mall.config;
 
 import dev.langchain4j.http.client.okhttp.OkHttpClientBuilder;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,21 +12,25 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * AI 客服的 LangChain4j 装配（M2-1）。
+ * AI 客服的 LangChain4j 装配（M2-1 / M2-5）。
  *
- * <p>只负责把「模型通道」装配成一个 {@link ChatModel} Bean，不做任何业务编排。
- * 编排（工具循环、质检、SSE）在后续模块里实现。
+ * <p>只负责把「模型通道」装配成两个 Bean，不做任何业务编排：
+ * <ul>
+ *   <li>{@code csChatModel}（{@link ChatModel}）—— 非流式：工具循环、质检</li>
+ *   <li>{@code csStreamingChatModel}（{@link StreamingChatModel}）—— 流式：M2-5 的 SSE 逐字推送</li>
+ * </ul>
+ * 编排（工具循环、质检、SSE）在 service/controller 层实现。
  *
  * <p><b>为什么不用官方 starter</b>：{@code langchain4j-spring-boot-starter} 目前只有
  * beta 版（1.20.0-beta30），而 core 与 open-ai 是稳定版（1.20.0）。M2-1 先用
  * 稳定坐标 + 显式装配，避免 beta 自动配置的黑盒；RAG 需要 embeddings /
  * community-redis 时（M2-3）再评估是否引入 beta 组件。
  *
- * <p><b>模型通道说明</b>：本项目当前网络下，Agnes AI Hub 配额已耗尽、OmniRoute
- * 网关未运行，因此本 Bean 构建时**不会**访问网络（只是装配对象）；
- * 真正的连通性由 M2-4 前的 function calling spike 验证。
+ * <p><b>模型通道说明</b>：本 Bean 构建时**不会**访问网络（只是装配对象）；
+ * 真正的连通性由 M2-4 的 function calling 实测验证（已跑通，见 docs/STATUS.md §7）。
  */
 @Configuration
 public class CsAgentConfig {
@@ -59,17 +65,31 @@ public class CsAgentConfig {
     @Value("${cs.model.timeout-seconds:60}")
     private long timeoutSeconds;
 
-    @Bean
-    public ChatModel csChatModel() {
-        // 显式告警：“未配置密钥”不应静默到 M2-2 首次调用时才在网关侧报 401。
-        // （同一模式在 M1 已踩过三次：DB 失联页面 200、尾斜杠错误页 200、compile 静默产出旧字节码）
-        // 注意：判断必须覆盖【未设置】与【空串】两种情形 —— 环境变量设为空串时
-        // ${cs.model.api-key:not-configured} 会得到 "" 而非占位串（实测确认）。
-        if (apiKey == null || apiKey.isBlank() || PLACEHOLDER_API_KEY.equals(apiKey)) {
+    /** 保证「未配置密钥」的告警只打一次（两个 Bean 都会调 {@link #warnIfApiKeyMissing()}） */
+    private final AtomicBoolean apiKeyWarned = new AtomicBoolean(false);
+
+    /**
+     * 「未配置密钥」不应静默到首次调用时才在网关侧报 401。
+     *
+     * <p>（同一模式在 M1 已踩过三次：DB 失联页面 200、尾斜杠错误页 200、compile 静默产出旧字节码）
+     *
+     * <p>注意：判断必须覆盖【未设置】与【空串】两种情形 —— 环境变量设为空串时
+     * {@code ${cs.model.api-key:not-configured}} 会得到 {@code ""} 而非占位串（实测确认）。
+     */
+    private void warnIfApiKeyMissing() {
+        if (apiKey != null && !apiKey.isBlank() && !PLACEHOLDER_API_KEY.equals(apiKey)) {
+            return;
+        }
+        if (apiKeyWarned.compareAndSet(false, true)) {
             log.warn("CS_MODEL_API_KEY 未配置或为空（当前值 {}）—— 应用能启动，但任何模型调用都会失败。"
                     + "本机开发请用环境变量注入（WSL 下经 ops/mvn.sh 的 WSLENV 转发）。",
                     apiKey == null ? "(null)" : "[" + apiKey + "]");
         }
+    }
+
+    @Bean
+    public ChatModel csChatModel() {
+        warnIfApiKeyMissing();
         return OpenAiChatModel.builder()
                 .baseUrl(baseUrl)
                 .apiKey(apiKey)
@@ -90,6 +110,32 @@ public class CsAgentConfig {
                 //   ⚠️ 历史教训：初版注释曾断言「Builder 没有 maxRetries」——那是错的，
                 //     根因是 javap 过滤正则写成 retry|Retry 而方法名是 maxRetries（含 Retries）。
                 .maxRetries(0)
+                .build();
+    }
+
+    /**
+     * 流式模型（M2-5）—— 供 {@code /api/cs/chat} 逐字推送。
+     *
+     * <p>与 {@link #csChatModel()} 同一套参数（baseUrl / key / model / 温度 / 超时 / OkHttp），
+     * 只差「流式」与「非流式」。
+     *
+     * <p>⚠️ 这里<b>没有</b> {@code maxRetries}：{@code OpenAiStreamingChatModel} 的 Builder 上
+     * <b>不存在</b>该方法，流式模型<b>也不做内置重试</b>（javap -c 全字节码中含 {@code etry} 的行数：
+     * 流式 = <b>0</b>，非流式 = 2）。所以流式路径的重试只能自己实现，见 {@code CsStreamService}；
+     * 也正因为没有内置重试，此处不存在「两层重试叠加」的问题。
+     */
+    @Bean
+    public StreamingChatModel csStreamingChatModel() {
+        warnIfApiKeyMissing();
+        return OpenAiStreamingChatModel.builder()
+                .baseUrl(baseUrl)
+                .apiKey(apiKey)
+                .modelName(modelName)
+                .temperature(temperature)
+                .timeout(Duration.ofSeconds(timeoutSeconds))
+                // 同 csChatModel：LangChain4j 默认 JDK HttpClient 调 OmniRoute 会报
+                //   java.io.IOException: HTTP/1.1 header parser received no bytes
+                .httpClientBuilder(new OkHttpClientBuilder())
                 .build();
     }
 }

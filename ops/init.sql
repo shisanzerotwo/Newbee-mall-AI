@@ -248,3 +248,31 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 SET FOREIGN_KEY_CHECKS=1;
+
+-- ============================================================================
+-- M2-5 新增：客服会话记忆（对应 docs/DESIGN.md §7.4 的 cs_chat_memory）
+--
+-- 设计要点：
+--   * 会话维度：登录用户按 user_id 归集；匿名用户按 conversation_id（前端 localStorage）归集。
+--     刻意**不用 sessionId** —— 本项目未启用 Spring Session，session 是 Tomcat 内存态、
+--     重启即变，那样「记忆跨刷新/重启保留」在匿名场景永远无法满足。
+--   * (conversation_id, id) / (user_id, id) 联合索引：支撑「取该会话最近 N 条」。
+--   * created_at 索引：支撑「超过 30 天归档删除」的每日定时任务。
+--   * 字符集用 utf8mb4（而非老表的 utf8mb3）：客服对话里可能出现 emoji 等 4 字节字符，
+--     utf8mb3 会直接写入失败。新表不参与与老表的关联查询，混用字符集无副作用。
+--
+-- ⚠️ 本文件只在**初始化空库**时被 docker-compose 执行；已存在的库需手工执行下面这段。
+-- ============================================================================
+DROP TABLE IF EXISTS `cs_chat_memory`;
+CREATE TABLE `cs_chat_memory` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '自增主键（同时是会话内的时序）',
+  `conversation_id` varchar(64) DEFAULT NULL COMMENT '匿名会话标识（前端 localStorage 生成、随请求携带）',
+  `user_id` bigint DEFAULT NULL COMMENT '登录用户 id；匿名场景为 NULL',
+  `role` varchar(16) NOT NULL COMMENT '消息角色：user / assistant',
+  `content` text NOT NULL COMMENT '消息正文',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '落库时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_conversation` (`conversation_id`,`id`),
+  KEY `idx_user` (`user_id`,`id`),
+  KEY `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='客服会话记忆（M2-5）';

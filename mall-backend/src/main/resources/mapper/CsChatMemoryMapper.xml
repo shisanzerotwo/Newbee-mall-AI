@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ltd.newbee.mall.dao.CsChatMemoryMapper">
+    <resultMap id="BaseResultMap" type="ltd.newbee.mall.entity.CsChatMemory">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="conversation_id" jdbcType="VARCHAR" property="conversationId"/>
+        <result column="user_id" jdbcType="BIGINT" property="userId"/>
+        <result column="role" jdbcType="VARCHAR" property="role"/>
+        <result column="content" jdbcType="LONGVARCHAR" property="content"/>
+        <result column="created_at" jdbcType="TIMESTAMP" property="createdAt"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, conversation_id, user_id, role, content, created_at
+    </sql>
+
+    <insert id="insert" parameterType="ltd.newbee.mall.entity.CsChatMemory"
+            useGeneratedKeys="true" keyProperty="id">
+        insert into cs_chat_memory (conversation_id, user_id, role, content, created_at)
+        values (#{conversationId,jdbcType=VARCHAR}, #{userId,jdbcType=BIGINT},
+                #{role,jdbcType=VARCHAR}, #{content,jdbcType=LONGVARCHAR}, #{createdAt,jdbcType=TIMESTAMP})
+    </insert>
+
+    <!--
+      先按 id 倒序取「最近 limit 条」，再外层正序 —— 模型必须看到从旧到新的对话顺序，
+      不能把 limit 直接写在正序查询上（那会取到最旧的 N 条）。
+    -->
+    <select id="selectRecentByConversation" resultMap="BaseResultMap">
+        select <include refid="Base_Column_List"/> from (
+            select <include refid="Base_Column_List"/>
+            from cs_chat_memory
+            where conversation_id = #{conversationId,jdbcType=VARCHAR}
+            order by id desc
+            limit #{limit}
+        ) recent
+        order by recent.id asc
+    </select>
+
+    <select id="selectRecentByUser" resultMap="BaseResultMap">
+        select <include refid="Base_Column_List"/> from (
+            select <include refid="Base_Column_List"/>
+            from cs_chat_memory
+            where user_id = #{userId,jdbcType=BIGINT}
+            order by id desc
+            limit #{limit}
+        ) recent
+        order by recent.id asc
+    </select>
+
+    <!-- 保留策略：超过保留期的会话归档删除（DESIGN §7.4） -->
+    <delete id="deleteOlderThan">
+        delete from cs_chat_memory where created_at &lt; #{cutoff,jdbcType=TIMESTAMP}
+    </delete>
+</mapper>

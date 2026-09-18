@@ -1,7 +1,5 @@
 package ltd.newbee.mall.service.agent;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.agent.tool.ToolSpecifications;
@@ -23,7 +21,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -92,13 +89,13 @@ public class CsAgentService {
             4. 不确定的信息说"我帮您核实一下"，而不是猜测
             """;
 
-    /** 工具循环超限且模型没给出任何文本时的兜底答复（客服口吻，且给出可操作的下一步） */
-    private static final String TOOL_LIMIT_ANSWER =
+    /** 工具循环超限且模型没给出任何文本时的兜底答复（客服口吻，且给出可操作的下一步）；流式编排共用 */
+    static final String TOOL_LIMIT_ANSWER =
             "抱歉，这次我查到的东西比较多，一时没能整理出完整答复。您可以把问题说得更具体一些（"
                     + "例如具体商品名或订单号），我再帮您查一次。";
 
-    /** 模型正常结束但没给出文本时的兜底（属于模型异常，日志里会 WARN） */
-    private static final String EMPTY_ANSWER =
+    /** 模型正常结束但没给出文本时的兜底（属于模型异常，日志里会 WARN）；流式编排共用 */
+    static final String EMPTY_ANSWER =
             "抱歉，这次我没能组织好答复。您可以再问一次，或换个说法告诉我需求。";
 
     /**
@@ -107,16 +104,20 @@ public class CsAgentService {
      * <p>不加它的话，对话会以一条「带 tool_calls 的 AI 消息」结尾；gate 模式打回时
      * 会在这条后面接 user 消息，OpenAI 兼容接口会直接报 400
      * （{@code tool_calls must be followed by tool messages}）。
+     *
+     * <p>包级可见：M2-5 的流式编排（{@link CsStreamService}）复用同一条对话格式约束。
      */
-    private static final String TOOL_LIMIT_SKIP_NOTE = "（已达单次问答的工具调用上限，本次未执行）";
-
-    private static final TypeReference<Map<String, Object>> ARGS_TYPE = new TypeReference<>() {
-    };
+    static final String TOOL_LIMIT_SKIP_NOTE = "（已达单次问答的工具调用上限，本次未执行）";
 
     private final ChatModel chatModel;
-    private final MallTools mallTools;
     private final RagService ragService;
     private final QaReviewer qaReviewer;
+
+    /**
+     * 工具分发。M2-5 的流式编排（{@link CsStreamService}）也用它，
+     * 保证「非流式」与「流式」两条路径执行的是同一套工具、同一份默认值。
+     */
+    private final MallToolInvoker toolInvoker;
 
     /** 工具规格从类上取（而非实例）：即使 MallTools 将来被代理包装，规格也不会丢 */
     private final List<ToolSpecification> toolSpecifications;
@@ -125,8 +126,6 @@ public class CsAgentService {
     private final int ragTopK;
     private final int maxModelRetries;
     private final QaReviewer.QaMode qaMode;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /** 质检旁路用的执行器：一次质检就是一次阻塞式 HTTP 调用，虚拟线程最合适（Java 21） */
     private final ExecutorService reviewExecutor = Executors.newVirtualThreadPerTaskExecutor();
@@ -140,7 +139,7 @@ public class CsAgentService {
                           @Value("${cs.agent.max-model-retries:3}") int maxModelRetries,
                           @Value("${cs.qa.mode:audit}") String qaMode) {
         this.chatModel = chatModel;
-        this.mallTools = mallTools;
+        this.toolInvoker = new MallToolInvoker(mallTools);
         this.ragService = ragService;
         this.qaReviewer = qaReviewer;
         this.maxToolRounds = Math.max(1, maxToolRounds);
@@ -385,47 +384,18 @@ public class CsAgentService {
     // ------------------------------------------------------------------
 
     /**
-     * 按工具名分发到 {@link MallTools}。
-     *
-     * <p>用显式 switch 而不是反射：工具集小且稳定，显式分发类型安全、默认值一目了然，
-     * 也不必处理反射异常。未知工具名会<b>回传给模型</b>并打 WARN（而不是静默丢弃），
-     * 让模型有机会改用正确的工具名。
+     * 按工具名分发。实现（含失败处理与「未知工具回传清单」）在 {@link MallToolInvoker} ——
+     * 与 M2-5 的流式编排共用同一份分发表。
      */
     private String invokeTool(String name, String argumentsJson) {
-        Map<String, Object> args;
-        try {
-            args = (argumentsJson == null || argumentsJson.isBlank())
-                    ? Map.of()
-                    : objectMapper.readValue(argumentsJson, ARGS_TYPE);
-        } catch (Exception e) {
-            log.warn("工具 {} 的参数解析失败（已把错误回传给模型）：{}", name, e.toString());
-            return "工具参数解析失败：" + e.getMessage();
-        }
-
-        try {
-            return switch (name) {
-                case "searchGoods" -> mallTools.searchGoods(str(args, "keyword"), intArg(args, "limit", 5));
-                case "getGoodsDetail" -> mallTools.getGoodsDetail(intArg(args, "goodsId", 0));
-                case "checkStock" -> mallTools.checkStock(intArg(args, "goodsId", 0));
-                case "queryOrder" -> mallTools.queryOrder(str(args, "orderNo"));
-                case "searchByCategory" -> mallTools.searchByCategory(
-                        str(args, "categoryName"), intArg(args, "limit", 5));
-                case "recommendGoods" -> mallTools.recommendGoods(
-                        str(args, "keyword"), strOr(args, "sort", "default"), intArg(args, "limit", 3));
-                default -> {
-                    log.warn("模型请求了未知工具：{}（已回传可用工具清单）", name);
-                    yield "未知工具：" + name + "。可用工具：searchGoods、getGoodsDetail、checkStock、"
-                            + "queryOrder、searchByCategory、recommendGoods。";
-                }
-            };
-        } catch (Exception e) {
-            log.warn("工具 {} 执行失败（已把错误回传给模型）：{}", name, e.toString());
-            return "工具执行失败：" + e.getMessage();
-        }
+        return toolInvoker.invoke(name, argumentsJson).result();
     }
 
-    /** 工具调用摘要（进质检 prompt，供核对数字来源）——对应 Python 版的 tool_summary */
-    private static String toolSummary(List<ToolCall> toolCalls) {
+    /**
+     * 工具调用摘要（进质检 prompt，供核对数字来源）——对应 Python 版的 tool_summary。
+     * 包级可见：M2-5 的流式编排复用同一份摘要口径。
+     */
+    static String toolSummary(List<ToolCall> toolCalls) {
         if (toolCalls == null || toolCalls.isEmpty()) {
             return "";
         }
@@ -437,31 +407,6 @@ public class CsAgentService {
             sb.append("工具 ").append(call.name()).append('(').append(call.args()).append(')');
         }
         return sb.toString();
-    }
-
-    private static String str(Map<String, Object> args, String key) {
-        Object value = args.get(key);
-        return value == null ? "" : String.valueOf(value);
-    }
-
-    private static String strOr(Map<String, Object> args, String key, String fallback) {
-        String value = str(args, key);
-        return value.isBlank() ? fallback : value;
-    }
-
-    private static int intArg(Map<String, Object> args, String key, int fallback) {
-        Object value = args.get(key);
-        if (value == null) {
-            return fallback;
-        }
-        if (value instanceof Number number) {
-            return number.intValue();
-        }
-        try {
-            return Integer.parseInt(String.valueOf(value).trim());
-        } catch (NumberFormatException e) {
-            return fallback;
-        }
     }
 
     private static boolean isBlank(String s) {

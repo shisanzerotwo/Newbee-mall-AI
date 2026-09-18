@@ -35,14 +35,18 @@
 | **M2-3** | RAG：`KnowledgeBuilder` + `RagService`（混合检索 RRF）+ 语料红线 | ✅ 完成（提交 `95b0f29`；测试 14/14；语料红线 0 命中） |
 | **M3 容器化** | Dockerfile + docker-compose + init.sql | ✅ 完成且**真机验证**（3 容器 healthy） |
 | **M2-4** | 编排 `CsAgentService`（工具循环 + RAG）+ 质检 `QaReviewer`（audit/gate） | ✅ **完成**（测试 51/51；**真实模型端到端已跑通**；claude 三轮复核：终审「可以提交」） |
-| M2-5 | SSE 接口 + 会话记忆落库 | ⬜ **下一步**（M2-4 已就绪）⚠️ 见下方时序红线 |
-| M2-6 | 单元/集成测试 | ⬜（部分已随 M2-1~M2-4 落地，共 47 个） |
-| M3 其余 | 前端原生融合（浮窗 + `/cs`）、虚拟线程压测、中文嵌入对比、CI | ⬜ |
+| **M2-5** | SSE 流式接口 + 会话记忆落库 | ✅ **完成**（测试 **106/106**；claude 6 项审查全过「可以提交」；真机时序红线验证通过） |
+| M2-6 | 收尾测试与 CI | ⬜ **下一步**（用例已随 M2-1~M2-5 累积到 **106** 个） |
+| M3 其余 | 前端原生融合（浮窗 + `/cs` + 上下文面板）、虚拟线程压测、中文嵌入对比、Testcontainers/CI | ⬜ |
 
-**提交数**：30（最近：M2-4 客服编排 CsAgentService + 质检 QaReviewer）
+**提交数**：31（最近：M2-5 SSE 流式 + 会话记忆）
 
-> ⚠️ **M2-5 时序红线（DESIGN §4.2）**：质检默认 **audit**（异步旁路）→ **`done` 不是终止事件**，
-> 不得在发 `done` 之后立即 `SseEmitter.complete()`，否则审计结果无处可发。
+> ✅ **M2-5 时序红线已验证守住**（DESIGN §4.2）：真机实测 `stage → tool(checkStock×2) → delta → done` →
+> **`review` 在 `done` 之后仍能送达**，且 complete 只发生一次（claude 已复核代码 + 端到端测试双重证据）。
+>
+> ⚠️ **已知上游现象（非代码缺陷）**：agnes 限流时 OmniRoute **只回 keepalive 心跳 chunk**
+> （`id=chatcmpl-keepalive`，`delta:{}`）→ 我们拿不到 content，只能走兜底话术。
+> 已用 curl 直接探测证得（同一时刻同参请求：1/3 正常返回、2/3 全是 keepalive）。
 
 ## 4. ⭐ 关键决策与基准（容易搞错，务必遵守）
 
@@ -171,12 +175,11 @@ CS_MODEL_NAME=agnes/agnes-2.0-flash
 1. ~~M2-3 等 claude 检查~~ ✅ 已提交 `95b0f29`
 2. ~~codex 修复模型通道~~ ✅ 已打通（根因：model id vs 显示名；已实测 `finish_reason: tool_calls`）
 3. ~~M2-4（编排 + 质检）~~ ✅ 已完成，测试 47/47 + 真实模型端到端跑通
-4. **M2-5（SSE 流式接口 + 会话记忆落库）** ← 当前任务
-   ⚠️ 时序红线：**默认 audit → `done` 不是终止事件**，发完 `done` 不能立即 `complete()`，
-   要给审计结果留通道（可加 `audit` 事件，再 `complete()`）
-5. M2-6 收尾测试 → M3 前端原生融合（浮窗 + `/cs` 页 + 上下文面板，这才是最初"界面割裂"的最终解）
-6. 之后虚拟线程压测 / 中文嵌入对比（`bge-small-zh-v1.5`）/ CI
-7. 全部完成后再推 GitHub（远程仓库尚未创建）
+4. **M2-5（SSE 流式 + 会话记忆）** ✅ 已完成 → claude 6 项全过、可以提交
+5. **M2-6**：收尾测试 + CI（可用 Testcontainers）
+6. **M3 前端融合**（浮窗 + `/cs` 页 + 上下文六区块面板）—— 这才是最初「界面割裂」的最终解
+7. 之后虚拟线程压测 / 中文嵌入对比（`bge-small-zh-v1.5`）/ CI
+8. 全部完成后再推 GitHub（远程仓库尚未创建）
 
 ## 9. 文档索引
 
