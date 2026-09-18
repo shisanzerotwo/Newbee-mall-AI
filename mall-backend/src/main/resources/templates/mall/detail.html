@@ -36,6 +36,10 @@
             <div class="order">
                 <input class="car" type="button" th:onclick="'saveAndGoCart('+${goodsDetail.goodsId}+')'" value="立即选购"/>
                 <input class="car" type="button" th:onclick="'saveToCart('+${goodsDetail.goodsId}+')'" value="加入购物车"/>
+                <!-- M3-B：问客服（带 goodsId，DESIGN §4.3） -->
+                <a class="car cs-ask-cs"
+                   th:href="@{/cs(goodsId=${goodsDetail.goodsId})}"
+                   title="就这件商品问客服">问客服</a>
             </div>
             <div class="tb-extra ml20" id="J_tbExtra">
                 <dl>
@@ -108,6 +112,11 @@
 </div>
 
 <div th:replace="mall/footer::footer-fragment"></div>
+
+<!-- M3-B：浮窗的上下文来源（DESIGN §4.3）。
+     走 dataset 而不是内联 JS 变量：Thymeleaf 会对属性值做 HTML 转义，无注入面。 -->
+<div id="cs-context" hidden
+     th:attr="data-goods-id=${goodsDetail.goodsId},data-goods-name=${goodsDetail.goodsName}"></div>
 
 <!-- jQuery -->
 <script th:src="@{/admin/plugins/jquery/jquery.min.js}"></script>

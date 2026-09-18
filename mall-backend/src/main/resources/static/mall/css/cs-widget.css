@@ -191,3 +191,152 @@
     text-align: center;
     padding: 12px 0;
 }
+
+/* 详情页/订单页的「问客服」入口：沿用商城按钮外观，但自己保证可点区域 */
+.cs-ask-cs {
+    display: inline-block;
+    height: 32px;
+    line-height: 32px;
+    padding: 0 14px;
+    margin-left: 8px;
+    text-decoration: none;
+    vertical-align: middle;
+}
+
+.cs-ask-cs:hover {
+    text-decoration: none;
+}
+
+/* ---------- 浮窗（M3-B）：全站右下角原生入口，取代旧 iframe 方案 ---------- */
+
+/* 气泡按钮：固定右下、胶囊形 */
+.cs-fab {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 900;
+    height: 44px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 22px;
+    background: var(--brand-500, #1baeae);
+    color: #fff;
+    font-size: 14px;
+    line-height: 44px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .18);
+}
+
+.cs-fab:hover {
+    background: var(--brand-600, #169a9a);
+}
+
+/* 展开面板时隐藏按钮（避免两个入口叠在一起） */
+.cs-fab--hidden {
+    display: none;
+}
+
+/* 面板：380 x 560（DESIGN §8.1） */
+.cs-float {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 901;
+    width: 380px;
+    height: 560px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg-card, #fff);
+    border-radius: var(--radius-lg, 14px);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, .22);
+}
+
+/* hidden 属性优先于上面的 display:flex（否则面板会一直可见 = 自动打开） */
+.cs-float[hidden] {
+    display: none;
+}
+
+.cs-float__h {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-1, #eceff1);
+    background: var(--bg-card, #fff);
+}
+
+.cs-float__title {
+    flex: 1 1 auto;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-1, #1f2328);
+}
+
+.cs-float__expand {
+    font-size: 12px;
+    color: var(--brand-500, #1baeae);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.cs-float__expand:hover {
+    text-decoration: underline;
+}
+
+.cs-float__close {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-3, #8b949e);
+    font-size: 18px;
+    line-height: 22px;
+    cursor: pointer;
+}
+
+.cs-float__close:hover {
+    background: var(--bg-page, #f6f8f9);
+    color: var(--text-1, #1f2328);
+}
+
+/* 快捷 chips（DESIGN §8.1：浮窗含 3 条） */
+.cs-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0 18px 10px;
+}
+
+.cs-chip {
+    padding: 5px 12px;
+    border: 1px solid var(--border-1, #eceff1);
+    border-radius: 14px;
+    background: var(--bg-page, #f6f8f9);
+    color: var(--text-2, #57606a);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.cs-chip:hover {
+    border-color: var(--brand-500, #1baeae);
+    color: var(--brand-500, #1baeae);
+}
+
+/* 窄屏（手机）下让浮窗占满可用宽度，不做底部抽屉（那是 §8.3 可选增强） */
+@media (max-width: 480px) {
+    .cs-float {
+        right: 8px;
+        left: 8px;
+        bottom: 8px;
+        width: auto;
+        height: 78vh;
+    }
+
+    .cs-fab {
+        right: 12px;
+        bottom: 12px;
+    }
+}

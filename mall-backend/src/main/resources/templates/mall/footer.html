@@ -74,5 +74,17 @@
         </div>
 
     </div>
+
+    <!-- ===== M3-B：客服浮窗（全站原生入口，取代旧 iframe 方案）=====
+         ⚠️ 必须放在 th:fragment="footer-fragment" 的【内部】：
+         页面用的是 th:replace="mall/footer::footer-fragment"，Thymeleaf 只提取 fragment 范围内的节点，
+         写在 fragment 外面（原实现放在 </html> 前）会被**静默丢弃** —— 表现是浮窗压根不出现。
+         另一层原因：head 是 head-fragment 按 path 拼的，模板里额外写的 <link>/<script>
+         会因为 th:replace 整个 <head> 而被丢弃（M3-A 踩过）。所以资源注入只能走 footer 且必须在 fragment 内。
+         cs-widget.js 会自行判断：在 /cs 完整页不注入，避免双份入口与两份并发会话。
+    -->
+    <link rel="stylesheet" th:href="@{/mall/css/cs-widget.css}">
+    <script th:src="@{/mall/js/cs-core.js}"></script>
+    <script th:src="@{/mall/js/cs-widget.js}"></script>
 </div>
 </html>

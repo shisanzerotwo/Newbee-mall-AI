@@ -31,6 +31,10 @@
                             </h2>
                             <div class="actions">
                                 <input type="hidden" id="orderNoValue" th:value="${orderDetailVO.orderNo}">
+                                <!-- M3-B：问客服（带 orderNo，DESIGN §4.3） -->
+                                <a class="btn btn-small btn-line-gray cs-ask-cs"
+                                   th:href="@{/cs(orderNo=${orderDetailVO.orderNo})}"
+                                   title="就这笔订单问客服">问客服</a>
                                 <th:block th:if="${orderDetailVO.orderStatus>0 and orderDetailVO.orderStatus<3}">
                                     <a onclick="cancelOrder()"
                                        class="btn btn-small btn-line-gray" title="取消订单">取消订单</a>
@@ -212,7 +216,10 @@
 </div>
 
 <div th:replace="mall/footer::footer-fragment"></div>
-<!-- jQuery -->
+
+<!-- M3-B：浮窗的上下文来源（DESIGN §4.3）；走 dataset 无注入面 -->
+<div id="cs-context" hidden
+     th:attr="data-order-no=${orderDetailVO.orderNo}"></div>
 <script th:src="@{/admin/plugins/jquery/jquery.min.js}"></script>
 <script th:src="@{/admin/plugins/sweetalert2/sweetalert2.all.min.js}"></script>
 <script type="text/javascript">
