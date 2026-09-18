@@ -109,7 +109,17 @@ public class RagService {
      * （见 {@link KnowledgeBuilder} 的语料红线），价格类事实必须由工具查询给出。
      */
     public String asPrompt(String query, int topK) {
-        List<Hit> hits = retrieve(query, topK);
+        return asPromptFrom(retrieve(query, topK));
+    }
+
+    /**
+     * 只做格式化（把「检索」与「格式化」拆开）。
+     *
+     * <p>存在的意义：调用方（{@code CsStreamService}）既需要 prompt、又需要原始的
+     * {@link Hit} 列表去做 SSE 的 {@code rag} 事件（前端「引用来源」区块要展示融合分）。
+     * 拆出本方法后两边共用<b>同一次</b>检索结果，不做二次嵌入/二次查询。
+     */
+    public String asPromptFrom(List<Hit> hits) {
         if (hits.isEmpty()) {
             return "";
         }

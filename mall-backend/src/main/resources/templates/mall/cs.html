@@ -1,0 +1,214 @@
+<!-- Copyright (c) 2019-2020 十三 all rights reserved. -->
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="mall/header::head-fragment('新蜂商城-在线客服','cs')">
+    <!--
+      注意：head-fragment 是 th:replace（整个 <head> 被片段替换掉），
+      所以在这里额外写 <link> 是无效的、会被丢弃 —— 需要额外的样式表时，
+      请加到 /mall/styles/cs.css（它按 head-fragment 的 path 参数自动加载）。
+      cs-widget.css（与浮窗共用的组件样式）就是通过 cs.css 里的 @import 引入的。
+    -->
+</head>
+<body>
+<header th:replace="mall/header::header-fragment"></header>
+
+<content id="content">
+    <nav th:replace="mall/header::nav-fragment"></nav>
+
+    <!--
+      上下文通过 data-* 传给前端，而不是内联 JS 变量（th:inline="javascript"）。
+      理由：Thymeleaf 对属性值做 HTML 转义，而 orderNo 是用户可控串
+      （/cs?orderNo=xxx），走 dataset 读出来就不会有任何脚本注入面。
+    -->
+    <div class="w1100">
+        <div class="cs-page"
+             id="cs-app"
+             th:attr="data-goods-id=${goodsId},data-goods-name=${goodsName},data-order-no=${orderNo}">
+
+            <!-- 左：会话历史（232px） -->
+            <aside class="cs-col cs-history">
+                <h3 class="cs-col__h">本次会话</h3>
+                <div class="cs-history__list" id="cs-history">
+                    <div class="cs-empty" id="cs-history-empty">还没有提问</div>
+                </div>
+            </aside>
+
+            <!-- 中：对话区 -->
+            <main class="cs-col cs-chat" id="cs-chat">
+                <div class="cs-context-bar" th:if="${goodsName}">
+                    正在咨询：<b th:text="${goodsName}">商品名</b>
+                </div>
+                <div class="cs-context-bar" th:if="${orderNo}">
+                    正在咨询订单：<b th:text="${orderNo}">订单号</b>
+                </div>
+
+                <div class="cs-messages" id="cs-messages">
+                    <div class="cs-msg cs-msg--bot">
+                        你好，我是新蜂商城的智能客服。可以问我商品有没有货、多少钱，或者订单进度。
+                    </div>
+                </div>
+
+                <form class="cs-composer" id="cs-form" autocomplete="off">
+                    <textarea id="cs-input" rows="1"
+                              placeholder="想问点什么？（Enter 发送 / Shift+Enter 换行）"></textarea>
+                    <button type="submit" id="cs-send">发送</button>
+                </form>
+            </main>
+
+            <!-- 右：上下文面板（340px，六区块） -->
+            <aside class="cs-col cs-panel">
+                <h3 class="cs-col__h">上下文（可观测）</h3>
+                <div class="cs-panel__body" id="cs-panel"></div>
+            </aside>
+        </div>
+    </div>
+</content>
+
+<div th:replace="mall/footer::footer-fragment"></div>
+
+<script th:src="@{/mall/js/cs-core.js}"></script>
+<script type="text/javascript">
+    /* /cs 完整页的页面粘连逻辑（浮窗会有自己的那份，共用 Cs.* 核心） */
+    (function () {
+        'use strict';
+
+        var app = document.getElementById('cs-app');
+        var goodsId = app.dataset.goodsId ? parseInt(app.dataset.goodsId, 10) : null;
+        var orderNo = app.dataset.orderNo || null;
+
+        var messages = document.getElementById('cs-messages');
+        var historyList = document.getElementById('cs-history');
+        var historyEmpty = document.getElementById('cs-history-empty');
+        var form = document.getElementById('cs-form');
+        var input = document.getElementById('cs-input');
+        var sendBtn = document.getElementById('cs-send');
+
+        var panel = new Cs.ContextPanel(document.getElementById('cs-panel'));
+        panel.setIntent('（尚未提问）', goodsId, orderNo);
+        panel.setOrder(orderNo);
+
+        var streaming = false;
+
+        /**
+         * 追加一条消息。<b>文本一律走 textContent</b>（模型输出绝不拼 HTML）。
+         * @returns {HTMLElement} 该消息节点，便于流式追加
+         */
+        function appendMessage(kind, text) {
+            var el = document.createElement('div');
+            el.className = 'cs-msg cs-msg--' + kind;
+            el.textContent = text || '';
+            messages.appendChild(el);
+            messages.scrollTop = messages.scrollHeight;
+            return el;
+        }
+
+        function addHistoryItem(question) {
+            if (historyEmpty) {
+                historyEmpty.remove();
+                historyEmpty = null;
+            }
+            var item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'cs-history__item';
+            item.textContent = question;              // 用户输入也要转义式写入
+            item.title = question;
+            item.addEventListener('click', function () {
+                input.value = question;
+                input.focus();
+            });
+            historyList.appendChild(item);
+            historyList.scrollTop = historyList.scrollHeight;
+        }
+
+        function setStreaming(active) {
+            streaming = active;
+            sendBtn.disabled = active;
+            sendBtn.textContent = active ? '回答中…' : '发送';
+        }
+
+        function ask(question) {
+            if (streaming) {
+                return;
+            }
+            appendMessage('user', question);
+            addHistoryItem(question);
+            panel.setIntent(question, goodsId, orderNo);
+
+            var bot = appendMessage('bot', '');
+            bot.classList.add('cs-caret');
+            // ⚠️ 文本必须挂在**独立的子节点**上：下面 onDelta 用 textContent 赋值，
+            // 而 textContent 的 setter 会**移除该节点的全部子节点**再写入一个 Text 节点 ——
+            // 若直接写 bot.textContent，onTool 挂进来的商品卡片会被立刻抹掉
+            //（服务端先发 tool、之后必有 delta，所以几乎必然触发；claude 审查发现）
+            var botText = document.createElement('span');
+            bot.appendChild(botText);
+            setStreaming(true);
+
+            Cs.streamChat({
+                question: question,
+                goodsId: goodsId,
+                orderNo: orderNo,
+                handlers: {
+                    onStage: function (evt) {
+                        panel.addStage(evt);
+                    },
+                    onRag: function (sources) {
+                        panel.setSources(sources);
+                    },
+                    onTool: function (evt) {
+                        panel.addTool(evt);
+                        // 商品卡片来自 tool 事件（不是模型文本）——防幻觉
+                        var card = Cs.renderGoodsCard(evt);
+                        if (card) {
+                            bot.appendChild(card);
+                            messages.scrollTop = messages.scrollHeight;
+                        }
+                    },
+                    onDelta: function (text) {
+                        // ⭐ 关键：模型输出只经 textContent，绝不拼 HTML
+                        // 且必须写到 botText（不能写 bot）—— 否则会抹掉已挂上的商品卡片
+                        botText.textContent = botText.textContent + text;
+                        messages.scrollTop = messages.scrollHeight;
+                    },
+                    onDone: function () {
+                        // done 不是终止事件（audit 下 review 还在后面），这里只去掉光标
+                        bot.classList.remove('cs-caret');
+                    },
+                    onReview: function (review) {
+                        panel.setReview(review);
+                    },
+                    onError: function (message) {
+                        bot.classList.remove('cs-caret');
+                        appendMessage('error', message);
+                    },
+                    onFinish: function () {
+                        bot.classList.remove('cs-caret');
+                        if (!botText.textContent) {
+                            botText.textContent = '（没有收到回答，请稍后再试）';
+                        }
+                        setStreaming(false);
+                    }
+                }
+            });
+        }
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var question = input.value.trim();
+            if (!question || streaming) {
+                return;
+            }
+            input.value = '';
+            ask(question);
+        });
+
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                form.dispatchEvent(new Event('submit', { cancelable: true }));
+            }
+        });
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+@import url("/mall/css/cs-widget.css");
+
+/*!
+ * cs.css —— /cs 完整页的三栏布局（M3-A）。
+ * 组件样式在 /mall/css/cs-widget.css（与浮窗共用），经由本文件的 @import 引入：
+ * 因为 head 片段是 th:replace 掉整个 <head> 的，在模板里额外加的 <link> 会被丢弃，
+ * 而 head-fragment 只会按 path 加载 /mall/styles/<path>.css —— 用 @import 是最稳的接法。
+ *
+ * 三栏：会话历史 232px | 对话区（自适应） | 上下文面板 340px（DESIGN §8.1）
+ */
+
+.cs-page {
+    display: grid;
+    grid-template-columns: 232px minmax(0, 1fr) 340px;
+    gap: 16px;
+    margin: 20px auto 40px;
+    height: calc(100vh - 260px);
+    min-height: 480px;
+}
+
+.cs-col {
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* 关键：让内部 overflow 生效（flex/grid 子项默认 min-height:auto 会撑破容器） */
+    background: var(--surface, #fff);
+    border: 1px solid var(--border, #e4e8eb);
+    border-radius: var(--radius-md, 10px);
+    box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, .07));
+    overflow: hidden;
+}
+
+.cs-col__h {
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 11px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-2, #57606a);
+    background: var(--bg-page, #f6f8f9);
+    border-bottom: 1px solid var(--border, #e4e8eb);
+}
+
+/* 会话历史（左） */
+.cs-history__list {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.cs-history__item {
+    display: block;
+    width: 100%;
+    padding: 8px 10px;
+    margin-bottom: 4px;
+    font-size: 13px;
+    text-align: left;
+    color: var(--text-2, #57606a);
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-sm, 6px);
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cs-history__item:hover,
+.cs-history__item.is-active {
+    background: var(--bg-page, #f6f8f9);
+    color: var(--text-1, #1f2328);
+}
+
+/* 上下文面板（右） */
+.cs-panel__body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+}
+
+/* 窄屏：退化为单列堆叠（手机端底部抽屉属 §8.3 增强项，本次不做） */
+@media (max-width: 1100px) {
+    .cs-page {
+        grid-template-columns: minmax(0, 1fr);
+        height: auto;
+    }
+
+    .cs-col {
+        max-height: 70vh;
+    }
+}

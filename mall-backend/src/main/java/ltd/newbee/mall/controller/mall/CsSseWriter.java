@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -77,6 +78,21 @@ public class CsSseWriter implements CsStreamService.CsStreamListener {
         payload.put("stage", stage);
         payload.put("elapsed", Math.round(elapsedMs / 10.0) / 100.0);
         send("stage", payload);
+    }
+
+    /**
+     * RAG 引用来源（DESIGN §8.2「引用来源（含融合分）」区块）。
+     *
+     * <p>只发 {@code title / score / goodsId}，<b>不发 chunk 正文</b>：面板只需「来源 + 融合分」，
+     * 把知识库原文整段推给浏览器既无必要也浪费带宽。
+     *
+     * <p>这是 M3-A 新增事件，老客户端忽略即可（向后兼容）。
+     */
+    @Override
+    public void onRag(List<CsStreamService.RagSource> sources) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("sources", sources);
+        send("rag", payload);
     }
 
     @Override

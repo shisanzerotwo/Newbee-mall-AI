@@ -90,6 +90,15 @@ public class CsStreamService {
         /** 某阶段完成（{@code elapsedMs} 是该阶段自身耗时） */
         void onStage(String stage, long elapsedMs);
 
+        /**
+         * RAG 引用来源（含融合分），紧跟 {@code onStage("检索知识库")} 之后发出。
+         *
+         * <p>{@code default} 空实现是故意的<b>向后兼容</b>：M2-5 已有的监听器实现
+         * （包括测试里的记录式假监听器）不认识这个事件，忽略即可，不会编译失败。
+         */
+        default void onRag(List<RagSource> sources) {
+        }
+
         /** 一次工具调用（{@code ok=false} 表示参数解析/执行失败或工具名未知） */
         void onTool(String name, String args, long ms, boolean ok);
 
@@ -123,6 +132,19 @@ public class CsStreamService {
      */
     public record CsStreamRequest(String question, String conversationId, Long userId,
                                   Integer goodsId, String orderNo) {
+    }
+
+    /**
+     * 一条 RAG 引用来源（DESIGN §8.2 的「引用来源」区块要展示融合分）。
+     *
+     * @param score 是<b>融合分</b>（RRF），不是余弦相似度 —— 量级很小（约 0.01 级），
+     *              前端展示时不要当百分比用
+     */
+    public record RagSource(String title, double score, String goodsId) {
+    }
+
+    /** RAG 检索的产物：喂给模型的 prompt 文本 + 给前端看的引用来源（同一次检索，不二次嵌入） */
+    private record RagContext(String prompt, List<RagSource> sources) {
     }
 
     /** 一次流式问答的结果（供调用方/测试断言；SSE 客户端本身只消费事件） */
@@ -212,8 +234,11 @@ public class CsStreamService {
             messages.addAll(memoryService.loadHistory(conversationId, userId));
 
             long ragStart = System.currentTimeMillis();
-            String ragContext = safeRagPrompt(request.question());
+            RagContext rag = safeRag(request.question());
             listener.onStage(STAGE_RAG, System.currentTimeMillis() - ragStart);
+            // 引用来源紧跟 stage 之后（DESIGN §8.2 的「引用来源（含融合分）」区块）
+            listener.onRag(rag.sources());
+            String ragContext = rag.prompt();
 
             messages.add(UserMessage.from(buildUserText(request, ragContext)));
 
@@ -526,12 +551,23 @@ public class CsStreamService {
         return sb.toString();
     }
 
-    private String safeRagPrompt(String question) {
+    /**
+     * 取 RAG 上下文 + 引用来源。
+     *
+     * <p>只做一次 {@code retrieve}，prompt 与 sources 共用同一批 {@link RagService.Hit}
+     *（{@link RagService#asPromptFrom} 就是把格式化单独拆出来的）。
+     * 失败时降级为「仅工具、无 RAG」，与 M2-5 行为一致。
+     */
+    private RagContext safeRag(String question) {
         try {
-            return ragService.asPrompt(question, ragTopK);
+            List<RagService.Hit> hits = ragService.retrieve(question, ragTopK);
+            List<RagSource> sources = hits.stream()
+                    .map(h -> new RagSource(h.title(), h.score(), h.goodsId()))
+                    .toList();
+            return new RagContext(ragService.asPromptFrom(hits), sources);
         } catch (Exception e) {
             log.warn("RAG 上下文获取异常，本次降级为『仅工具、无 RAG』：{}", e.toString());
-            return "";
+            return new RagContext("", List.of());
         }
     }
 
