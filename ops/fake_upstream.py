@@ -106,10 +106,14 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             # ---- 流式：先发响应头，再慢速逐块吐 ----
+            # ⚠️ 必须带 Connection: close：SSE 响应没有 Content-Length，
+            #    客户端只能靠「连接关闭」判断流结束；若保持 keep-alive，curl/网关会一直等下去
+            #    （实测：不加这行，curl 读满 -m 超时、应用侧报「模型流式调用超时」）。
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream; charset=utf-8")
             self.send_header("Cache-Control", "no-cache")
-            self.send_header("Connection", "keep-alive")
+            self.send_header("Connection", "close")
+            self.close_connection = True
             self.end_headers()
 
             def send_chunk(obj):
@@ -132,6 +136,12 @@ class Handler(BaseHTTPRequestHandler):
             })
             self.wfile.write(b"data: [DONE]\n\n")
             self.wfile.flush()
+            # 显式关闭，让客户端立刻知道流结束（而不是等到超时）
+            self.close_connection = True
+            try:
+                self.wfile.close()
+            except Exception:
+                pass
         except (BrokenPipeError, ConnectionResetError):
             # 客户端提前断开（压测常见）—— 正常，不计为错误
             pass
