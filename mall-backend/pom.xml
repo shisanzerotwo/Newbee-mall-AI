@@ -28,9 +28,19 @@
         <mybatis.start.version>3.0.5</mybatis.start.version>
         <hutool-captcha.version>5.8.47</hutool-captcha.version>
         <!-- LangChain4j：core 与 open-ai 为稳定版（1.20.0）；
-             starter / embeddings / community-redis 目前只有 beta（1.20.0-beta30），
-             M2-1 先不引入，到 M2-3（RAG）再评估 -->
+             starter / embeddings / community-redis 目前只有 beta（1.20.0-beta30） -->
         <langchain4j.version>1.20.0</langchain4j.version>
+        <langchain4j.beta.version>1.20.0-beta30</langchain4j.beta.version>
+
+        <!-- 覆盖 Boot BOM 管理的 Jedis 版本
+             【为什么必须覆盖】
+             dev.langchain4j:langchain4j-community-redis:1.20.0-beta30 声明 jedis 7.2.1，
+             但 spring-boot-dependencies:3.5.16 管理 jedis 6.0.0，父 POM 会强制降级：
+               jedis:jar:6.0.0:compile (version managed from 7.2.1)
+             运行时可能 NoSuchMethodError（报错点离根因很远）。
+             这是 DESIGN §6.4 预检专门要拦的场景（R3）。
+             注：Spring Data Redis 默认用 Lettuce，不受此覆盖影响。 -->
+        <jedis.version>7.2.1</jedis.version>
     </properties>
 
     <dependencies>
@@ -81,6 +91,24 @@
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-open-ai</artifactId>
             <version>${langchain4j.version}</version>
+        </dependency>
+
+        <!-- ===== M2-3（RAG）=====
+             两个 beta 组件：
+             - community-redis：RedisEmbeddingStore（用 RediSearch / FT.* 建向量索引，
+               需目标 Redis 带 Query Engine，实测本机容器 redis:8 可用）
+             - embeddings-all-minilm-l6-v2：内置 ONNX 嵌入模型（首次加载会下载模型文件）
+             注：底层用 Jedis，而 Boot BOM 也管理 jedis 版本 —— 引入后必须跑
+             `dependency:tree -Dincludes=redis.clients:jedis` 预检（见 DESIGN §6.4 / R3） -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-community-redis</artifactId>
+            <version>${langchain4j.beta.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-embeddings-all-minilm-l6-v2</artifactId>
+            <version>${langchain4j.beta.version}</version>
         </dependency>
     </dependencies>
 
