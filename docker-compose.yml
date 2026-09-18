@@ -41,7 +41,10 @@ services:
   redis:
     image: redis:8
     container_name: newbee-mall-redis
-    # ⚠️ 不映射宿主端口：本机已有 Redis(6379) 在跑（同理见 mysql 注释）
+    # ⚠️ 本机已有 Redis(6379) 在跑，故默认映射到宿主 16379
+    # （M2-3 的 RAG 需要带 Query Engine 的 Redis 8；本机那台 3.0.504 不支持向量）
+    ports:
+      - "${REDIS_HOST_PORT:-16379}:6379"
     volumes:
       - redis-data:/data
     healthcheck:
