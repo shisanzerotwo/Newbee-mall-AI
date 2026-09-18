@@ -91,6 +91,30 @@ bash ops/smoke.sh
 
 > ⚠️ 这是上游开源项目自带的默认测试账号，**首次部署后请立即改密**。
 
+### 容器化一键启动（✅ 已实测通过 2026-09-18）
+
+```bash
+cp .env.example .env      # 填 DB_PASSWORD（必填）
+docker compose up -d      # 首次构建较慢（容器内 Maven 下载依赖）
+docker compose ps         # 期望：3 个容器均 healthy
+```
+
+**实测结果**：
+
+| 项 | 结果 |
+|---|---|
+| 三容器状态 | ✅ app / mysql / redis **均 healthy** |
+| 容器内应用冒烟 | ✅ **16/16**，退出码 0 |
+| 容器 MySQL 数据 | ✅ 575 商品 / 3 管理员 / 92 分类 / **0 用户**（脱敏符合决策 #36） |
+| Redis | ✅ 官方 **redis:8（8.10.1）**，实测 **Query Engine 可用**（`FT.CREATE ... VECTOR HNSW` 成功） |
+
+**端口约定**（本机已有服务时的默认避让）：
+- app：宿主 `28089`；本机应用在跑时用 `APP_PORT=28090 docker compose up -d`
+- redis：宿主 **`16379`**（避开本机 Redis 3.0.504 占用的 6379）
+- mysql：**不映射宿主端口**（应用容器经服务名互通，调试用 `docker compose exec mysql mysql -uroot -p`）
+
+> ⚠️ 首次构建需要容器内从 Maven Central 下载依赖（国内约 420 KB/s），可能耗时 10–20 分钟；后续构建有层缓存。
+
 ## 待办
 
 **M1 收尾（已完成）**：
