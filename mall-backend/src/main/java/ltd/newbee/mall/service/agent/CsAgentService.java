@@ -99,6 +99,18 @@ public class CsAgentService {
             "抱歉，这次我没能组织好答复。您可以再问一次，或换个说法告诉我需求。";
 
     /**
+     * 上游把整轮时间耗完（没吐任何文本就撞上单轮上限）时的兜底：对用户而言这是
+     * 「服务忙/慢」而非「模型坏了」，话术要给出可操作的下一步且不要暴露内部细节。
+     *
+     * <p>真机背景（2026-09-18）：agnes 免费额度受限时 OmniRoute 只回 keepalive 心跳
+     * （{@code id=chatcmpl-keepalive}、{@code delta:{}}），整轮 40~50s 一个字都不给，
+     * 最后撞上 {@code cs.stream.round-timeout-ms}(45s)。此时甩 EMPTY_ANSWER 会让用户
+     * 以为是自己的提问有问题，与实际原因不符。
+     */
+    static final String BUSY_ANSWER =
+            "当前咨询的人有点多，我这边响应慢了些，没能及时给您答复。麻烦您稍后再试一次～";
+
+    /**
      * 工具循环超限时，为「未执行」的待办工具调用补的占位结果。
      *
      * <p>不加它的话，对话会以一条「带 tool_calls 的 AI 消息」结尾；gate 模式打回时

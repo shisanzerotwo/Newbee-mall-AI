@@ -269,8 +269,10 @@ public class CsStreamService {
     private Generation generate(List<ChatMessage> messages, DeltaSink sink, FirstToken firstToken,
                                 List<CsAgentService.ToolCall> toolCalls, CsStreamListener listener,
                                 long startMs) {
+        long rs0 = System.currentTimeMillis();
         AiMessage ai = streamRoundWithRetry(messages, sink, firstToken, startMs);
-        // ⚠️ 与 M2-4 同理：带 tool_calls 的 assistant 消息必须进历史，
+        // 「最后一轮」的实测耗时：用来区分「上游繁忙/静默」与「模型真的没给文本」
+        long lastRoundMs = System.currentTimeMillis() - rs0;
         // OpenAI 协议要求 tool 消息紧跟其 assistant(tool_calls)，否则下一轮 400。
         messages.add(ai);
 
@@ -301,7 +303,9 @@ public class CsStreamService {
                 messages.add(ToolExecutionResultMessage.from(toolRequest, invocation.result()));
             }
             markBeforeRound = sink.streamedLength();
+            long rsN = System.currentTimeMillis();
             ai = streamRoundWithRetry(messages, sink, firstToken, startMs);
+            lastRoundMs = System.currentTimeMillis() - rsN;
             messages.add(ai);
         }
 
@@ -310,7 +314,17 @@ public class CsStreamService {
             if (!truncated) {
                 log.warn("模型返回了空文本（且无工具调用请求）");
             }
-            answer = truncated ? CsAgentService.TOOL_LIMIT_ANSWER : CsAgentService.EMPTY_ANSWER;
+            if (truncated) {
+                answer = CsAgentService.TOOL_LIMIT_ANSWER;
+            } else if (lastRoundMs >= roundTimeoutMs * 8 / 10) {
+                // 整轮时间被上游耗尽（真机：agnes 限流时只回 keepalive，40~50s 零文本）
+                // → 对用户而言这是「服务忙/慢」，不是「模型坏了」，话术必须区分开
+                log.warn("本轮耗时 {}ms 已达单轮上限 {}ms 的 80% 且零文本，判定为上游繁忙/静默（非模型异常）",
+                        lastRoundMs, roundTimeoutMs);
+                answer = CsAgentService.BUSY_ANSWER;
+            } else {
+                answer = CsAgentService.EMPTY_ANSWER;
+            }
         }
 
         // ⭐ 补发：模型没把回答流式吐出来时，客户端会一个字都收不到。
