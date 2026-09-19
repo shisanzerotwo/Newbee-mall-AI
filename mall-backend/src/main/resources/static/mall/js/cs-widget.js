@@ -4,8 +4,8 @@
  * <h3>设计约束（DESIGN §8.1 / §8.4）</h3>
  * <ul>
  *   <li><b>不用 iframe</b>：直接操作本页 DOM。这是本项目取代旧方案的核心诉求。</li>
- *   <li><b>XSS 强制</b>：所有文本写入一律走 {@code textContent}；本文件<b>不新写转义函数</b>，
- *       需要转义时复用 {@code Cs.escapeHtml}。模型输出永不拼 HTML。</li>
+ *   <li><b>XSS 强制</b>：所有文本写入一律走 {@code textContent}（<b>这才是防线</b>）；本文件<b>不新写转义函数</b>，
+ *       也<b>没有调用</b> {@code Cs.escapeHtml}。模型输出永不拼 HTML。</li>
  *   <li><b>文本与卡片不能同层</b>：{@code textContent} 的 setter 会清空子节点，
  *       所以流式文本写在独立的 {@code span}（{@code botText}）里，商品卡片另占一个子节点
  *       —— 否则 onTool 刚挂上的卡片会被 onDelta 抹掉（M3-A 踩过这个真 bug）。</li>

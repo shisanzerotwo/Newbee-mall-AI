@@ -3,11 +3,13 @@
  *
  * 三条硬约束（DESIGN §8.1 / §8.2 / §8.4），改代码前先读：
  *
- *   1. 【XSS 强制】模型流式文本、工具返回的商品名，渲染时<b>一律经 Cs.escapeHtml</b>，
- *      或者只走 textContent。本文件<b>全程只用 createElement + textContent 构造节点</b>，
- *      不拼接任何 HTML 字符串 —— 这样就不存在"忘了转义"的可能（也便于用 grep 守住）。
- *      escapeHtml 覆盖 & < > " ' 五个字符。注意<b>必须包含单引号</b>：
- *      Python 基准（web/index.html:219）的 esc() 漏了它，在属性语境下是真实缺口，本项目不继承。
+ *   1. 【XSS 强制】模型流式文本、工具返回的商品名，渲染时<b>一律走 textContent</b>：
+ *      本文件<b>全程只用 createElement + textContent 构造节点</b>，不拼接任何 HTML 字符串
+ *      —— 这样就不存在"忘了转义"的可能（也便于用 grep 守住）。
+ *      本文件另导出 escapeHtml（覆盖 & < > " ' 五个字符；注意<b>必须包含单引号</b>：
+ *      Python 基准（web/index.html:219）的 esc() 漏了它，在属性语境下是真实缺口，本项目不继承），
+ *      但<b>当前两条客服渲染路径都没有调用点</b> —— 真正的防线是 textContent，别搞反了。
+ *      行为级核查见 docs/XSS-VERIFICATION.md（已固化为 CsXssBrowserIT）。
  *
  *   2. 【数据来源】卡片里的商品信息只从 SSE 的 `tool` 事件（args.goodsId）取，
  *      <b>绝不从模型文本里正则抠数</b>—— 模型会幻觉出不存在的商品名/价格（DESIGN §8.4）。

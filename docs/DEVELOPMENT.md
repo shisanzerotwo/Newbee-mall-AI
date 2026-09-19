@@ -13,8 +13,10 @@
 cd /mnt/d/GitHub/xiangmu/newbee-mall-ai
 
 # ② 起依赖（MySQL + Redis 8 + 应用，三个容器）
-docker compose up -d
-docker compose ps            # 期望：三个都 healthy
+# ⚠️ 本机 WSL 里**没有可用的 docker**（Docker Desktop 的 WSL 集成未启用）：执行会报
+#    "could not be found in this WSL 2 distro"。改用 Windows 侧 docker（已在 PATH 里，实测可用）：
+powershell.exe -NoProfile -Command "cd 'D:\GitHub\xiangmu\newbee-mall-ai'; docker compose up -d"
+powershell.exe -NoProfile -Command "cd 'D:\GitHub\xiangmu\newbee-mall-ai'; docker compose ps"   # 期望：三个都 healthy
 
 # ③ 或本地跑应用（改代码时用这个，热重启快）
 set -a && . ./.env && set +a     # ⚠️ 必须 export：Maven 不读 .env
@@ -94,9 +96,14 @@ mall-backend/src/main/java/ltd/newbee/mall/
 ### 3.4 注入 `ChatModel` 必须带 `@Qualifier("csChatModel")`
 项目里有多个模型 Bean（编排 / 质检 / 流式），按类型注入会歧义。
 
-### 3.5 XSS：模型文本一律经 `escapeHtml`
-`cs-core.js` 的 `escapeHtml` 覆盖 `& < > " '` **五个**字符（注意**单引号也要转**）。
+### 3.5 XSS：模型文本一律走 `textContent`（**不是** `escapeHtml`）
+两条客服渲染路径（`cs-core.js` / `cs-widget.js`）的实际防线是 **`createElement` + `textContent`**：
+不解析 HTML，从根上不存在“忘了转义”。`cs-core.js` 仍导出 `Cs.escapeHtml`（覆盖 `& < > " '` 五个字符，
+**单引号也要转**）作为备用工具，但**当前没有任何调用点** —— 别以为改了它会影响防线。
 **禁止**裸 `innerHTML` 拼接模型输出。商品卡片数据**从 `tool` 事件解析**，不从 LLM 文本解析（防幻觉）。
+
+> 该结论来自**行为级核查**（不是读代码猜的）：`docs/XSS-VERIFICATION.md` ——
+> 12 条 payload × 2 条路径 + 阳性对照 + 阴性对照，已固化为 `CsXssBrowserIT`。
 
 ---
 
@@ -132,6 +139,32 @@ cp /tmp/F.bak F.java && grep -c 'if (bucketCount > MAX)' F.java   # 确认恢复
 ```
 
 > ⚠️ **恢复后一定要 grep 确认**。我踩过一次：阴性对照没干净恢复，把源码留在了损坏状态。
+
+### 4.2 全量测试跑到一半 JVM 崩了？（本机内存坑，2026-09-19 实测）
+
+症状（不是 assertion 失败，日志里也**没有** `Tests run: ... Failures:` 汇总行）：
+
+```text
+# There is insufficient memory for the Java Runtime Environment to continue.
+# Native memory allocation (malloc) failed to allocate 1449368 bytes. Error detail: Chunk::new
+```
+
+同时在 `mall-backend/` 留下 `hs_err_pid*.log` / `replay_pid*.log`（已被 `.gitignore` 的 `*.log` 盖住）。
+
+**这不是代码问题，是本机内存不足**：总内存 15.7 GB，实测**空闲 1.9 GB 时必崩**
+（ZCode 多进程、Docker/WSL、浏览器常吃掉十几 GB），崩的是 JIT 编译器的 native 内存分配。
+
+处置顺序：
+
+1. 先看空闲内存：`Get-CimInstance Win32_OperatingSystem` 的 `FreePhysicalMemory`
+2. 给测试 JVM 让出 native 空间（实测一条命令跑完 163 个）：
+   ```bash
+   bash ops/mvn.sh test -DargLine="-Xmx700m -XX:MaxMetaspaceSize=256m -XX:ReservedCodeCacheSize=96m -XX:CICompilerCount=2"
+   ```
+3. 清掉崩溃日志：`rm -f mall-backend/hs_err_pid*.log mall-backend/replay_pid*.log`
+
+> ⚠️ **别把这种崩溃误判成“某个测试失败”** —— 看到 `insufficient memory` 就该去查内存，
+> 而不是去查测试代码。（本轮实测：不限制内存连崩 2 次，限制后 45s 跑完 163/163。）
 
 ---
 
@@ -239,16 +272,18 @@ git rev-parse HEAD
 powershell.exe -NoProfile -Command "git -C 'D:\GitHub\xiangmu\newbee-mall-ai' ls-remote origin master"
 
 # ⭐ 推送前：全历史密钥扫描（本项目真踩过 —— 文档里的示例命令带明文密码，被 19 个历史版本继承）
-for pat in "密码片段" "sk-" "agent-demo-key"; do
-  n=0
-  for obj in $(git rev-list --objects --all | awk '{print $1}'); do
-    git cat-file -p "$obj" 2>/dev/null | grep -q "$pat" && n=$((n+1))
-  done
-  echo "$pat -> $n"
-done
+bash ops/scan-secrets.sh        # 一条命令扫全历史，退出码 0 = 未发现疑似泄漏
+
+# 它的实现（自己重写时的要点）：
+#   git rev-list --objects --all | awk '{print $1}' | git cat-file --batch --buffer > tmp
+#   → 一次导出全部对象再按模式 grep。**别**逐对象 cat-file（1221 个对象 × 5 模式 要等数分钟）。
 # 发现命中时：git filter-branch --tree-filter '...' -- --all
 #            + 删 refs/original + reflog expire --expire=now --all + gc --prune=now
 #            + 复扫确认 0
+#
+# ⚠️ 命中 ≠ 泄漏：本仓库当前有 21 处**已知无害**命中（占位符 <你的MySQL密码>、
+#    省略号、.env.example 空值、以及描述这段历史的 commit message）。脚本已内置白名单过滤，
+#    但白名单是启发式的 —— 真值判断必须人工。
 ```
 
 > **本机 GitHub 通路的特殊性**：hosts 被 Steam++ 接管（66 条 github 域名 → 127.0.0.1）。
@@ -266,6 +301,7 @@ done
 | JDK | `C:\Users\22421\.jdks\openjdk-25`（编译 `--release 21`） |
 | MySQL | 本机 3306（`E:\mysql-9.7.1`）；容器内网 |
 | Redis | 本机 6379（3.0.504，**无向量**）；**RAG 用容器 16379**（redis:8） |
+| Docker | ⚠️ **WSL 里不可用**（集成未启用，报 "could not be found in this WSL 2 distro"）→ 走 Windows 侧 `docker`（已在 PATH：29.8.0 + Compose v5.5.1）；实测三容器 `newbee-mall-{mysql,redis,app}` 均 healthy |
 | 应用端口 | 本地 28091（我常用）/ 28089（默认）；容器 28090 |
 | 容器名 | `newbee-mall-mysql` / `newbee-mall-redis` / `newbee-mall-app` |
 | 日志 | `mall-backend/logs/newbee-mall.log`（**相对进程 cwd**） |
