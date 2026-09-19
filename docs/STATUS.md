@@ -12,7 +12,7 @@
 
 - **落点**：`D:\GitHub\xiangmu\newbee-mall-ai`（新建仓库，旧仓库 `newbee-mall` / `ai开发` 原样保留）
 - **来源**：商城代码拷自 `D:\GitHub\xiangmu\newbee-mall`；AI 客服参照 `D:\GitHub\xiangmu\ai开发\12_agent_cs`（Python）
-- **GitHub 推送**：**暂停中**（`origin` 已配 `https://github.com/shisanzerotwo/newbee-mall-ai.git`，但远程仓库尚未创建）
+- **GitHub 推送**：✅ **已推送**（`origin` = `https://github.com/shisanzerotwo/Newbee-mall-AI`；GitHub 侧仓库已改名，旧名 `newbee-mall-ai` 会重定向）
 
 ## 2. 技术栈
 
@@ -44,7 +44,7 @@
 | **M3-D** | DoD 剩余项：10 问回归集 / Java↔Python 对比表 / XSS 12 条行为级核查 / 架构·评测·演示三份文档 | ✅ 完成（**含未验证项的如实留痕**：核心「数字一致性」断言两轮均因上游超时未执行到，见 `docs/COMPARE-JAVA-PYTHON.md` §2b/§5） |
 | M3 其余 | Testcontainers / CI（需 GitHub，暂缓）、§8.3 增强项（拖拽/抽屉/重生成） | ⬜ |
 
-**提交数**：51（已推送 GitHub：`github.com/shisanzerotwo/Newbee-mall-AI`，`master` 与本地 SHA 一致）
+**提交数**：54（已推送 GitHub：`github.com/shisanzerotwo/Newbee-mall-AI`，`master` 与本地 SHA 一致）
 
 > ✅ **M2-5 时序红线已验证守住**（DESIGN §4.2）：真机实测 `stage → tool(checkStock×2) → delta → done` →
 > **`review` 在 `done` 之后仍能送达**，且 complete 只发生一次（claude 已复核代码 + 端到端测试双重证据）。
