@@ -40,8 +40,10 @@ import java.util.concurrent.Executors;
  *
  * <h3>三条不变量</h3>
  * <ol>
- *   <li><b>数据铁律</b>：价格 / 库存 / 订单状态只来自工具结果；RAG 片段仅作语义参考
- *       （知识库语料在 {@link KnowledgeBuilder} 里已剔除价格/库存字段，见其语料红线）</li>
+   *   <li><b>数据铁律</b>：价格 / 库存 / 订单状态只来自工具结果；RAG 片段仅作语义参考
+   *       （知识库语料在 {@link KnowledgeBuilder} 里已剔除价格/库存字段，见其语料红线）。
+   *       出口门禁为「意图 + 内容」双判定：本轮没调工具时，回答含价格/库存特征
+   *       或问题命中商城意图（如"有哪些分类"）都会触发一次带工具提醒的重问</li>
  *   <li><b>工具循环有上限</b>：{@code cs.agent.max-tool-rounds}（默认 6，M3-C 按 DESIGN §7.2 对齐；原为 5）。Python 教学版的
  *       {@code while response.tool_calls:} 没有上限，模型一旦反复调工具就会无限烧钱；
  *       这里超限即停并<b>打 WARN</b>，绝不静默死循环。</li>
@@ -88,7 +90,14 @@ public class CsAgentService {
             2. 商品详情字段若工具未返回或显示占位（如"商品介绍加载中"），用简介/规格/标签介绍，
                绝不编造详情内容
             3. 知识库检索结果仅供参考；价格、库存、订单状态一律以工具查询结果为准
-            4. 不确定的信息说"我帮您核实一下"，而不是猜测
+            4. 不确定的信息先调用工具核实；确实查不到的，如实说明，而不是猜测
+            5. 禁止用通用知识回答商城问题：分类、在售商品、价格、库存、订单都必须来自工具结果。
+               例：问"化妆品有哪些分类"必须调 searchByCategory 查本店真实分类，
+               不能背"一般化妆品分为护肤/彩妆/香水…"
+            6. 禁止"只说不做"：不要说"我先帮您查一下"却不调用工具——
+               要么立刻调用工具，要么如实说明查不到
+            7. 查到即总结：一轮问答的工具调用次数有限，拿到工具结果、信息足够时
+               就直接基于结果给出回答，不要为同一个问题反复发起相似查询
             """;
 
     /** 工具循环超限且模型没给出任何文本时的兜底答复（客服口吻，且给出可操作的下一步）；流式编排共用 */
@@ -124,16 +133,31 @@ public class CsAgentService {
     static final String TOOL_LIMIT_SKIP_NOTE = "（已达单次问答的工具调用上限，本次未执行）";
 
     /**
-     * 数据铁律出口门禁：只在回答出现“数字紧贴价格/库存单位”、且本轮没有工具调用时触发。
+     * 数据铁律出口门禁（内容侧）：回答出现“数字紧贴价格/库存单位”、且本轮没有工具调用时触发。
      * 年份与订单号不命中，避免把普通日期和订单号误判为商品数据。
      */
     private static final Pattern DATA_RULE_PATTERN =
             Pattern.compile("[¥￥]\\s*\\d+|\\d+(?:\\.\\d+)?\\s*(?:元|台|件)");
 
+    /**
+     * 数据铁律出口门禁（意图侧）：问题命中商城意图词 → 视为「在问商城数据」，
+     * 本轮却没有任何工具调用即违规。这是 #8「该查不查」幻觉变体的门禁：
+     * 模型用通用知识答「化妆品一般分为护肤/彩妆/香水…」，回答里没有价格/库存数字，
+     * 内容侧正则抓不到，只能靠问题意图兜住。
+     *
+     * <p>词表设计原则是<b>宁漏不误伤</b>：不收「有没有」（“你有没有听过…”这类闲聊会误伤，
+     * 10 问回归的 #7「有没有扫地机器人？」因此是已知漏网，靠内容侧正则兜底）；
+     * 退换货政策、天气、问候类必须不命中。
+     */
+    private static final Pattern MALL_INTENT_PATTERN =
+            Pattern.compile("价格|售价|多少钱|库存|有货|在售|下架|分类|品类|订单|推荐|有什么|有哪些|型号|品牌");
+
     private static final String DATA_RULE_REMINDER =
-            "你的回答中出现了价格/库存信息，但本轮没有调用任何工具。数据铁律要求：商城数据必须先调用工具获取。"
+            "本轮没有调用任何工具，但问题涉及商城数据（或回答中出现了价格/库存信息）。"
+                    + "数据铁律要求：商城数据必须先调用工具获取，禁止用通用知识回答商城问题。"
                     + "请先调用合适的工具（searchGoods / getGoodsDetail / checkStock 等）核实，"
-                    + "再基于工具结果重新回答。不要道歉式开头。";
+                    + "查到结果后直接基于结果总结回答（不要为同一个问题反复发起相似查询）。"
+                    + "不要道歉式开头。";
 
     private final ChatModel chatModel;
     private final RagService ragService;
@@ -297,12 +321,13 @@ public class CsAgentService {
      * 首次无工具是触发原因的客观记录，不把重问过程伪装成首次回答的数据来源。
      */
     private Generated enforceDataRule(String question, Generated generated) {
-        if (!dataRuleGuard || !violatesDataRule(generated.answer(), generated.toolCalls())) {
+        if (!dataRuleGuard || !violatesDataRule(question, generated.answer(), generated.toolCalls())) {
             return generated;
         }
-        log.warn("数据铁律门禁触发：回答含价格/库存特征但本轮未调用工具。question={}", question);
+        log.warn("数据铁律门禁触发（本轮未调用工具）：回答含价格/库存特征={}，问题命中商城意图={}。question={}",
+                DATA_RULE_PATTERN.matcher(generated.answer()).find(), needsMallData(question), question);
         Generated regenerated = regenerateWithToolReminder(generated, question);
-        if (violatesDataRule(regenerated.answer(), regenerated.toolCalls())) {
+        if (violatesDataRule(question, regenerated.answer(), regenerated.toolCalls())) {
             log.error("数据铁律门禁重答后仍违规，按设计放行（用户不能空手）。question={}", question);
         }
         return new Generated(regenerated.answer(), generated.toolCalls(), regenerated.messages());
@@ -313,6 +338,23 @@ public class CsAgentService {
         return !isBlank(answer)
                 && (toolCalls == null || toolCalls.isEmpty())
                 && DATA_RULE_PATTERN.matcher(answer).find();
+    }
+
+    /** 纯函数：问题是否在问商城数据（关键词启发式，宁漏不误伤，见 {@link #MALL_INTENT_PATTERN}）。 */
+    static boolean needsMallData(String question) {
+        return question != null && MALL_INTENT_PATTERN.matcher(question).find();
+    }
+
+    /**
+     * 意图 + 内容双判定：工具轨迹非空 → 直接放行（调过工具即有数据来源，不做内容审查）；
+     * 否则「回答命中价格/库存特征」或「问题命中商城意图」→ 违规。
+     * 2 参版本 {@link #violatesDataRule(String, List)} 保留不删（既有单测直测它）。
+     */
+    static boolean violatesDataRule(String question, String answer, List<ToolCall> toolCalls) {
+        if (isBlank(answer) || (toolCalls != null && !toolCalls.isEmpty())) {
+            return false;
+        }
+        return DATA_RULE_PATTERN.matcher(answer).find() || needsMallData(question);
     }
 
     /** gate 模式打回：把质检意见追加进对话后让模型重写一次（只一次，不循环） */

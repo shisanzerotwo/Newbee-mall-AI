@@ -198,7 +198,9 @@ class CsAgentServiceTest {
         when(qaReviewer.review(anyString(), anyString(), anyString()))
                 .thenReturn(new QaReviewer.QaResult(true, "合格\n数据与工具一致"));
 
-        CsAgentService.CsAnswer answer = newService("gate").answer("有货吗");
+        // 问题用中性文本（不命中商城意图词表）：本用例只验证 gate 质检行为，
+        // 不能让问题本身触发数据门禁的额外重问
+        CsAgentService.CsAnswer answer = newService("gate").answer("你叫什么名字");
 
         verify(csModel, times(1)).chat(any(ChatRequest.class));
         assertEquals("原回答", answer.answer());
@@ -216,7 +218,8 @@ class CsAgentServiceTest {
         when(qaReviewer.review(anyString(), anyString(), anyString()))
                 .thenReturn(new QaReviewer.QaResult(false, "不合格\n推荐了已下架商品"));
 
-        CsAgentService.CsAnswer answer = newService("gate").answer("推荐个洗面奶");
+        // 中性问题文本：不让问题本身触发数据门禁（本用例只验证质检打回次数）
+        CsAgentService.CsAnswer answer = newService("gate").answer("你叫什么名字");
 
         verify(csModel, times(2)).chat(any(ChatRequest.class));   // 生成 1 次 + 打回重答 1 次，不再循环
         assertEquals("修正后回答（只推荐在售商品）", answer.answer());
@@ -237,7 +240,8 @@ class CsAgentServiceTest {
         when(qaReviewer.review(anyString(), anyString(), anyString()))
                 .thenReturn(new QaReviewer.QaResult(false, "不合格\n推荐了已下架商品"));
 
-        CsAgentService.CsAnswer answer = newService("audit").answer("推荐个洗面奶");
+        // 中性问题文本：不让问题本身触发数据门禁（本用例只验证 audit 不打回）
+        CsAgentService.CsAnswer answer = newService("audit").answer("你叫什么名字");
 
         verify(csModel, times(1)).chat(any(ChatRequest.class));   // 不打回
         assertEquals("原回答", answer.answer());
@@ -383,5 +387,96 @@ class CsAgentServiceTest {
 
         verify(csModel, times(2)).chat(any(ChatRequest.class));
         assertEquals("这款还是 899 元、435 台。", answer.answer());
+    }
+
+    // ------------------------------------------------------------------
+    // 意图门禁（TASK_GUARD2）：「该查不查」幻觉变体 —— 问题在问商城数据却零工具调用
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("意图门禁阳性：问分类却不查库、用通用知识作答 → 追加提醒并重问（#8 变体）")
+    void intentGuardShouldRegenerateWhenMallQuestionAnsweredFromGeneralKnowledge() {
+        when(mallTools.searchByCategory(eq("化妆品"), anyInt()))
+                .thenReturn("分类「化妆品」下找到 2 个商品：\n"
+                        + "- [10006] 保湿化妆水｜88.00｜库存 100\n"
+                        + "- [10007] 修护面霜｜129.00｜库存 50");
+        when(csModel.chat(any(ChatRequest.class))).thenReturn(
+                // 第一次：通用知识作答（"护肤/彩妆/香水"），无价格数字、无工具调用 —— #8 实测失败形态
+                response(AiMessage.from("化妆品一般分为护肤、彩妆、香水三大类哦～")),
+                // 重问后：调 searchByCategory 查本店真实分类，再基于工具结果回答
+                response(toolCallMessage("searchByCategory", "{\"categoryName\":\"化妆品\",\"limit\":5}")),
+                response(AiMessage.from("本店在售的化妆品有保湿化妆水和修护面霜两类哦～")));
+
+        CsAgentService.CsAnswer answer = newService("audit").answer("化妆品有哪些分类？");
+
+        verify(csModel, times(3)).chat(any(ChatRequest.class));
+        verify(mallTools).searchByCategory("化妆品", 5);
+        assertEquals("本店在售的化妆品有保湿化妆水和修护面霜两类哦～", answer.answer());
+
+        ArgumentCaptor<ChatRequest> captor = ArgumentCaptor.forClass(ChatRequest.class);
+        verify(csModel, times(3)).chat(captor.capture());
+        String reminder = captor.getAllValues().get(1).messages().toString();
+        assertTrue(reminder.contains("数据铁律"), "重问必须明确提醒数据铁律");
+        assertTrue(reminder.contains("searchByCategory") || reminder.contains("searchGoods"),
+                "重问提示应给出可调用工具示例");
+    }
+
+    @Test
+    @DisplayName("意图门禁阴性：退换货政策类问题不命中商城意图 → 不触发重问")
+    void intentGuardShouldNotTriggerForPolicyQuestions() {
+        when(csModel.chat(any(ChatRequest.class)))
+                .thenReturn(response(AiMessage.from("我们支持七天内退货，请保持商品完好。")));
+
+        CsAgentService.CsAnswer answer = newService("audit").answer("你们支持退货吗？");
+
+        verify(csModel, times(1)).chat(any(ChatRequest.class));
+        assertFalse(CsAgentService.needsMallData("你们支持退货吗？"), "政策类问题不得命中商城意图");
+        assertEquals("我们支持七天内退货，请保持商品完好。", answer.answer());
+    }
+
+    @Test
+    @DisplayName("意图门禁阴性：天气闲聊不命中商城意图 → 不触发重问")
+    void intentGuardShouldNotTriggerForSmallTalkQuestions() {
+        when(csModel.chat(any(ChatRequest.class)))
+                .thenReturn(response(AiMessage.from("今天天气不错，适合出门逛街呀～")));
+
+        CsAgentService.CsAnswer answer = newService("audit").answer("今天天气怎么样？");
+
+        verify(csModel, times(1)).chat(any(ChatRequest.class));
+        assertFalse(CsAgentService.needsMallData("今天天气怎么样？"), "闲聊问题不得命中商城意图");
+        assertEquals("今天天气不错，适合出门逛街呀～", answer.answer());
+    }
+
+    @Test
+    @DisplayName("意图门禁阴性：商城问题但本轮有工具调用 → 直接放行，不重问")
+    void intentGuardShouldNotTriggerWhenToolWasCalled() {
+        when(mallTools.searchByCategory(eq("化妆品"), anyInt()))
+                .thenReturn("分类「化妆品」下找到 2 个商品：\n"
+                        + "- [10006] 保湿化妆水｜88.00｜库存 100\n"
+                        + "- [10007] 修护面霜｜129.00｜库存 50");
+        when(csModel.chat(any(ChatRequest.class))).thenReturn(
+                response(toolCallMessage("searchByCategory", "{\"categoryName\":\"化妆品\",\"limit\":5}")),
+                response(AiMessage.from("本店的化妆品分类有保湿化妆水和修护面霜两类哦～")));
+
+        CsAgentService.CsAnswer answer = newService("audit").answer("化妆品有哪些分类？");
+
+        verify(csModel, times(2)).chat(any(ChatRequest.class));
+        assertEquals(1, answer.toolCalls().size(), "调过工具就有数据来源，不做内容审查");
+    }
+
+    @Test
+    @DisplayName("意图门禁词表：10 问回归集逐题断言（#7 刻意漏网属「宁漏不误伤」）")
+    void needsMallDataShouldMatchTenRealQuestions() {
+        assertTrue(CsAgentService.needsMallData("无印良品的笔记本多少钱？"), "#1 命中（多少钱）");
+        assertTrue(CsAgentService.needsMallData("无印良品的化妆水有货吗？"), "#2 命中（有货）");
+        assertTrue(CsAgentService.needsMallData("MUJI 化妆盒卖多少钱？"), "#3 命中（多少钱）");
+        assertTrue(CsAgentService.needsMallData("店里有什么手机卖？"), "#4 命中（有什么）");
+        assertTrue(CsAgentService.needsMallData("推荐一款洗面奶"), "#5 命中（推荐）");
+        assertTrue(CsAgentService.needsMallData("我的订单 2024051312345678 什么状态？"), "#6 命中（订单）");
+        // 词表刻意不收「有没有」："你有没有听过…"这类闲聊会误伤 → #7 是已知漏网，靠内容侧正则兜底
+        assertFalse(CsAgentService.needsMallData("有没有扫地机器人？"), "#7 刻意不命中（宁漏不误伤）");
+        assertTrue(CsAgentService.needsMallData("化妆品有哪些分类？"), "#8 命中（有哪些/分类）——TASK_GUARD2 的目标变体");
+        assertFalse(CsAgentService.needsMallData("你们支持退货吗？"), "#9 必须不命中（政策类不得误伤）");
+        assertFalse(CsAgentService.needsMallData("今天天气怎么样？"), "#10 必须不命中（闲聊不得误伤）");
     }
 }
