@@ -121,11 +121,18 @@ class Handler(BaseHTTPRequestHandler):
                 self.wfile.write(line.encode("utf-8"))
                 self.wfile.flush()
 
+            # ⭐ 回显收到的 messages 数量与角色序列 —— 用于验证「会话记忆是否真的被注入」。
+            # 假上游不读 prompt 的话，注入与不注入在客户端看来完全一样（空洞的链路验证）。
+            msgs = req.get("messages") or []
+            roles = ",".join(str(m.get("role")) for m in msgs)
+            summary = f"[msgs={len(msgs)} roles={roles}] "
+
             for i in range(CHUNKS):
+                text = summary if i == 0 else f"块{i} "
                 send_chunk({
                     "id": "fake-1", "object": "chat.completion.chunk",
                     "created": int(time.time()), "model": "fake-model",
-                    "choices": [{"index": 0, "delta": {"content": f"块{i} "}, "finish_reason": None}],
+                    "choices": [{"index": 0, "delta": {"content": text}, "finish_reason": None}],
                 })
                 time.sleep(DELAY_MS / 1000.0)
 
