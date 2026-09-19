@@ -184,11 +184,16 @@ docker compose exec -T mysql mysql -uroot -p<你的MySQL密码> -e "USE newbee_m
 
 ### 应用侧配置（`newbee-mall-ai/.env`，已被 gitignore）
 
+> 🔄 **2026-09-19 已切换到新通道**（用户提供新 key，直连不走 OmniRoute）：
+> 单问从「24~80s 超时」降到 **1~26s**，10 问回归 7/10 通过（见 `COMPARE-JAVA-PYTHON.md` §7）。
+
 ```
-CS_MODEL_BASE_URL=http://localhost:20128/v1
-CS_MODEL_API_KEY=
-CS_MODEL_NAME=agnes/agnes-2.0-flash
+CS_MODEL_BASE_URL=https://api.agnes-ai.cn/v1   # ⚠️ 是 api.agnes-ai.cn；apihub.agnes-ai.cn 是另一个入口（chat 端点 401）
+CS_MODEL_API_KEY=sk-BDmT***（不落盘，见 .env）
+CS_MODEL_NAME=agnes-2.5-flash
 ```
+
+旧 OmniRoute 通道（`http://localhost:20128/v1` + `agnes/agnes-2.0-flash`）仍可用作备用。
 
 `ops/mvn.sh` 的 `WSLENV` 已扩展到 `DB_PASSWORD` + `CS_MODEL_API_KEY` + `CS_MODEL_NAME` + `CS_MODEL_BASE_URL`（否则 WSL 启动应用时这些变量传不到 Windows 侧）。
 
@@ -202,8 +207,7 @@ CS_MODEL_NAME=agnes/agnes-2.0-flash
 6. ~~M3 前端融合~~ ✅ 已完成（`217c96e` / `f8d7481`）
 7. ~~虚拟线程压测 / 中文嵌入 A/B~~ ✅ 已完成（结论见 `docs/PERF-M3.md`；嵌入默认切 BGE）
 8. ~~M3-D DoD 剩余项~~ ✅ 已完成（见本文件 §11）
-9. **唯一未验证的质量项**：10 问回归的「数字一致性」断言 —— 必须先有**稳定的模型通道**才能重跑
-   （两轮实测均因上游超时未执行到，不是重跑次数的问题），命令见 `docs/COMPARE-JAVA-PYTHON.md` §5
+9. ~~10 问回归的「数字一致性」断言~~ ✅ **已执行到**（2026-09-19 第三轮：新通道 agnes-2.5-flash 直连，10 问 7/10，价格/库存均来自工具结果）；新暴露 2 个待办：#4 模型跳过工具直接作答（prompt 层强化）、#6 断言词表过窄 —— 见 `COMPARE-JAVA-PYTHON.md` §7
 10. ~~生产化四项~~ ✅ **已完成**（2026-09-19，`docs/TASK_PROD.md` 交 claude 执行、codex 复核）：
     - **中文检索**：发现「**40% 是灌水指标**」——20 条里 **11 条题目本身无解**（商品库没那个类目）
       → 新增「**可满足子集**」口径（由代码扫全量语料动态判定，非人工标注）：**8/9 = 88.9%**；
