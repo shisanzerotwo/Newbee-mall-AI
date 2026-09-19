@@ -91,3 +91,60 @@ jobs:
           name: surefire-reports
           path: mall-backend/target/surefire-reports/
           if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------------
+  # XSS 行为验证（P3）：把 CsXssBrowserIT 接进 CI。
+  #
+  # 为什么拆成**独立 job**而不是塞进上面那个：
+  #   1. 它**不需要 MySQL / Redis** —— 夹具是进程内 HttpServer + 仓库里真实的前端 JS/模板，
+  #      本机实测（不导出 .env）3 个用例 8.7s 通过，所以这里**不配 services**，启动最快；
+  #   2. 它需要**真实浏览器**，而上面那个 job 的 JDK/服务组合与它无关，
+  #      混在一起会让"跑不了 Chrome"污染主构建的结论。
+  #
+  # Chrome 从哪来：ubuntu-latest 镜像**自带** Google Chrome（`/usr/bin/google-chrome`）。
+  #   ⚠️ 这条**未在本机复现**（本机跑不了 GitHub Actions，Linux 侧 Chrome 行为也没验过）——
+  #   依据是 runner-images 仓库 ubuntu 镜像的公开软件清单（含 Chrome 及其版本更新 issue）。
+  #   因此本 job 的设计对"没有 Chrome"是**安全**的：IT 按既有约定 skip 而非 fail
+  #   （不制造随机红灯），由末尾那步用 ::warning:: 把"本次 CI 其实没验证 XSS"喊出来，
+  #   避免静默空跑 —— 第一次在 CI 上跑的结果请当作这条事实的**实证**。
+  # ---------------------------------------------------------------------------
+  xss-browser-it:
+    name: XSS 行为验证（真实 Chrome）
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: 浏览器可用性（仅告知，不阻断）
+        run: google-chrome --version || echo "未找到 google-chrome —— CsXssBrowserIT 会跳过"
+
+      - name: Run CsXssBrowserIT
+        run: |
+          cd mall-backend
+          mvn -B test -Dtest=CsXssBrowserIT
+
+      - name: 本次 CI 是否真的验证了 XSS（被跳过就喊出来）
+        if: always()
+        run: |
+          report=mall-backend/target/surefire-reports/ltd.newbee.mall.controller.mall.CsXssBrowserIT.txt
+          if [ -f "$report" ] && grep -q "Skipped: 0" "$report"; then
+            echo "✅ CsXssBrowserIT 真实执行（Chrome 可用）：$(grep 'Tests run' "$report")"
+          else
+            echo "::warning::CsXssBrowserIT 被跳过 —— 本次 CI 并没有验证 XSS（无 Chrome 时按约定 skip 而非 fail，这里是提醒而不是失败）"
+          fi
+
+      - name: Upload surefire reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xss-it-surefire-reports
+          path: mall-backend/target/surefire-reports/
+          if-no-files-found: ignore

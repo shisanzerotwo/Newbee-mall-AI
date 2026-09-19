@@ -58,13 +58,16 @@ import static org.mockito.Mockito.when;
  * 因此默认**不执行**：需要显式设置环境变量才跑。
  *
  * <pre>
- * export CS_ENABLE_REAL_MODEL_IT=1
+ * export CS_ENABLE_REAL_MODEL_IT=1     # 1 / true / yes 都行（大小写不敏感）
  * set -a &amp;&amp; . ./.env &amp;&amp; set +a
  * bash ops/mvn.sh test -Dtest=CsAgentRealCallIT
  * </pre>
  *
  * <p>加这个守卫的原因（claude 复核建议）：光靠 {@code *IT} 命名只能挡住 Maven 默认生命周期，
  * 挡不住"手滑指定 -Dtest=...IT"—— 一旦误跑就会白烧额度并等待长时间超时。
+ *
+ * <p>⚠️ 守卫取值**放宽过**（P4）：原先只认字面 {@code 1}，写 {@code =true} 时 IT 会**静默跳过**
+ * ——表现为"跑了一次却什么都没发生"，比报错更容易误判。现在接受 {@code 1 / true / yes}（大小写不敏感）。
  *
  * <p><b>抽样复跑</b>：上游限流时跑满 10 题只会刷一批超时，可用 {@code -Dcs.it.questions=1,2,10}
  * 只跑指定题号（默认不指定时仍是全部 10 题，既有语义不变）：
@@ -75,7 +78,7 @@ import static org.mockito.Mockito.when;
  * </pre>
  * ⚠️ 抽样运行会**覆盖** {@code target/cs-regression/java-results.tsv}；要留下全量结果请先备份该文件。
  */
-@EnabledIfEnvironmentVariable(named = "CS_ENABLE_REAL_MODEL_IT", matches = "1")
+@EnabledIfEnvironmentVariable(named = "CS_ENABLE_REAL_MODEL_IT", matches = "(?i)(1|true|yes)")
 class CsAgentTenQuestionIT {
 
     private static final Pattern NUMBER = Pattern.compile("\\d+(?:\\.\\d+)?");

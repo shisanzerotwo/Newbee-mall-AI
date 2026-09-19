@@ -10,7 +10,10 @@
 ## 0. 环境须知（先读，能省很多时间）
 
 - 项目根：`D:\GitHub\xiangmu\newbee-mall-ai`（WSL：`/mnt/d/GitHub/xiangmu/newbee-mall-ai`）
-- **本机 bash 是 WSL**：调 Windows 程序要带 `.exe`；Windows 侧 docker 在 PATH 里
+- **bash 环境取决于你在哪个 pane（2026-09-19 claude 实测反馈）**：
+  - 编排者 / pi 的会话是 **WSL**：用 `/mnt/d/...`；调 Windows 程序**要带 `.exe`**；WSL 里 `docker` 只是个会报错的包装器
+  - herdr pane 里的 claude / codex 实测是 **Git Bash**：用 `/d/...`，能直接跑 Windows 侧程序
+  → 写脚本时**两边都要能跑**，或明确标注「本命令在哪一侧执行」
 - **Maven 必须用** `bash ops/mvn.sh <args>`（WSL→Windows 包装器）
 - 跑测试前：`set -a && . ./.env && set +a`（**Maven 不读 .env**）
 - ⚠️ **本机内存紧张**（15.7 GB 常只剩 1~3 GB）：跑全量测试请带

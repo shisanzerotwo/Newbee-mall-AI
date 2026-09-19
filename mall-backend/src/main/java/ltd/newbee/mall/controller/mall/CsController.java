@@ -16,15 +16,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -211,29 +207,6 @@ public class CsController {
             }
         });
         return writer.emitter();
-    }
-
-    /**
-     * 轻量健康检查：确认流式编排已装配、当前质检模式、限流配置与用量快照。
-     *
-     * <p>存在的意义：SSE 接口不便用普通 curl 一眼看出配置是否生效（要读事件流），
-     * 这个接口让「装配对不对」可以一步验证。不含任何密钥。
-     */
-    @GetMapping("/health")
-    @ResponseBody
-    public Map<String, Object> health() {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("status", "UP");
-        body.put("qaMode", csStreamService.qaModeName());
-        body.put("sseTimeoutMs", emitterTimeoutMs);
-
-        Map<String, Object> limits = new LinkedHashMap<>();
-        limits.put("requestsPerMinute", rateLimiter.capacityPerMinute());
-        limits.put("maxQuestionChars", maxQuestionChars);
-        body.put("limits", limits);
-
-        body.put("usage", usageMeter.summaryMap());
-        return body;
     }
 
     /** 登录用户 id；匿名返回 {@code null}（绝不从请求体取 userId —— 那是可伪造的） */

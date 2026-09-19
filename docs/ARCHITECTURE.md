@@ -57,11 +57,12 @@
 | `MallToolInvoker` | **121** | 工具分发（switch 一处实现，两个编排共用） | 防"两张表漂移" |
 | `CsUsageMeter` | **106** | 用量记账（请求/工具调用/两类被拒） | **刻意不采集 token**（流式下不可靠，恒 0 比不显示更误导） |
 
-### 2.2 接入层 `controller/`（共 606 行）
+### 2.2 接入层 `controller/`（共 715 行）
 
 | 模块 | 行数 | 职责 |
 |---|---:|---|
-| `CsController` | **335** | `POST /api/cs/chat`（SSE）+ `GET /api/cs/health`；**双维度限流**（会话 10/min + IP 60/min） |
+| `CsController` | **308** | `POST /api/cs/chat`（SSE）；**双维度限流**（会话 10/min + IP 60/min） |
+| `CsHealthController` | **136** | `GET /api/cs/health`；**默认只回健康必需项**（status/db/redis），内部信息走 `CS_HEALTH_DETAIL` 开关（P2 收敛 R9） |
 | `CsSseWriter` | **203** | **SSE 事件的唯一出口**：complete 时机、只 complete 一次、发送失败静默丢弃 |
 | `CsPageController` | **68** | `GET /cs`（回填 `goodsId` / `orderNo`） |
 

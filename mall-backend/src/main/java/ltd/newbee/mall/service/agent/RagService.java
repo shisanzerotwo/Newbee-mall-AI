@@ -48,11 +48,23 @@ public class RagService {
     /** RRF 平滑常数（论文惯例取 60） */
     static final int RRF_K = 60;
 
-    /** 关键词侧取多少个候选参与融合 */
-    private static final int KEYWORD_CANDIDATES = 10;
-
     /** 2-gram 的 n */
     private static final int NGRAM_N = 2;
+
+    /**
+     * 关键词侧候选数。默认 10 = 历史行为（做成 {@code @Value} 是为了让调参可 A/B，
+     * 评测换参数不必改代码，见 {@code docs/RAG-EVAL.md}）。
+     */
+    @Value("${cs.rag.keyword-candidates:10}")
+    private int keywordCandidates = 10;
+
+    /** 向量侧候选数。默认 0 = 沿用历史行为 {@code max(topK * 2, 5)}；&gt;0 时取该绝对值。 */
+    @Value("${cs.rag.vector-candidates:0}")
+    private int vectorCandidates = 0;
+
+    /** RRF 中关键词侧权重，默认 1.0 = 与向量侧等权（历史行为）。越小越偏向语义召回。 */
+    @Value("${cs.rag.keyword-weight:1.0}")
+    private double keywordWeight = 1.0;
 
     private final EmbeddingModel embeddingModel;
 
@@ -87,9 +99,10 @@ public class RagService {
         }
         int k = Math.max(1, topK);
         try {
-            List<Hit> keywordHits = keywordSearch(query, KEYWORD_CANDIDATES);
-            List<Hit> vectorHits = vectorSearch(query, Math.max(k * 2, 5));
-            List<Hit> fused = rrfFuse(keywordHits, vectorHits, k);
+            int vecLimit = vectorCandidates > 0 ? vectorCandidates : Math.max(k * 2, 5);
+            List<Hit> keywordHits = keywordSearch(query, keywordCandidates);
+            List<Hit> vectorHits = vectorSearch(query, vecLimit);
+            List<Hit> fused = rrfFuse(keywordHits, vectorHits, k, keywordWeight);
             if (log.isDebugEnabled()) {
                 log.debug("RAG 检索「{}」：关键词 {} 条 / 向量 {} 条 → 融合 {} 条",
                         query, keywordHits.size(), vectorHits.size(), fused.size());
@@ -221,11 +234,20 @@ public class RagService {
      * 作为身份键合并（对齐 Python 版做法），两路都排得靠前的片段自然得分更高。
      */
     static List<Hit> rrfFuse(List<Hit> keywordHits, List<Hit> vectorHits, int topK) {
+        return rrfFuse(keywordHits, vectorHits, topK, 1.0);
+    }
+
+    /**
+     * 带权重的 RRF 融合：关键词侧的分贡献乘 {@code keywordWeight}（向量侧恒为 1.0）。
+     *
+     * <p>{@code weight = 1.0} 时与三参重载完全等价（阴性对照要能退回旧行为）。
+     */
+    static List<Hit> rrfFuse(List<Hit> keywordHits, List<Hit> vectorHits, int topK, double keywordWeight) {
         Map<String, Double> rrfScores = new LinkedHashMap<>();
         Map<String, Hit> byKey = new LinkedHashMap<>();
 
-        accumulate(rrfScores, byKey, keywordHits);
-        accumulate(rrfScores, byKey, vectorHits);
+        accumulate(rrfScores, byKey, keywordHits, keywordWeight);
+        accumulate(rrfScores, byKey, vectorHits, 1.0);
 
         return rrfScores.entrySet().stream()
                 .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
@@ -234,11 +256,12 @@ public class RagService {
                 .toList();
     }
 
-    private static void accumulate(Map<String, Double> rrfScores, Map<String, Hit> byKey, List<Hit> hits) {
+    private static void accumulate(Map<String, Double> rrfScores, Map<String, Hit> byKey,
+                                   List<Hit> hits, double weight) {
         for (int rank = 0; rank < hits.size(); rank++) {
             Hit hit = hits.get(rank);
             String key = hit.identity();
-            rrfScores.merge(key, 1.0 / (RRF_K + rank), Double::sum);
+            rrfScores.merge(key, weight / (RRF_K + rank), Double::sum);
             byKey.putIfAbsent(key, hit);
         }
     }

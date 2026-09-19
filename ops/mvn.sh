@@ -23,6 +23,7 @@ set -euo pipefail
 # CS_ENABLE_REAL_MODEL_IT：真实模型 IT（CsAgentTenQuestionIT / CsAgentRealCallIT）的开关守卫。
 #    漏掉它时 JUnit 的 @EnabledIfEnvironmentVariable 不满足 → IT 被**静默跳过**（不是失败），
 #    表现为「跑了一次却什么都没发生」，容易误判为「跑过了」。
+#    取值接受 1 / true / yes（大小写不敏感）—— 原先只认字面 1，写 =true 会静默跳过（P4 已修）。
 export WSLENV="${WSLENV:+$WSLENV:}DB_PASSWORD/w:CS_MODEL_API_KEY/w:CS_MODEL_NAME/w:CS_MODEL_BASE_URL/w:CS_RAG_EMBEDDING_MODEL/w:CS_ENABLE_REAL_MODEL_IT/w"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

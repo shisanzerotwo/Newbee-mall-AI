@@ -152,5 +152,11 @@ bash ops/mvn.sh test -Dtest=CsXssBrowserIT
   已完成同样强度的行为级验证。
 - 结论以当前源码为准：这两条路径目前未观察到 XSS；后续若引入模板字符串拼接、
   `innerHTML` 或动态 URL 渲染，`CsXssBrowserIT` 就是该回归的入口（§5b 已验证它抓得到这类回归）。
-- 行为验证已入库（§5b），但**不强制**在 CI 跑：拉 Chrome 需要额外的 CI 镜像条件，
-  当前 CI 只跑静态守卫（`CsFrontendGuardTest` / `CsWidgetGuardTest`）。
+- 行为验证已入库（§5b）。~~但**不强制**在 CI 跑：拉 Chrome 需要额外的 CI 镜像条件~~
+  → **P3 更新（2026-09-19）：已接进 CI**，`.github/workflows/ci.yml` 新增独立 job
+  `xss-browser-it`（与主构建分开，**不配 MySQL/Redis** —— 该 IT 用进程内 HttpServer 夹具，
+  本机实测不导出 `.env` 也能 3/3 通过、约 8.7s）。Chrome 由 `ubuntu-latest` 镜像自带，
+  未额外安装；若某天镜像不再自带，IT 按既有约定 **skip 而非 fail**，
+  由 job 末尾一步用 `::warning::` 把"本次 CI 其实没验证 XSS"喊出来，避免静默空跑。
+  ⚠️ 该 job **尚未在真实 GitHub Actions 上跑过**（本机跑不了 Actions）——
+  首次运行的结论请当作上面"Chrome 自带"这条事实的实证。

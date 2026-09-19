@@ -1,5 +1,6 @@
 package ltd.newbee.mall.service.agent;
 
+import dev.langchain4j.data.segment.TextSegment;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -32,6 +33,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 评测口径：看 Top-K 片段文本里是否出现该类目的期望关键词，统计命中率。
  * 口径粗，但**可复算、不随人“感觉”漂移**，足以支撑「换不换模型」的决策。
  *
+ * <h3>⚠️ 分母陷阱与「可满足子集」（本次修订新增，务必读）</h3>
+ * 原始 10+10 条用例里，有相当一部分的期望关键词**在语料里根本不存在**
+ * （商品库 575 条 = 276 台手机 + 256 未分类 + 40 口红 + 3 扫地机器人，
+ * 没有面膜/防晒/眼霜/香水/精华/洗发水/洁面膏这类目）。
+ * 拿这类用例当分母，等于**给分母灌水**：检索再准也不可能命中。
+ * 因此本类同时给出两个指标，两份都如实记录、不互相取代：
+ * <ol>
+ *   <li><b>原始全量</b>：10+10 条一条不删，如实记录（这是历史口径，便于纵向对比）；</li>
+ *   <li><b>可满足子集</b>：只保留「期望关键词在语料中至少出现一次」的用例
+ *       —— 由 {@link #satisfiable} 在运行时**扫全量语料动态判定**，不是人工挑的。</li>
+ * </ol>
+ * 「可满足」是**必要不充分**条件：关键词在语料里存在，不代表检索一定能把它排进 Top-K。
+ *
  * <p>需要真实 MySQL + 带 Query Engine 的 Redis（localhost:16379）。
  */
 @SpringBootTest
@@ -42,6 +56,9 @@ class RagChineseQualityTest {
 
     @Resource
     private RagService ragService;
+
+    @Resource
+    private KnowledgeBuilder knowledgeBuilder;
 
     /** 同词查询（关键词通路即可命中；用于看整体链路是否正常，区分不出模型）。 */
     private static final Object[][] CASES = {
@@ -71,13 +88,78 @@ class RagChineseQualityTest {
             {"保湿擦脸的", new String[]{"乳液", "面霜", "保湿"}},
     };
 
-    private String searchText(String question) {
-        // Hit 的字段是 chunk（不是 text）—— 编译验证过
-        StringBuilder sb = new StringBuilder();
+    private List<String> topChunks(String question) {
+        List<String> chunks = new ArrayList<>();
         for (RagService.Hit h : ragService.retrieve(question, TOP_K)) {
-            sb.append(h.chunk()).append('\n');
+            chunks.add(h.chunk());  // Hit 的字段是 chunk（不是 text）—— 编译验证过
         }
-        return sb.toString();
+        return chunks;
+    }
+
+    /** 全量语料小写拼接（用于判定「该类目在语料里到底有没有」）。 */
+    private String corpusText() {
+        StringBuilder sb = new StringBuilder();
+        for (TextSegment s : knowledgeBuilder.lastSegments()) {
+            sb.append(s.text()).append('\n');
+        }
+        return sb.toString().toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * 该用例的期望关键词是否**至少有一个**在语料中出现过。
+     *
+     * <p>这是「该查询客观上有无可能命中」的机械判据（必要不充分）——
+     * 由运行时代码扫描语料得到，而不是人工标注，避免"挑对自己有利的用例"。
+     */
+    private static boolean satisfiable(String corpus, String[] keywords) {
+        for (String kw : keywords) {
+            if (corpus.contains(kw.toLowerCase(Locale.ROOT))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** 单条用例的评测结果。 */
+    private record CaseResult(String query, boolean hit, int hitChunks, boolean satisfiable) {}
+
+    /** 跑一组用例（只做检索与判定，不打印）。 */
+    private List<CaseResult> runCases(Object[][] cases, String corpus) {
+        List<CaseResult> out = new ArrayList<>();
+        for (Object[] c : cases) {
+            String query = (String) c[0];
+            String[] keywords = (String[]) c[1];
+            int hitChunks = 0;
+            for (String chunk : topChunks(query)) {
+                String lower = chunk.toLowerCase(Locale.ROOT);
+                for (String kw : keywords) {
+                    if (lower.contains(kw.toLowerCase(Locale.ROOT))) {
+                        hitChunks++;
+                        break;
+                    }
+                }
+            }
+            out.add(new CaseResult(query, hitChunks > 0, hitChunks, satisfiable(corpus, keywords)));
+        }
+        return out;
+    }
+
+    private static int hitsOf(List<CaseResult> results) {
+        return (int) results.stream().filter(CaseResult::hit).count();
+    }
+
+    /** 打印一组用例的明细与命中率（分子/分母都写出来，便于读者复算）。 */
+    private void printGroup(String title, List<CaseResult> results, boolean showSatisfiable) {
+        System.out.printf("%n===== %s（Top%d）=====%n", title, TOP_K);
+        for (CaseResult r : results) {
+            System.out.printf("  %-16s -> %-4s (%d/%d 条命中)%s%n",
+                    r.query(), r.hit() ? "命中" : "未命中", r.hitChunks(), TOP_K,
+                    showSatisfiable ? (r.satisfiable() ? "  [语料可满足]" : "  [语料无该类目]") : "");
+        }
+        int hit = hitsOf(results);
+        System.out.printf("%s 命中率 = %d/%d = %.1f%%%n",
+                title, hit, results.size(), hit * 100.0 / results.size());
+        System.out.println("--------------------------------------------------");
     }
 
     /**
@@ -110,34 +192,6 @@ class RagChineseQualityTest {
         System.out.println("[warn] 等待索引就绪超过 3 分钟，仍继续评测（结果可能受未建完影响）");
     }
 
-    /** 对一组用例统计命中率并打印明细。 */
-    private int evaluate(String title, Object[][] cases) {
-        int hit = 0;
-        List<String> details = new ArrayList<>();
-        for (Object[] c : cases) {
-            String query = (String) c[0];
-            String[] keywords = (String[]) c[1];
-            String top = searchText(query).toLowerCase(Locale.ROOT);
-            boolean ok = false;
-            for (String kw : keywords) {
-                if (top.contains(kw.toLowerCase(Locale.ROOT))) {
-                    ok = true;
-                    break;
-                }
-            }
-            if (ok) {
-                hit++;
-            }
-            details.add(String.format("  %-16s -> %s", query, ok ? "命中" : "未命中"));
-        }
-        System.out.printf("%n===== %s（Top%d）=====%n", title, TOP_K);
-        details.forEach(System.out::println);
-        System.out.printf("%s 命中率 = %d/%d = %.1f%%%n",
-                title, hit, cases.length, hit * 100.0 / cases.length);
-        System.out.println("--------------------------------------------------");
-        return hit;
-    }
-
     /**
      * 一次性跑两组用例（只等一次索引就绪）。
      *
@@ -150,16 +204,40 @@ class RagChineseQualityTest {
     void chineseRetrievalQuality() throws InterruptedException {
         awaitIndexReady();
 
-        int wordHit = evaluate("同词查询（关键词通路即可命中）", CASES);
-        int semHit = evaluate("⭐ 语义查询（同义/口语化，这组才区分得出模型）", SEMANTIC_CASES);
+        String corpus = corpusText();
+        List<CaseResult> word = runCases(CASES, corpus);
+        List<CaseResult> sem = runCases(SEMANTIC_CASES, corpus);
 
-        System.out.printf("%n【小结】同词 %d/%d ｜ 语义 %d/%d%n",
-                wordHit, CASES.length, semHit, SEMANTIC_CASES.length);
-        System.out.println("（同词命中率相近是预期的：混合检索的关键词通路已能命中；"
-                + "要判断向量模型好坏，看语义那一组）");
+        // 口径一：原始全量（一条不删，如实记录 —— 历史口径，便于纵向对比）
+        printGroup("同词查询（原始 10 条，如实记录）", word, true);
+        printGroup("⭐ 语义查询（原始 10 条，如实记录）", sem, true);
+
+        // 口径二：可满足子集（只含语料里真有的类目；运行时动态判定，非人工挑选）
+        List<CaseResult> satisfiable = new ArrayList<>();
+        word.stream().filter(CaseResult::satisfiable).forEach(satisfiable::add);
+        sem.stream().filter(CaseResult::satisfiable).forEach(satisfiable::add);
+        printGroup("可满足子集（期望关键词在语料中确实存在）", satisfiable, false);
+
+        int wordHit = hitsOf(word);
+        int semHit = hitsOf(sem);
+        int satHit = hitsOf(satisfiable);
+        System.out.printf("%n【小结·口径一｜原始全量】同词 %d/%d ｜ 语义 %d/%d ｜ 合计 %d/%d = %.1f%%%n",
+                wordHit, CASES.length, semHit, SEMANTIC_CASES.length,
+                wordHit + semHit, CASES.length + SEMANTIC_CASES.length,
+                (wordHit + semHit) * 100.0 / (CASES.length + SEMANTIC_CASES.length));
+        System.out.printf("【小结·口径二｜可满足子集】%d/%d = %.1f%%（其中同词 %d/%d、语义 %d/%d）%n",
+                satHit, satisfiable.size(), satHit * 100.0 / satisfiable.size(),
+                hitsOf(word.stream().filter(CaseResult::satisfiable).toList()),
+                (int) word.stream().filter(CaseResult::satisfiable).count(),
+                hitsOf(sem.stream().filter(CaseResult::satisfiable).toList()),
+                (int) sem.stream().filter(CaseResult::satisfiable).count());
+        System.out.println("（可满足子集的「可满足」= 期望关键词在语料中至少出现一次，是必要不充分条件："
+                + "关键词存在也不代表一定排得进 Top-K）");
 
         // 不断言具体阈值（这是评测不是门禁）：只保证链路没整体失效。
         assertTrue(wordHit > 0 || semHit > 0,
                 "两组都完全命中不了任何类目 —— 说明索引或检索链路坏了，而不只是模型弱");
+        assertTrue(!satisfiable.isEmpty(),
+                "可满足子集为空 —— 语料没建起来或商品库异常，本评测已失去意义");
     }
 }
