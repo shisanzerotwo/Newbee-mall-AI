@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.regex.Pattern;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -122,6 +123,18 @@ public class CsAgentService {
      */
     static final String TOOL_LIMIT_SKIP_NOTE = "（已达单次问答的工具调用上限，本次未执行）";
 
+    /**
+     * 数据铁律出口门禁：只在回答出现“数字紧贴价格/库存单位”、且本轮没有工具调用时触发。
+     * 年份与订单号不命中，避免把普通日期和订单号误判为商品数据。
+     */
+    private static final Pattern DATA_RULE_PATTERN =
+            Pattern.compile("[¥￥]\\s*\\d+|\\d+(?:\\.\\d+)?\\s*(?:元|台|件)");
+
+    private static final String DATA_RULE_REMINDER =
+            "你的回答中出现了价格/库存信息，但本轮没有调用任何工具。数据铁律要求：商城数据必须先调用工具获取。"
+                    + "请先调用合适的工具（searchGoods / getGoodsDetail / checkStock 等）核实，"
+                    + "再基于工具结果重新回答。不要道歉式开头。";
+
     private final ChatModel chatModel;
     private final RagService ragService;
     private final QaReviewer qaReviewer;
@@ -138,6 +151,7 @@ public class CsAgentService {
     private final int maxToolRounds;
     private final int ragTopK;
     private final int maxModelRetries;
+    private final boolean dataRuleGuard;
     private final QaReviewer.QaMode qaMode;
 
     /** 质检旁路用的执行器：一次质检就是一次阻塞式 HTTP 调用，虚拟线程最合适（Java 21） */
@@ -150,6 +164,7 @@ public class CsAgentService {
                           @Value("${cs.agent.max-tool-rounds:6}") int maxToolRounds,
                           @Value("${cs.agent.top-k:3}") int ragTopK,
                           @Value("${cs.agent.max-model-retries:3}") int maxModelRetries,
+                          @Value("${cs.agent.data-rule-guard:true}") boolean dataRuleGuard,
                           @Value("${cs.qa.mode:audit}") String qaMode) {
         this.chatModel = chatModel;
         this.toolInvoker = new MallToolInvoker(mallTools);
@@ -158,10 +173,12 @@ public class CsAgentService {
         this.maxToolRounds = Math.max(1, maxToolRounds);
         this.ragTopK = Math.max(1, ragTopK);
         this.maxModelRetries = Math.max(1, maxModelRetries);
+        this.dataRuleGuard = dataRuleGuard;
         this.qaMode = QaReviewer.QaMode.from(qaMode);
         this.toolSpecifications = ToolSpecifications.toolSpecificationsFrom(MallTools.class);
-        log.info("客服编排就绪：qaMode={}，maxToolRounds={}，ragTopK={}，工具数={}",
-                this.qaMode, this.maxToolRounds, this.ragTopK, this.toolSpecifications.size());
+        log.info("客服编排就绪：qaMode={}，maxToolRounds={}，ragTopK={}，dataRuleGuard={}，工具数={}",
+                this.qaMode, this.maxToolRounds, this.ragTopK, this.dataRuleGuard,
+                this.toolSpecifications.size());
     }
 
     @PreDestroy
@@ -182,7 +199,7 @@ public class CsAgentService {
         if (question == null || question.isBlank()) {
             throw new IllegalArgumentException("question 不能为空");
         }
-        Generated generated = generate(question);
+        Generated generated = enforceDataRule(question, generate(question));
 
         if (qaMode == QaReviewer.QaMode.GATE) {
             QaReviewer.QaResult review;
@@ -217,7 +234,20 @@ public class CsAgentService {
         messages.add(SystemMessage.from(CS_PROMPT));
         String ragContext = safeRagPrompt(question);
         messages.add(UserMessage.from(isBlank(ragContext) ? question : question + "\n\n" + ragContext));
+        return generateFrom(messages, question);
+    }
 
+    /**
+     * 数据门禁触发后的重问：保留原消息，只追加一次工具提醒，随后继续同一套工具循环。
+     * 不抛异常；第二次仍违规时由调用方放行并留 ERROR。
+     */
+    private Generated regenerateWithToolReminder(Generated generated, String question) {
+        List<ChatMessage> messages = new ArrayList<>(generated.messages());
+        messages.add(UserMessage.from(DATA_RULE_REMINDER));
+        return generateFrom(messages, question);
+    }
+
+    private Generated generateFrom(List<ChatMessage> messages, String question) {
         List<ToolCall> toolCalls = new ArrayList<>();
         int rounds = 0;
         boolean truncated = false;
@@ -259,7 +289,30 @@ public class CsAgentService {
             }
             answer = truncated ? TOOL_LIMIT_ANSWER : EMPTY_ANSWER;
         }
-        return new Generated(answer, List.copyOf(toolCalls), messages);
+        return new Generated(answer, List.copyOf(toolCalls), List.copyOf(messages));
+    }
+
+    /**
+     * A2 数据铁律门禁。返回的“事实轨迹”保留首次生成的轨迹：
+     * 首次无工具是触发原因的客观记录，不把重问过程伪装成首次回答的数据来源。
+     */
+    private Generated enforceDataRule(String question, Generated generated) {
+        if (!dataRuleGuard || !violatesDataRule(generated.answer(), generated.toolCalls())) {
+            return generated;
+        }
+        log.warn("数据铁律门禁触发：回答含价格/库存特征但本轮未调用工具。question={}", question);
+        Generated regenerated = regenerateWithToolReminder(generated, question);
+        if (violatesDataRule(regenerated.answer(), regenerated.toolCalls())) {
+            log.error("数据铁律门禁重答后仍违规，按设计放行（用户不能空手）。question={}", question);
+        }
+        return new Generated(regenerated.answer(), generated.toolCalls(), regenerated.messages());
+    }
+
+    /** 纯函数：回答含价格/库存特征，且本轮没有工具调用。 */
+    static boolean violatesDataRule(String answer, List<ToolCall> toolCalls) {
+        return !isBlank(answer)
+                && (toolCalls == null || toolCalls.isEmpty())
+                && DATA_RULE_PATTERN.matcher(answer).find();
     }
 
     /** gate 模式打回：把质检意见追加进对话后让模型重写一次（只一次，不循环） */

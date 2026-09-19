@@ -68,10 +68,15 @@ class CsAgentServiceTest {
     }
 
     private CsAgentService newService(String qaMode) {
+        return newService(qaMode, true);
+    }
+
+    private CsAgentService newService(String qaMode, boolean dataRuleGuard) {
         service = new CsAgentService(csModel, mallTools, ragService, qaReviewer,
                 MAX_ROUNDS,   // maxToolRounds
                 3,            // ragTopK
                 3,            // maxModelRetries（模型调用重试次数，见 cs.agent.max-model-retries）
+                dataRuleGuard,
                 qaMode);
         return service;
     }
@@ -289,5 +294,94 @@ class CsAgentServiceTest {
     void blankQuestionShouldBeRejected() {
         assertThrows(IllegalArgumentException.class, () -> newService("audit").answer("  "));
         verify(csModel, times(0)).chat(any(ChatRequest.class));
+    }
+    // ------------------------------------------------------------------
+    // 数据铁律门禁
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("数据门禁正则：价格/库存单位命中，年份和订单号不误伤")
+    void dataRulePatternShouldBeNarrow() {
+        assertTrue(CsAgentService.violatesDataRule("这款只要 9 元", List.of()));
+        assertTrue(CsAgentService.violatesDataRule("还有 435 台", List.of()));
+        assertFalse(CsAgentService.violatesDataRule("2024 年", List.of()));
+        assertFalse(CsAgentService.violatesDataRule("订单 2024051312345678", List.of()));
+        assertFalse(CsAgentService.violatesDataRule("", List.of()));
+    }
+
+    @Test
+    @DisplayName("数据门禁阳性：无工具却报价格/库存 → 追加提醒并重答")
+    void dataRuleGuardShouldRegenerateWhenPriceAppearsWithoutToolCalls() {
+        when(mallTools.getGoodsDetail(10003))
+                .thenReturn("商品名：无印良品化妆水（在售）\n价格：899.00 元\n库存：435 件");
+        when(csModel.chat(any(ChatRequest.class))).thenReturn(
+                response(AiMessage.from("红米7 ¥899，库存 435 台。")),
+                response(toolCallMessage("getGoodsDetail", "{\"goodsId\":10003}")),
+                response(AiMessage.from("我核实过啦，这款商品价格 899.00 元，库存 435 件。")));
+
+        CsAgentService.CsAnswer answer = newService("audit").answer("推荐一款手机");
+
+        verify(csModel, times(3)).chat(any(ChatRequest.class));
+        verify(mallTools).getGoodsDetail(10003);
+        assertEquals("我核实过啦，这款商品价格 899.00 元，库存 435 件。", answer.answer());
+
+        ArgumentCaptor<ChatRequest> captor = ArgumentCaptor.forClass(ChatRequest.class);
+        verify(csModel, times(3)).chat(captor.capture());
+        String reminder = captor.getAllValues().get(1).messages().toString();
+        assertTrue(reminder.contains("数据铁律"), "重问必须明确提醒数据铁律");
+        assertTrue(reminder.contains("searchGoods") || reminder.contains("checkStock"),
+                "重问提示应给出可调用工具示例");
+    }
+
+    @Test
+    @DisplayName("数据门禁阴性 1：有工具轨迹时，价格/库存回答不触发重问")
+    void dataRuleGuardShouldNotRegenerateWhenToolWasCalled() {
+        when(mallTools.getGoodsDetail(10003))
+                .thenReturn("商品名：无印良品化妆水（在售）\n价格：899.00 元\n库存：435 件");
+        when(csModel.chat(any(ChatRequest.class))).thenReturn(
+                response(toolCallMessage("getGoodsDetail", "{\"goodsId\":10003}")),
+                response(AiMessage.from("核实结果是 899.00 元，库存 435 件。")));
+
+        CsAgentService.CsAnswer answer = newService("audit").answer("这个多少钱");
+
+        verify(csModel, times(2)).chat(any(ChatRequest.class));
+        assertEquals("核实结果是 899.00 元，库存 435 件。", answer.answer());
+    }
+
+    @Test
+    @DisplayName("数据门禁阴性 2：无价格的纯话术问题不触发重问")
+    void dataRuleGuardShouldNotRegenerateForPolicyOnlyAnswer() {
+        when(csModel.chat(any(ChatRequest.class)))
+                .thenReturn(response(AiMessage.from("我们支持七天内退货，请保持商品完好。")));
+
+        CsAgentService.CsAnswer answer = newService("audit").answer("你们支持退货吗？");
+
+        verify(csModel, times(1)).chat(any(ChatRequest.class));
+        assertEquals("我们支持七天内退货，请保持商品完好。", answer.answer());
+    }
+
+    @Test
+    @DisplayName("数据门禁开关：关闭后不重问")
+    void dataRuleGuardSwitchShouldDisableRegeneration() {
+        when(csModel.chat(any(ChatRequest.class)))
+                .thenReturn(response(AiMessage.from("红米7 ¥899，库存 435 台。")));
+
+        CsAgentService.CsAnswer answer = newService("audit", false).answer("推荐一款手机");
+
+        verify(csModel, times(1)).chat(any(ChatRequest.class));
+        assertEquals("红米7 ¥899，库存 435 台。", answer.answer());
+    }
+
+    @Test
+    @DisplayName("数据门禁重答仍违规：放行第二次回答，不抛异常")
+    void dataRuleGuardShouldReleaseWhenRegeneratedAnswerStillViolates() {
+        when(csModel.chat(any(ChatRequest.class))).thenReturn(
+                response(AiMessage.from("红米7 ¥899，库存 435 台。")),
+                response(AiMessage.from("这款还是 899 元、435 台。")));
+
+        CsAgentService.CsAnswer answer = newService("audit").answer("推荐一款手机");
+
+        verify(csModel, times(2)).chat(any(ChatRequest.class));
+        assertEquals("这款还是 899 元、435 台。", answer.answer());
     }
 }
