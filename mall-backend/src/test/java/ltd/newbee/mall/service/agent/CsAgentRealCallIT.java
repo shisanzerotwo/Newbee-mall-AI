@@ -2,6 +2,7 @@ package ltd.newbee.mall.service.agent;
 
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -25,6 +26,20 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * 免费额度会 429，{@code CsAgentService} 自带重试（退避 1s×n）。
  */
 @SpringBootTest
+/**
+ * ⚠️ 本类会**真实调用上游模型**（烧额度、且上游限流时会大面积超时），
+ * 因此默认**不执行**：需要显式设置环境变量才跑。
+ *
+ * <pre>
+ * export CS_ENABLE_REAL_MODEL_IT=1
+ * set -a &amp;&amp; . ./.env &amp;&amp; set +a
+ * bash ops/mvn.sh test -Dtest=CsAgentRealCallIT
+ * </pre>
+ *
+ * <p>加这个守卫的原因（claude 复核建议）：光靠 {@code *IT} 命名只能挡住 Maven 默认生命周期，
+ * 挡不住"手滑指定 -Dtest=...IT"—— 一旦误跑就会白烧额度并等待长时间超时。
+ */
+@EnabledIfEnvironmentVariable(named = "CS_ENABLE_REAL_MODEL_IT", matches = "1")
 class CsAgentRealCallIT {
 
     @Resource
