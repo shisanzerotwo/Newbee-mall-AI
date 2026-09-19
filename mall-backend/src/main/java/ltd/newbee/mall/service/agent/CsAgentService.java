@@ -41,7 +41,7 @@ import java.util.concurrent.Executors;
  * <ol>
  *   <li><b>数据铁律</b>：价格 / 库存 / 订单状态只来自工具结果；RAG 片段仅作语义参考
  *       （知识库语料在 {@link KnowledgeBuilder} 里已剔除价格/库存字段，见其语料红线）</li>
- *   <li><b>工具循环有上限</b>：{@code cs.agent.max-tool-rounds}（默认 5）。Python 教学版的
+ *   <li><b>工具循环有上限</b>：{@code cs.agent.max-tool-rounds}（默认 6，M3-C 按 DESIGN §7.2 对齐；原为 5）。Python 教学版的
  *       {@code while response.tool_calls:} 没有上限，模型一旦反复调工具就会无限烧钱；
  *       这里超限即停并<b>打 WARN</b>，绝不静默死循环。</li>
  *   <li><b>质检双模式</b>：默认 {@code audit}（旁路：不阻塞、不打回，结论经 future 回给调用方）；
@@ -146,7 +146,7 @@ public class CsAgentService {
                           MallTools mallTools,
                           RagService ragService,
                           QaReviewer qaReviewer,
-                          @Value("${cs.agent.max-tool-rounds:5}") int maxToolRounds,
+                          @Value("${cs.agent.max-tool-rounds:6}") int maxToolRounds,
                           @Value("${cs.agent.top-k:3}") int ragTopK,
                           @Value("${cs.agent.max-model-retries:3}") int maxModelRetries,
                           @Value("${cs.qa.mode:audit}") String qaMode) {

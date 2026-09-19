@@ -179,7 +179,7 @@ public class CsStreamService {
                            RagService ragService,
                            QaReviewer qaReviewer,
                            CsChatMemoryService memoryService,
-                           @Value("${cs.agent.max-tool-rounds:5}") int maxToolRounds,
+                           @Value("${cs.agent.max-tool-rounds:6}") int maxToolRounds,
                            @Value("${cs.agent.top-k:3}") int ragTopK,
                            @Value("${cs.agent.max-model-retries:2}") int maxModelRetries,
                            @Value("${cs.stream.review-timeout-ms:3000}") long reviewTimeoutMs,
