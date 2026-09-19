@@ -1,7 +1,7 @@
 # newbee-mall-ai 项目状态快照
 
 > **用途**：会话压缩 / agent 交接用的状态快照。**任何 agent 接手本项目，先读这个文件 + `docs/DESIGN.md`。**
-> 最后更新：2026-09-18（M2-3 完成、待检查）
+> 最后更新：2026-09-19（M3-D 完成：10 问回归集 / Java↔Python 对比 / XSS 行为级核查 / 三份文档）
 
 ---
 
@@ -41,9 +41,10 @@
 | **M3-B** | 浮窗（全站唤起）+ 详情页/订单页「问客服」入口 | ✅ 完成（`f8d7481`；**至此「界面割裂」原始痛点闭环**） |
 | **M3 虚拟线程** | 启用虚拟线程 + 并发压测（含 VT ON/OFF 对照） | ✅ 完成（`3cf42a4`/`c8673e0`/`cb494a2`；**结论：本场景无收益** —— 瓶颈不在线程，见 `docs/PERF-M3.md`） |
 | **M3 中文嵌入** | all-MiniLM（英文）vs bge-small-zh-v15（中文）A/B 对比 | ✅ 完成（`fc82255`/`667a697`；**语义查询命中率 20%→40% 翻倍，默认切 BGE**） |
+| **M3-D** | DoD 剩余项：10 问回归集 / Java↔Python 对比表 / XSS 12 条行为级核查 / 架构·评测·演示三份文档 | ✅ 完成（**含未验证项的如实留痕**：核心「数字一致性」断言两轮均因上游超时未执行到，见 `docs/COMPARE-JAVA-PYTHON.md` §2b/§5） |
 | M3 其余 | Testcontainers / CI（需 GitHub，暂缓）、§8.3 增强项（拖拽/抽屉/重生成） | ⬜ |
 
-**提交数**：45（已推送 GitHub：`github.com/shisanzerotwo/Newbee-mall-AI`，`master` 与本地 SHA 一致）
+**提交数**：51（已推送 GitHub：`github.com/shisanzerotwo/Newbee-mall-AI`，`master` 与本地 SHA 一致）
 
 > ✅ **M2-5 时序红线已验证守住**（DESIGN §4.2）：真机实测 `stage → tool(checkStock×2) → delta → done` →
 > **`review` 在 `done` 之后仍能送达**，且 complete 只发生一次（claude 已复核代码 + 端到端测试双重证据）。
@@ -196,11 +197,15 @@ CS_MODEL_NAME=agnes/agnes-2.0-flash
 1. ~~M2-3 等 claude 检查~~ ✅ 已提交 `95b0f29`
 2. ~~codex 修复模型通道~~ ✅ 已打通（根因：model id vs 显示名；已实测 `finish_reason: tool_calls`）
 3. ~~M2-4（编排 + 质检）~~ ✅ 已完成，测试 47/47 + 真实模型端到端跑通
-4. **M2-5（SSE 流式 + 会话记忆）** ✅ 已完成 → claude 6 项全过、可以提交
-5. **M2-6**：收尾测试 + CI（可用 Testcontainers）
-6. **M3 前端融合**（浮窗 + `/cs` 页 + 上下文六区块面板）—— 这才是最初「界面割裂」的最终解
-7. 之后虚拟线程压测 / 中文嵌入对比（`bge-small-zh-v1.5`）/ CI
-8. 全部完成后再推 GitHub（远程仓库尚未创建）
+4. ~~M2-5（SSE 流式 + 会话记忆）~~ ✅ 已完成 → claude 6 项全过
+5. ~~M2-6~~ ✅ CI 已配（**刻意不跑真实模型**，避免上游限流致随机红灯）
+6. ~~M3 前端融合~~ ✅ 已完成（`217c96e` / `f8d7481`）
+7. ~~虚拟线程压测 / 中文嵌入 A/B~~ ✅ 已完成（结论见 `docs/PERF-M3.md`；嵌入默认切 BGE）
+8. ~~M3-D DoD 剩余项~~ ✅ 已完成（见本文件 §11）
+9. **唯一未验证的质量项**：10 问回归的「数字一致性」断言 —— 必须先有**稳定的模型通道**才能重跑
+   （两轮实测均因上游超时未执行到，不是重跑次数的问题），命令见 `docs/COMPARE-JAVA-PYTHON.md` §5
+10. 生产化候选：中文检索命中率 → 限流共享存储 → 客服鉴权 → `/health` 收敛 → 验证码/记忆跨重启已验
+11. XSS 行为验证已入库但**不进 CI**（需 Chrome 镜像条件）；要强化就把它接进 CI 镜像
 
 ## 9. 文档索引
 
@@ -254,3 +259,35 @@ CS_MODEL_NAME=agnes/agnes-2.0-flash
 实际应用连的是**本机 MySQL**（3306）—— **两个是不同的库**。
 改成查本机库后：**1282 条记录，最新两条就是刚才那轮**。
 → 又一次「**先确认观察对象对不对**」的教训。
+
+---
+
+## 11. M3-D 交付记录（2026-09-19）
+
+> 任务卡：`docs/TASK_M3-D.md`；分工：codex/claude 分角色执行与复核，编排者（pi）负责落地、验证与提交。
+
+### 交付物
+
+| 项 | 产物 | 状态 |
+|---|---|---|
+| P1 10 问回归集 | `CsAgentTenQuestionIT.java`（`*IT` + `CS_ENABLE_REAL_MODEL_IT` 双守卫） | ✅ 已建；本轮新增可选抽样参数 `-Dcs.it.questions=1,2,10` |
+| P1 Java↔Python 对比表 | `docs/COMPARE-JAVA-PYTHON.md` | ✅ 已提交（`835f5fb`）；本轮补 §5 抽样复跑 |
+| P2 三份文档 | `ARCHITECTURE.md` / `RAG-EVAL.md` / `DEMO.md` | ✅ 已提交（`6364c38`） |
+| P2 XSS 12 条 | `docs/XSS-VERIFICATION.md` + **`CsXssBrowserIT.java`** | ✅ 行为级核查完成，并**固化为仓库内测试**（本轮） |
+| P3 容器验证码 + 记忆跨重启 | 见本文件 §10 | ✅ 已提交（`9426d9a`） |
+
+### 本轮新做的两件事（会影响后续维护）
+
+1. **XSS 行为验证从“仓库外一次性探针”固化为 `CsXssBrowserIT`**
+   - 三处实质改进：阳性对照改**硬断言** / 杀整棵 Chrome **进程树**并清理临时 profile / 无 Chrome 时**跳过**
+   - 证据链：实跑 3/3 绿 → **阴性对照**（把 `cs-widget.js` 的 `textContent` 改成 `innerHTML`）如期变红并检出 24 个问题 → 还原后 md5 一致、复跑 3/3 绿
+2. **`ops/mvn.sh` 补 `CS_ENABLE_REAL_MODEL_IT/w` 转发**
+   - 原先不在 WSLENV 白名单 → `@EnabledIfEnvironmentVariable` 让真实模型 IT **静默跳过**
+   - 这类坑的表现是「跑了一次却什么都没发生」，比报错更难发现
+
+### ⚠️ 本轮没有任何进展的项（如实记）
+
+**10 问回归的“数字一致性”断言仍未被执行到**：抽样复跑 3 题（#1 价格 / #2 库存 / #10 无关），
+前两题再次上游超时（39.2s / 66.7s，工具调用 **0** 次）—— 与第一轮 10 问的结论一致。
+两轮相隔数小时仍 2/3 超时 → 属**持续性上游限流**，不是重跑次数的问题。
+详见 `docs/COMPARE-JAVA-PYTHON.md` §2b / §5。

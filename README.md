@@ -18,7 +18,7 @@
 | **M2-5** | SSE 流式 + 会话记忆 | ✅ 完成（时序红线已验证） |
 | **M3** | **前端原生融合**（浮窗 + `/cs` + 六区块面板）+ 容器化 | ✅ 完成 |
 | **M3** | 虚拟线程压测（含 ON/OFF 对照）+ 中文嵌入 A/B + 接入面防护（限流） | ✅ 完成（结论见 `docs/PERF-M3.md`） |
-| M3-D | DoD 剩余项（10 问回归 / Java-Python 对比表 / XSS 全量 / 三份文档） | 🔄 进行中 |
+| **M3-D** | DoD 剩余项（10 问回归 / Java-Python 对比表 / XSS 全量 / 三份文档） | ✅ 完成（回归集两轮受上游限流，**核心数字一致性断言仍未验证**，已在文档如实留痕） |
 
 **当前**：47 个提交 · 测试 **163** 个 · 冒烟 16/16 · 仓库 `github.com/shisanzerotwo/Newbee-mall-AI`
 **一句话形态**：AI 客服是商城的**原生能力**（浮窗 / 完整页 / 商品上下文自动带入），不是挂在旁边的外部网站。
@@ -34,6 +34,8 @@
 | `docs/PLAN.md` | **M1 实现计划**（11 个任务，含升级前基线与 DoD） |
 | `docs/UPGRADE-BOOT3.md` | **升级实战记录**（实测基线、迁移清单、9 个踩坑与解法、验证证据、回退方式） |
 | `docs/MALL-UI-SPEC.md` | 商城前台 UI 规格（来自旧仓库的 UI 重设计） |
+| `docs/ARCHITECTURE.md` · `docs/RAG-EVAL.md` · `docs/DEMO.md` | 架构地图 / RAG 评测口径与复跑 / 一键演示路径（M3-D） |
+| `docs/COMPARE-JAVA-PYTHON.md` · `docs/XSS-VERIFICATION.md` | Java↔Python 同题对比（含**未验证项的如实标注**）/ XSS 12 条行为级核查（已固化为 `CsXssBrowserIT`） |
 | `ops/mvn.sh` | Maven 包装器（WSL/Git Bash → Windows 侧 Maven，含 WSLENV 密钥转发） |
 | `ops/smoke.sh` | 冒烟回归脚本（升级前后对照用） |
 | `mall-backend/` | 唯一应用（Spring Boot 3.5.16 + Java 21） |

@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -64,6 +65,15 @@ import static org.mockito.Mockito.when;
  *
  * <p>加这个守卫的原因（claude 复核建议）：光靠 {@code *IT} 命名只能挡住 Maven 默认生命周期，
  * 挡不住"手滑指定 -Dtest=...IT"—— 一旦误跑就会白烧额度并等待长时间超时。
+ *
+ * <p><b>抽样复跑</b>：上游限流时跑满 10 题只会刷一批超时，可用 {@code -Dcs.it.questions=1,2,10}
+ * 只跑指定题号（默认不指定时仍是全部 10 题，既有语义不变）：
+ * <pre>
+ *   export CS_ENABLE_REAL_MODEL_IT=1
+ *   set -a &amp;&amp; . ./.env &amp;&amp; set +a
+ *   bash ops/mvn.sh test -Dtest=CsAgentTenQuestionIT -Dcs.it.questions=1,2,10
+ * </pre>
+ * ⚠️ 抽样运行会**覆盖** {@code target/cs-regression/java-results.tsv}；要留下全量结果请先备份该文件。
  */
 @EnabledIfEnvironmentVariable(named = "CS_ENABLE_REAL_MODEL_IT", matches = "1")
 class CsAgentTenQuestionIT {
@@ -110,8 +120,9 @@ class CsAgentTenQuestionIT {
     @Timeout(value = 30, unit = TimeUnit.MINUTES)
     @DisplayName("固定 10 问：答案非空、工具轨迹与关键数字可复算")
     void tenQuestionRegressionShouldMeetObjectiveChecks() throws IOException {
+        List<QuestionCase> cases = activeCases();
         List<Result> results = new ArrayList<>();
-        for (QuestionCase testCase : CASES) {
+        for (QuestionCase testCase : cases) {
             results.add(runCase(testCase));
         }
 
@@ -123,9 +134,33 @@ class CsAgentTenQuestionIT {
                         + " -> " + String.join("；", result.failures()))
                 .toList();
 
-        assertEquals(CASES.size(), results.size() - failed.size(),
-                "10 问回归未全部通过：\n" + String.join("\n", failed)
+        assertEquals(cases.size(), results.size() - failed.size(),
+                "回归未全部通过（本次 " + cases.size() + " 题）：\n" + String.join("\n", failed)
                         + "\n结果文件：target/cs-regression/java-results.tsv");
+    }
+
+    /**
+     * 默认返回全部 10 题；指定 {@code -Dcs.it.questions=1,2,10} 时只返回这些题号（抽样复跑用）。
+     * 抽取后仍保持原有顺序，结果文件格式不变。
+     */
+    private static List<QuestionCase> activeCases() {
+        String filter = System.getProperty("cs.it.questions", "").trim();
+        if (filter.isEmpty()) {
+            return CASES;
+        }
+        Set<Integer> wanted = Arrays.stream(filter.split(","))
+                .map(String::trim)
+                .filter(part -> !part.isEmpty())
+                .map(Integer::parseInt)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        List<QuestionCase> selected = CASES.stream()
+                .filter(testCase -> wanted.contains(testCase.index()))
+                .toList();
+        if (selected.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "cs.it.questions=" + filter + " 未匹配任何题目（有效题号 1-" + CASES.size() + "）");
+        }
+        return selected;
     }
 
     private Result runCase(QuestionCase testCase) {

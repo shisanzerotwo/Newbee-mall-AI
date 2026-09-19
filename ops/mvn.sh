@@ -20,7 +20,10 @@ set -euo pipefail
 # CS_RAG_EMBEDDING_MODEL：M3 起用于 A/B 对比嵌入模型（minilm=英文 384 维 / bge-zh=中文 512 维）。
 # ⚠️ 漏掉它会出现「以为切了模型、其实没切」—— 实测踩过：跑 bge 评测时日志仍打印 all-MiniLM，
 #    命中率 0/10，一度怀疑索引坏了；根因只是环境变量没被白名单转发到 Windows 子进程。
-export WSLENV="${WSLENV:+$WSLENV:}DB_PASSWORD/w:CS_MODEL_API_KEY/w:CS_MODEL_NAME/w:CS_MODEL_BASE_URL/w:CS_RAG_EMBEDDING_MODEL/w"
+# CS_ENABLE_REAL_MODEL_IT：真实模型 IT（CsAgentTenQuestionIT / CsAgentRealCallIT）的开关守卫。
+#    漏掉它时 JUnit 的 @EnabledIfEnvironmentVariable 不满足 → IT 被**静默跳过**（不是失败），
+#    表现为「跑了一次却什么都没发生」，容易误判为「跑过了」。
+export WSLENV="${WSLENV:+$WSLENV:}DB_PASSWORD/w:CS_MODEL_API_KEY/w:CS_MODEL_NAME/w:CS_MODEL_BASE_URL/w:CS_RAG_EMBEDDING_MODEL/w:CS_ENABLE_REAL_MODEL_IT/w"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP="$ROOT/mall-backend"
