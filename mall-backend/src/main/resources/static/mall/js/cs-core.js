@@ -134,6 +134,19 @@
             signal: controller.signal
         }).then(function (response) {
             if (!response.ok || !response.body) {
+                // 429（限流 / 上一条还在回答）时，后端仍会发一帧 SSE error，**里面写着可读的中文原因**
+                //（"上一条还在回答中，请等它答完再问"）。若不读出来，用户只能看到 "HTTP 429"，
+                // 后端特意写的话术就白写了。这里把响应体读出来抽 message。
+                if (response.status === 429) {
+                    return response.text().then(function (raw) {
+                        var msg = null;
+                        try {
+                            var m = /"message"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(raw || '');
+                            if (m) { msg = JSON.parse('"' + m[1] + '"'); }
+                        } catch (e) { /* 解析失败就用兜底文案 */ }
+                        throw new Error(msg || '请求过于频繁，请稍后再试');
+                    });
+                }
                 throw new Error('HTTP ' + response.status);
             }
             var reader = response.body.getReader();

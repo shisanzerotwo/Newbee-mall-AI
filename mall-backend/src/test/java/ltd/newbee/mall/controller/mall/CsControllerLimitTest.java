@@ -32,8 +32,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class CsControllerLimitTest {
 
     private static CsController controller(CsRateLimiter limiter, CsStreamService service) {
+        // 第 6 个参数是 IP 维度限流容量（M3-C：防「轮换 conversationId 绕过限流」）。
+        // 这些用例专注会话维度，把 IP 容量设得足够大以免干扰。
         return new CsController(service, limiter, new CsUsageMeter(1000),
-                120_000L, 500);
+                120_000L, 500, 100_000L);
     }
 
     private static CsController.CsChatRequest ask(String conversationId) {
@@ -213,5 +215,30 @@ class CsControllerLimitTest {
             }
             assertTrue(accepted, "第 " + i + " 次：校验失败后名额必须被释放，不该被 in-flight 永久卡住");
         }
+    }
+
+    @Test
+    @DisplayName("⭐ 轮换 conversationId 不能绕过限流（IP 维度兜底）—— claude 复核指出的漏洞")
+    void rotatingConversationIdCannotBypassLimit() {
+        // 会话维度容量给大（1000），只有 IP 维度小（3）→
+        // 若没有 IP 维度，轮换 conversationId 会永远通过（每换一个就是新桶）。
+        CsStreamService service = Mockito.mock(CsStreamService.class);
+        CsController c = new CsController(service, new CsRateLimiter(1000, 1),
+                new CsUsageMeter(1000), 120_000L, 500, 3);
+
+        int denied = 0;
+        for (int i = 0; i < 6; i++) {
+            // 关键：每次都换一个全新的 conversationId（模拟匿名客户端轮换绕过）
+            MockHttpServletRequest req = new MockHttpServletRequest();
+            try {
+                c.chat(ask("rotate-" + i), req);
+            } catch (CsController.CsRequestRejectedException e) {
+                denied++;
+            }
+        }
+
+        assertTrue(denied > 0,
+                "轮换 conversationId 必须仍被拦住（靠 IP 维度）；实际一次都没拒 —— "
+                        + "说明 IP 维度没生效，攻击者换个 id 就能无限刷");
     }
 }

@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *   <li>{@code completed} / {@code failed}：走完流的次数（成功 / 出错兜底）；</li>
  *   <li>{@code toolCalls}：工具调用次数 —— 它是模型调用次数的下界代理
  *       （每一轮工具调用都会伴随一次模型调用），比单纯数请求更能反映成本；</li>
- *   <li>{@code tokensInput} / {@code tokensOutput}：仅在模型返回 usage 时累加，否则保持 0
+ *   <li><b>刻意不采集 token 用量</b>：流式调用下拿不到可靠的 usage（见类注释末尾）
  *       （不猜、不估算成假数据）。</li>
  * </ul>
  *
@@ -41,8 +41,6 @@ public class CsUsageMeter {
     private final AtomicLong completed = new AtomicLong();
     private final AtomicLong failed = new AtomicLong();
     private final AtomicLong toolCalls = new AtomicLong();
-    private final AtomicLong tokensInput = new AtomicLong();
-    private final AtomicLong tokensOutput = new AtomicLong();
 
     private final long reportEvery;
 
@@ -81,15 +79,6 @@ public class CsUsageMeter {
         }
     }
 
-    /** 仅在模型确实返回 usage 时调用（拿不到就别猜）。 */
-    public void recordTokens(long input, long output) {
-        if (input > 0) {
-            tokensInput.addAndGet(input);
-        }
-        if (output > 0) {
-            tokensOutput.addAndGet(output);
-        }
-    }
 
     /** 快照（供日志与只读接口使用）。返回不可变 Map，避免调用方改到内部状态。 */
     public Map<String, Long> summaryMap() {
@@ -100,8 +89,6 @@ public class CsUsageMeter {
         m.put("completed", completed.get());
         m.put("failed", failed.get());
         m.put("toolCalls", toolCalls.get());
-        m.put("tokensInput", tokensInput.get());
-        m.put("tokensOutput", tokensOutput.get());
         return Map.copyOf(m);
     }
 
@@ -114,6 +101,6 @@ public class CsUsageMeter {
                 + " 被限流=" + (m.get("deniedRate") + m.get("deniedInFlight"))
                 + "（频率 " + m.get("deniedRate") + " / 在途 " + m.get("deniedInFlight") + "）"
                 + " 工具调用=" + m.get("toolCalls")
-                + " token(in/out)=" + m.get("tokensInput") + "/" + m.get("tokensOutput");
+               ;
     }
 }

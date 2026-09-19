@@ -67,6 +67,19 @@ public class CsController {
     private final CsRateLimiter rateLimiter;
     private final CsUsageMeter usageMeter;
 
+    /**
+     * <b>第二条限流维度：客户端 IP</b>（容量更大，不限 in-flight）。
+     *
+     * <h3>为什么必须有这一条</h3>
+     * 会话维度的键是 {@code c:<conversationId>}，而 anonymous 客户端可以**自己生成** conversationId
+     * —— 每换一个就是新桶，于是**轮换 conversationId 即可绕过限流**（claude 复核指出）。
+     * IP 维度的容量设得比会话维度大（默认 60/分钟 vs 10/分钟），
+     * 这样既堵住“换个 id 继续刷”，又不会误伤同一出口 IP 下的正常多用户。
+     *
+     * <p>不限 in-flight：那是会话维度的职责（同一会话同时只允许 1 个在途）。
+     */
+    private final CsRateLimiter ipLimiter;
+
     /** 单连接上限（DESIGN 决策 #40 与 DoD：SSE 连接 120s 自动收尾） */
     private final long emitterTimeoutMs;
 
@@ -79,12 +92,15 @@ public class CsController {
                         CsRateLimiter rateLimiter,
                         CsUsageMeter usageMeter,
                         @Value("${cs.stream.emitter-timeout-ms:120000}") long emitterTimeoutMs,
-                        @Value("${cs.limit.max-question-chars:500}") int maxQuestionChars) {
+                        @Value("${cs.limit.max-question-chars:500}") int maxQuestionChars,
+                        @Value("${cs.limit.ip-requests-per-minute:60}") long ipRequestsPerMinute) {
         this.csStreamService = csStreamService;
         this.rateLimiter = rateLimiter;
         this.usageMeter = usageMeter;
         this.emitterTimeoutMs = Math.max(1000, emitterTimeoutMs);
         this.maxQuestionChars = Math.max(1, maxQuestionChars);
+        // IP 维度：不限 in-flight（Long.MAX_VALUE），只卡每分钟配额
+        this.ipLimiter = new CsRateLimiter(Math.max(1, ipRequestsPerMinute), Long.MAX_VALUE);
     }
 
     @PreDestroy
@@ -115,8 +131,20 @@ public class CsController {
         Long userId = currentUserId(request.getSession(false));
 
         String key = limitKey(userId, conversationId, request);
+
+        // ① 先查 IP 维度（防“轮换 conversationId 绕过限流”）；② 再查会话维度
+        String ipKey = "ip:" + clientIp(request);
+        CsRateLimiter.Decision ipDecision = ipLimiter.tryAcquire(ipKey);
+        if (!ipDecision.allowed()) {
+            usageMeter.recordDenied(ipDecision.kind());
+            log.warn("客服请求被拒绝（IP 维度）：kind={}，key={}", ipDecision.kind(), safeForLog(ipKey));
+            throw new CsRequestRejectedException("这个网络问得太频繁了，请稍后再试");
+        }
+
         CsRateLimiter.Decision decision = rateLimiter.tryAcquire(key);
         if (!decision.allowed()) {
+            // 会话维度被拒 → 把刚占的 IP 名额还回去，避免双重扣费
+            ipLimiter.release(ipKey);
             usageMeter.recordDenied(decision.kind());
             // 被限流必须留痕：线上只看到 429 却不知道是谁在刷，是没法处置的
             log.warn("客服请求被拒绝：kind={}，key={}", decision.kind(), safeForLog(key));
@@ -127,27 +155,29 @@ public class CsController {
             CsSseWriter writer = CsSseWriter.create(new SseEmitter(emitterTimeoutMs), emitterTimeoutMs);
 
             if (question == null || question.isBlank()) {
-                return errorThenClose(writer, key, "问题不能为空");
+                return errorThenClose(writer, key, ipKey, "问题不能为空");
             }
             if (question.length() > maxQuestionChars) {
                 // §7.2 的「单次请求 token 上限」：先卡住超长正文，再谈模型调用
-                return errorThenClose(writer, key,
+                return errorThenClose(writer, key, ipKey,
                         "问题太长了（最多 " + maxQuestionChars + " 字），请精简后再问");
             }
 
             CsStreamService.CsStreamRequest streamRequest = new CsStreamService.CsStreamRequest(
                     question, conversationId, userId, body.goodsId(), body.orderNo());
-            streamExecutor.execute(() -> runStream(streamRequest, writer, key));
+            streamExecutor.execute(() -> runStream(streamRequest, writer, key, ipKey));
             return writer.emitter();
         } catch (RuntimeException e) {
             // 例如 streamExecutor 拒绝执行：名额已经占了，必须还回去，否则该会话锁死
             rateLimiter.release(key);
+            ipLimiter.release(ipKey);
             throw e;
         }
     }
 
     /** 跑完整条流；<b>无论成败都在 finally 释放名额</b>。 */
-    private void runStream(CsStreamService.CsStreamRequest streamRequest, CsSseWriter writer, String key) {
+    private void runStream(CsStreamService.CsStreamRequest streamRequest, CsSseWriter writer,
+                           String key, String ipKey) {
         try {
             CsStreamService.CsStreamResult result = csStreamService.stream(streamRequest, writer);
             usageMeter.recordToolCalls(result.toolCalls() == null ? 0 : result.toolCalls().size());
@@ -170,13 +200,14 @@ public class CsController {
     }
 
     /** 入参不合法：仍用事件流把原因说清楚（与既有约定一致），并释放名额。 */
-    private SseEmitter errorThenClose(CsSseWriter writer, String key, String message) {
+    private SseEmitter errorThenClose(CsSseWriter writer, String key, String ipKey, String message) {
         streamExecutor.execute(() -> {
             try {
                 writer.onError(message);
                 writer.onClose();
             } finally {
                 rateLimiter.release(key);
+                ipLimiter.release(ipKey);
             }
         });
         return writer.emitter();

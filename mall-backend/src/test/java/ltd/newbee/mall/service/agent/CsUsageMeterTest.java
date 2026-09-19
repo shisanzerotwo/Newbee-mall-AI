@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -31,8 +32,6 @@ class CsUsageMeterTest {
         meter.recordFailed();
         meter.recordToolCalls(3);
         meter.recordToolCalls(0);                             // 0 不应改变计数
-        meter.recordTokens(120, 34);
-        meter.recordTokens(0, 0);                             // 拿不到 usage 就别记
 
         Map<String, Long> m = meter.summaryMap();
         assertEquals(5L, m.get("requests"));
@@ -41,8 +40,13 @@ class CsUsageMeterTest {
         assertEquals(1L, m.get("completed"));
         assertEquals(1L, m.get("failed"));
         assertEquals(3L, m.get("toolCalls"));
-        assertEquals(120L, m.get("tokensInput"));
-        assertEquals(34L, m.get("tokensOutput"));
+
+        // ⭐ 刻意不再采集 token 用量（claude 复核指出：流式调用下拿不到可靠 usage，
+        //    而对外暴露恒 0 的字段比不显示更误导 —— 读的人会以为"没花 token"）。
+        //    这里断言那两个字段**确实不存在**，防止将来又被加回来变成假指标。
+        assertFalse(m.containsKey("tokensInput"),
+                "不应再对外暴露恒 0 的 tokensInput（假指标比没有数据更误导）");
+        assertFalse(m.containsKey("tokensOutput"), "同上");
     }
 
     @Test
