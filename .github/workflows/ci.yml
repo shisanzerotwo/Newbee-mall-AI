@@ -48,7 +48,14 @@ jobs:
         # 老版本/普通 redis 镜像没有这些命令
         image: redis:8
         ports:
+          # 16379 = RAG 的向量端点
           - 16379:6379
+          # 6379 = 应用的**主缓存**端点（spring.data.redis.port 默认 6379）。
+          # ⚠️ 本机开发时这个端口被那台 Redis 3.0.504 占着，但 **CI runner 上没有** ——
+          #    不映射的话首页缓存拿不到连接 → 渲染成错误页（而错误页也返回 200），
+          #    表现是 CsWidgetInjectionTest 的 3 条断言挂。
+          #    因果已本地复现：把 REDIS_PORT 指向死端口即可复现同一组失败（2026-09-24）。
+          - 6379:6379
         options: >-
           --health-cmd="redis-cli ping"
           --health-interval=10s
@@ -122,7 +129,7 @@ jobs:
             echo "::error::没有 surefire 报告（测试可能根本没启动）"
             exit 0
           fi
-          grep -h -E "^Tests run:|<<< (FAILURE|ERROR)!" "${files[@]}" \
+          grep -h -E "<<< (FAILURE|ERROR)!|AssertionFailedError|expected:|^\s+at ltd\.newbee" "${files[@]}" \
             | head -40 | while IFS= read -r l; do echo "::error::${l}"; done
 
   # ---------------------------------------------------------------------------
