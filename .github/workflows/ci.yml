@@ -29,6 +29,12 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: ci-root-pw
           MYSQL_DATABASE: newbee_mall_db
+          # ⚠️ 必须显式声明：官方镜像默认只建 'root'@'localhost'，
+          #    而从 runner 宿主通过 127.0.0.1:3306 连进来时源地址是 docker 网桥
+          #    → 没有这行会在 import / 跑测试时报 Access denied。
+          #    （历史：本行缺失导致 09-19 起 8 次 CI 全红，且失败在
+          #     "Wait for MySQL and import schema" 使 Run tests 被 skip）
+          MYSQL_ROOT_HOST: '%'
         ports:
           - 3306:3306
         options: >-
@@ -61,16 +67,29 @@ jobs:
 
       - name: Wait for MySQL and import schema
         run: |
-          set -e
-          # 等 MySQL 真正可用（healthcheck 有时先于初始化完成）
+          set -uo pipefail
+          ready=0
           for i in $(seq 1 30); do
-            if mysqladmin ping -h 127.0.0.1 -P 3306 -uroot -pci-root-pw --silent 2>/dev/null; then
-              echo "MySQL ready after ${i} tries"; break
+            if mysqladmin ping -h 127.0.0.1 -P 3306 -uroot -pci-root-pw --silent 2>/tmp/mysql_err; then
+              echo "MySQL ready after ${i} tries"; ready=1; break
             fi
             sleep 5
           done
+          # 失败时把**真实原因**喊进 annotation：
+          # 本机（Steam++ 接管 hosts）拉不到 Actions 日志域名，annotation 是编排者
+          # 唯一能读回来的诊断通道 —— 否则只能看到一个没信息量的 exit code 1。
+          if [ "$ready" != 1 ]; then
+            echo "::error::MySQL 30 次探测（150s）仍未就绪：$(tr '\n' ' ' </tmp/mysql_err)"
+            echo "::error::容器：$(docker ps -a --format '{{.Names}}|{{.Image}}|{{.Status}}' | tr '\n' ' ')"
+            exit 1
+          fi
           # 导入初始化数据（ops/init.sql 含建表 + 商品数据 + cs_chat_memory）
-          mysql -h 127.0.0.1 -P 3306 -uroot -pci-root-pw < ops/init.sql
+          if ! mysql -h 127.0.0.1 -P 3306 -uroot -pci-root-pw < ops/init.sql 2>/tmp/import_err; then
+            echo "::error::init.sql 导入失败：$(tr '\n' ' ' </tmp/import_err)"
+            echo "::error::注意：ping 能过不代表能登进去（ping 只看进程是否在活）"
+            exit 1
+          fi
+          echo "init.sql 导入完成"
 
       - name: Run tests
         env:
@@ -91,6 +110,20 @@ jobs:
           name: surefire-reports
           path: mall-backend/target/surefire-reports/
           if-no-files-found: ignore
+
+      # 与上一行同样理由：本机拉不到日志域名，失败细节只能靠 annotation 带出来。
+      - name: 失败时把测试失败摘要喊进 annotation
+        if: failure()
+        run: |
+          set -uo pipefail
+          shopt -s nullglob
+          files=(mall-backend/target/surefire-reports/*.txt)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::没有 surefire 报告（测试可能根本没启动）"
+            exit 0
+          fi
+          grep -h -E "^Tests run:|<<< (FAILURE|ERROR)!" "${files[@]}" \
+            | head -40 | while IFS= read -r l; do echo "::error::${l}"; done
 
   # ---------------------------------------------------------------------------
   # XSS 行为验证（P3）：把 CsXssBrowserIT 接进 CI。
