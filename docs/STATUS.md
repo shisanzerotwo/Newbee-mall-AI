@@ -1,7 +1,7 @@
 # newbee-mall-ai 项目状态快照
 
 > **用途**：会话压缩 / agent 交接用的状态快照。**任何 agent 接手本项目，先读这个文件 + `docs/DESIGN.md`。**
-> 最后更新：2026-09-19（M3-D 完成：10 问回归集 / Java↔Python 对比 / XSS 行为级核查 / 三份文档）
+> 最后更新：**2026-09-24**（文档索引整理：新增 `docs/INDEX.md`，同步提交数/测试数；功能面最后变更为 09-19 幻觉治理）
 
 ---
 
@@ -41,10 +41,11 @@
 | **M3-B** | 浮窗（全站唤起）+ 详情页/订单页「问客服」入口 | ✅ 完成（`f8d7481`；**至此「界面割裂」原始痛点闭环**） |
 | **M3 虚拟线程** | 启用虚拟线程 + 并发压测（含 VT ON/OFF 对照） | ✅ 完成（`3cf42a4`/`c8673e0`/`cb494a2`；**结论：本场景无收益** —— 瓶颈不在线程，见 `docs/PERF-M3.md`） |
 | **M3 中文嵌入** | all-MiniLM（英文）vs bge-small-zh-v15（中文）A/B 对比 | ✅ 完成（`fc82255`/`667a697`；**语义查询命中率 20%→40% 翻倍，默认切 BGE**） |
-| **M3-D** | DoD 剩余项：10 问回归集 / Java↔Python 对比表 / XSS 12 条行为级核查 / 架构·评测·演示三份文档 | ✅ 完成（**含未验证项的如实留痕**：核心「数字一致性」断言两轮均因上游超时未执行到，见 `docs/COMPARE-JAVA-PYTHON.md` §2b/§5） |
+| **M3-D** | DoD 剩余项：10 问回归集 / Java↔Python 对比表 / XSS 12 条行为级核查 / 架构·评测·演示三份文档 | ✅ 完成（XSS 已固化为 `CsXssBrowserIT`；**10 问回归已 10/10**，详见 §8 第 9 条与 `docs/COMPARE-JAVA-PYTHON.md` §7.1） |
 | M3 其余 | Testcontainers / CI（需 GitHub，暂缓）、§8.3 增强项（拖拽/抽屉/重生成） | ⬜ |
 
-**提交数**：54（已推送 GitHub：`github.com/shisanzerotwo/Newbee-mall-AI`，`master` 与本地 SHA 一致）
+**提交数**：**62**（已推送 GitHub：`github.com/shisanzerotwo/Newbee-mall-AI`，`master` 与本地 SHA 一致；2026-09-24 核实）
+**默认测试**：**177 通过 / 0 失败 / 0 跳过**（2026-09-24 实测，`bash ops/mvn.sh test`；不含 4 个 `*IT`）——— 口径见 `docs/INDEX.md` §6
 
 > ✅ **M2-5 时序红线已验证守住**（DESIGN §4.2）：真机实测 `stage → tool(checkStock×2) → delta → done` →
 > **`review` 在 `done` 之后仍能送达**，且 complete 只发生一次（claude 已复核代码 + 端到端测试双重证据）。
@@ -231,6 +232,7 @@ CS_MODEL_NAME=agnes-2.5-flash
 | `docs/screenshots/` | 商城前端截图（首页 / 搜索 / 后台登录，Chrome headless） |
 | `README.md` | 项目说明 + 容器化实测 + 端口约定 |
 | `docs/STATUS.md` | 本文件（状态快照） |
+| `docs/INDEX.md` | ⭐ **文档索引与阅读地图**（21 份文档的读法 + 数字口径 + 历史任务卡说明） |
 | `ops/mvn.sh` · `ops/smoke.sh` · `ops/init.sql` | 运维脚本与初始化数据 |
 
 ---
@@ -299,6 +301,10 @@ CS_MODEL_NAME=agnes-2.5-flash
    - 这类坑的表现是「跑了一次却什么都没发生」，比报错更难发现
 
 ### ⚠️ 本轮没有任何进展的项（如实记）
+
+> 📌 **此段是 2026-09-19 上半场的留痕，结论已被 §8 第 9 条的「10/10」取代** ——
+> 当晚换到新通道（`api.agnes-ai.cn` + `agnes-2.5-flash`）后，同一套断言**首次完整执行到且全部通过**。
+> 保留此段是为了留下“上游限流期间真实失败长什么样”的记录（勿据此判断当前状态）。
 
 **10 问回归的“数字一致性”断言仍未被执行到**：抽样复跑 3 题（#1 价格 / #2 库存 / #10 无关），
 前两题再次上游超时（39.2s / 66.7s，工具调用 **0** 次）—— 与第一轮 10 问的结论一致。
