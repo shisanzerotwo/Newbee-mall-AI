@@ -1,6 +1,14 @@
 -- newbee-mall-ai 初始化数据（脱敏：仅结构与业务基础数据 + 管理员账号）
 -- 由 mysqldump 于 2026-09-18 生成（决策 #20/#36）
 -- 用户/订单/购物车表只有结构，不含数据
+--
+-- ⚠️ 显式选库（2026-09-24 补）：本文件原本既无 CREATE DATABASE 也无 USE ——
+--    在 docker-compose 里能跑，是因为 MySQL 官方镜像执行 docker-entrypoint-initdb.d
+--    时会自动带上 --database=$MYSQL_DATABASE；但**手动执行或 CI 里**跑
+--    `mysql -uroot -p < ops/init.sql` 会直接报 ERROR 1046 (No database selected)。
+--    这个坑在 CI 上真实踩到过（09-19 起 8 次 CI 全红均卡在此）。
+USE `newbee_mall_db`;
+
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS=0;
 
