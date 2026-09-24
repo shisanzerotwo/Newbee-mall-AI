@@ -171,15 +171,28 @@ class RagChineseQualityTest {
      * 查 Redis 才发现 {@code num_docs=300}（应 588）、{@code hash_indexing_failures=50}，
      * 即**索引还没建完**。
      *
-     * <p>用「连续多次检索到稳定且非空」作为就绪信号（不依赖 KnowledgeBuilder 内部状态，避免耦合）。
+     * <h3>⚠️ 就绪判据必须覆盖“被测依赖本身”（2026-09-24 修）</h3>
+     * 本方法原先只看“检索能返回结果且连续 3 次稳定”。这个信号是**错的**，
+     * 因为 {@code embedAndStore} 是**边嵌入边写入**：中途只要插进去 1 条，
+     * {@code retrieve} 就会返回非空且数字不变 → 判定为“就绪”，
+     * 而断言真正依赖的 {@link KnowledgeBuilder#lastSegments()}（**建库跑到末尾才赋值**）还是空的。
+     * 后果：全部 20 条用例被当成“[语料无该类目]”，可满足子集变成 {@code 0/0 = NaN%}，
+     * 报错话术却写成“语料没建起来”——**指向了错误的方向**。
+     *
+     * <p>CI 上真实踩到（本地因建库更快而侥幸绿）。因此现在要求**两个条件同时成立**：
+     * <ol>
+     *   <li>{@code lastSegments()} 非空 —— 建库已跑到末尾（这才是 {@link #corpusText()} 读的东西）；</li>
+     *   <li>{@code retrieve} 结果非空且连续稳定 —— 向量索引侧也已可用。</li>
+     * </ol>
      */
     private void awaitIndexReady() throws InterruptedException {
         long deadline = System.currentTimeMillis() + Duration.ofMinutes(3).toMillis();
         int last = -1;
         int stable = 0;
         while (System.currentTimeMillis() < deadline) {
+            int seg = knowledgeBuilder.lastSegments().size();
             int n = ragService.retrieve("化妆水", TOP_K).size();
-            if (n > 0 && n == last) {
+            if (seg > 0 && n > 0 && n == last) {
                 if (++stable >= 3) {
                     return;
                 }
@@ -189,7 +202,8 @@ class RagChineseQualityTest {
             last = n;
             Thread.sleep(1000);
         }
-        System.out.println("[warn] 等待索引就绪超过 3 分钟，仍继续评测（结果可能受未建完影响）");
+        System.out.printf("[warn] 等待 RAG 就绪超过 3 分钟：内存片段 %d 个、检索命中 %d 条%n",
+                knowledgeBuilder.lastSegments().size(), last);
     }
 
     /**
