@@ -44,7 +44,8 @@
 | **M3-D** | DoD 剩余项：10 问回归集 / Java↔Python 对比表 / XSS 12 条行为级核查 / 架构·评测·演示三份文档 | ✅ 完成（XSS 已固化为 `CsXssBrowserIT`；**10 问回归已 10/10**，详见 §8 第 9 条与 `docs/COMPARE-JAVA-PYTHON.md` §7.1） |
 | M3 其余 | Testcontainers / CI（需 GitHub，暂缓）、§8.3 增强项（拖拽/抽屉/重生成） | ⬜ |
 
-**提交数**：**62**（已推送 GitHub：`github.com/shisanzerotwo/Newbee-mall-AI`，`master` 与本地 SHA 一致；2026-09-24 核实）
+**提交数**：**63**（2026-09-24 快照；已推送 GitHub：`github.com/shisanzerotwo/Newbee-mall-AI`，`master` 与本地 SHA 一致）
+> 提交数是快照值，**文档整理本身就会改变它** —— 要当前值跑 `git log --oneline | wc -l`（口径见 `docs/INDEX.md` §6）
 **默认测试**：**177 通过 / 0 失败 / 0 跳过**（2026-09-24 实测，`bash ops/mvn.sh test`；不含 4 个 `*IT`）——— 口径见 `docs/INDEX.md` §6
 
 > ✅ **M2-5 时序红线已验证守住**（DESIGN §4.2）：真机实测 `stage → tool(checkStock×2) → delta → done` →
@@ -232,7 +233,7 @@ CS_MODEL_NAME=agnes-2.5-flash
 | `docs/screenshots/` | 商城前端截图（首页 / 搜索 / 后台登录，Chrome headless） |
 | `README.md` | 项目说明 + 容器化实测 + 端口约定 |
 | `docs/STATUS.md` | 本文件（状态快照） |
-| `docs/INDEX.md` | ⭐ **文档索引与阅读地图**（21 份文档的读法 + 数字口径 + 历史任务卡说明） |
+| `docs/INDEX.md` | ⭐ **文档索引与阅读地图**（21 份文档的读法 + 数字口径 + 历史任务卡说明 + **维护约定 §9**） |
 | `ops/mvn.sh` · `ops/smoke.sh` · `ops/init.sql` | 运维脚本与初始化数据 |
 
 ---
