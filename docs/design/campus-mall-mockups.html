@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>伊犁师范大学校园二手交易平台 · 前端设计稿</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"LXGW WenKai",-apple-system,"PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",sans-serif;background:#eef1f4;color:#1f2328;padding:32px 16px 90px}
+.wrap{max-width:1500px;margin:0 auto}
+h1{font-size:24px;margin-bottom:6px}
+.sub{color:#57606a;font-size:14px;line-height:1.7;margin-bottom:20px}
+.tabs{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px}
+.tab{cursor:pointer;background:#fff;border:1px solid #dfe3e8;border-radius:10px;padding:12px 18px;font-size:15px;font-weight:600;transition:.15s}
+.tab small{display:block;font-weight:400;font-size:12px;color:#8b949e;margin-top:2px}
+.tab.on{border-color:#0a5c46;color:#0a5c46;box-shadow:0 4px 14px rgba(10,92,70,.18)}
+.scheme{display:none}
+.scheme.show{display:block}
+.desc{background:#fff;border:1px solid #e4e8eb;border-radius:8px;padding:12px 16px;font-size:13px;color:#57606a;margin-bottom:20px;line-height:1.7}
+.row{display:flex;gap:26px;flex-wrap:wrap}
+.unit{flex:none}
+.cap{text-align:center;font-weight:700;font-size:14px;margin-top:12px}
+.cap span{display:block;font-weight:400;font-size:12px;color:#8b949e;margin-top:2px}
+
+/* ===== 手机框 ===== */
+.phone{width:290px;border:7px solid #1c1c1e;border-radius:30px;overflow:hidden;background:var(--bg);display:flex;flex-direction:column;box-shadow:0 14px 34px rgba(0,0,0,.18);font-size:11.5px}
+.sb{display:flex;justify-content:space-between;padding:8px 14px 2px;font-size:10px;color:var(--t1)}
+.scr{height:560px;overflow:hidden;display:flex;flex-direction:column;position:relative}
+.body{flex:1;overflow:hidden}
+
+/* 主题变量 */
+.thA{--brand:#0a5c46;--brand2:#1a7f63;--accent:#c98f1b;--bg:#f5f7f6;--card:#fff;--t1:#1f2a26;--t2:#54605b;--t3:#8a948f;--bd:#e2e8e5;--chip:#e4f0ea;--btnTx:#fff;--grad:linear-gradient(120deg,#084d3a,#1a7f63)}
+.thB{--brand:#ffd200;--brand2:#ffe14d;--accent:#ff4d24;--bg:#f6f6f6;--card:#fff;--t1:#1a1a1a;--t2:#666;--t3:#999;--bd:#ececec;--chip:#fff6cc;--btnTx:#1a1a1a;--grad:linear-gradient(120deg,#ffd200,#ffe14d)}
+.thC{--brand:#7c5cff;--brand2:#9a82ff;--accent:#ff5c8a;--bg:#14141b;--card:#1f1f29;--t1:#f0f0f6;--t2:#a2a2b2;--t3:#6a6a7c;--bd:#2d2d3b;--chip:#2a2440;--btnTx:#fff;--grad:linear-gradient(120deg,#7c5cff,#b05cff)}
+
+/* 通用件 */
+.nav{padding:8px 12px;display:flex;align-items:center;gap:8px}
+.spill{flex:1;background:var(--card);border:1px solid var(--bd);border-radius:99px;padding:6px 12px;color:var(--t3);display:flex;gap:6px;align-items:center}
+.loc{color:var(--t1);font-weight:700;white-space:nowrap}
+.banner{margin:8px 12px;border-radius:12px;padding:14px;color:#fff;background:var(--grad);font-weight:700}
+.thB .banner{color:#1a1a1a}
+.banner small{display:block;font-weight:400;opacity:.85;margin-top:2px}
+.cats{display:flex;justify-content:space-around;padding:10px 12px 2px}
+.cat{text-align:center;color:var(--t2);font-size:10px}
+.cat i{display:block;width:38px;height:38px;border-radius:12px;background:var(--card);border:1px solid var(--bd);margin:0 auto 4px;line-height:38px;font-style:normal;font-size:16px}
+.sec{padding:12px 12px 8px;font-weight:700;color:var(--t1);font-size:13px;display:flex;justify-content:space-between;align-items:baseline}
+.sec em{font-style:normal;color:var(--t3);font-weight:400;font-size:10.5px}
+.wf{column-count:2;column-gap:8px;padding:0 12px}
+.g{break-inside:avoid;background:var(--card);border:1px solid var(--bd);border-radius:10px;overflow:hidden;margin-bottom:8px}
+.gi{display:flex;align-items:center;justify-content:center;font-size:26px;background:var(--bd);color:var(--t3)}
+.gb{padding:8px}
+.gn{color:var(--t1);font-weight:600;line-height:1.35}
+.gp{color:var(--accent);font-weight:800;font-size:14px;margin-top:4px}
+.gp s{color:var(--t3);font-weight:400;font-size:10px;margin-left:4px}
+.gs{display:flex;align-items:center;gap:4px;margin-top:6px;color:var(--t3);font-size:10px}
+.av{width:16px;height:16px;border-radius:50%;background:var(--brand);color:var(--btnTx);display:inline-flex;align-items:center;justify-content:center;font-size:9px;flex:none}
+.tg{display:inline-block;padding:1px 6px;border-radius:99px;font-size:9px;margin-right:4px}
+.tgA{background:var(--chip);color:var(--brand)}
+.thB .tgA{color:#8a6d00}
+.tgB{background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent)}
+.bar{display:flex;background:var(--card);border-top:1px solid var(--bd);padding:6px 0 10px;position:relative;flex:none}
+.t{flex:1;text-align:center;color:var(--t3);font-size:10px}
+.t b{display:block;font-size:17px;font-weight:400;margin-bottom:2px}
+.t.on{color:var(--brand);font-weight:700}
+.thB .t.on{color:#c9a400}
+.fab{position:absolute;top:-20px;left:50%;transform:translateX(-50%);width:44px;height:44px;border-radius:50%;background:var(--brand);color:var(--btnTx);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 5px 12px rgba(0,0,0,.28)}
+/* 详情页 */
+.dimg{height:200px;background:var(--bd);display:flex;align-items:center;justify-content:center;font-size:56px;color:var(--t3)}
+.dcard{background:var(--card);margin:-14px 10px 0;border-radius:14px;border:1px solid var(--bd);padding:14px;position:relative}
+.dprice{color:var(--accent);font-weight:800;font-size:22px}
+.dprice s{color:var(--t3);font-weight:400;font-size:11px;margin-left:6px}
+.dname{color:var(--t1);font-weight:700;font-size:14px;margin-top:8px;line-height:1.5}
+.dmeta{color:var(--t3);font-size:10px;margin-top:8px;display:flex;gap:10px}
+.seller{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--bd);border-radius:14px;margin:10px;padding:12px}
+.seller .av{width:38px;height:38px;font-size:15px}
+.sinfo{flex:1}
+.sinfo b{color:var(--t1);font-size:12.5px}
+.sinfo p{color:var(--t3);font-size:10px;margin-top:2px}
+.sbtn{background:var(--chip);color:var(--brand);border-radius:99px;padding:5px 12px;font-weight:700}
+.thB .sbtn{color:#8a6d00}
+.dact{display:flex;gap:10px;padding:10px 12px;background:var(--card);border-top:1px solid var(--bd);flex:none}
+.dact .ic{flex:none;text-align:center;color:var(--t2);font-size:9px;width:36px}
+.dact .ic b{display:block;font-size:16px;font-weight:400}
+.btn{flex:1;border-radius:99px;text-align:center;padding:10px 0;font-weight:700;font-size:13px}
+.btnP{background:var(--brand);color:var(--btnTx)}
+.btnS{background:var(--chip);color:var(--brand)}
+.thB .btnS{color:#8a6d00}
+/* 发布页 */
+.phead{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;color:var(--t1);font-weight:700}
+.phead em{font-style:normal;color:var(--t3);font-weight:400;font-size:11px}
+.upgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:4px 14px 12px}
+.up{aspect-ratio:1;border:1.5px dashed var(--bd);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:22px;background:var(--card)}
+.up.full{border-style:solid;font-size:30px;background:var(--bd)}
+.field{background:var(--card);border:1px solid var(--bd);border-radius:10px;margin:0 14px 10px;padding:10px 12px}
+.field label{display:block;color:var(--t3);font-size:10px;margin-bottom:4px}
+.field .v{color:var(--t1);font-weight:600}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:4px 10px;border-radius:99px;background:var(--bg);border:1px solid var(--bd);color:var(--t2);font-size:10.5px}
+.chip.on{background:var(--chip);color:var(--brand);border-color:var(--brand);font-weight:700}
+.thB .chip.on{color:#8a6d00}
+.pubbtn{margin:10px 14px;background:var(--brand);color:var(--btnTx);border-radius:99px;text-align:center;padding:11px;font-weight:800;font-size:14px}
+/* 消息/客服 */
+.mitem{display:flex;gap:10px;padding:11px 14px;align-items:center;border-bottom:1px solid var(--bd);background:var(--card)}
+.mitem .av{width:40px;height:40px;font-size:15px}
+.mitem .ai{background:var(--grad);font-size:18px}
+.mbody{flex:1;min-width:0}
+.mbody b{color:var(--t1);font-size:12.5px}
+.mbody p{color:var(--t3);font-size:10.5px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mtime{color:var(--t3);font-size:9.5px;text-align:right}
+.badge{background:var(--accent);color:#fff;border-radius:99px;font-size:9px;padding:1px 6px;display:inline-block;margin-top:4px}
+/* 聊天 */
+.chat{flex:1;padding:12px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.msg{max-width:78%;padding:9px 12px;border-radius:14px;line-height:1.5;font-size:11.5px}
+.msg.l{background:var(--card);border:1px solid var(--bd);color:var(--t1);border-top-left-radius:4px;align-self:flex-start}
+.msg.r{background:var(--brand);color:var(--btnTx);border-top-right-radius:4px;align-self:flex-end}
+.msg .mini{margin-top:8px;background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px;display:flex;gap:8px;align-items:center}
+.msg .mini .th{width:34px;height:34px;border-radius:6px;background:var(--bd);display:flex;align-items:center;justify-content:center;font-size:16px;flex:none}
+.msg .mini b{color:var(--t1);font-size:10.5px;display:block}
+.msg .mini i{color:var(--accent);font-style:normal;font-weight:800;font-size:11px}
+.msg .mini button{margin-left:auto;background:var(--brand);color:var(--btnTx);border:0;border-radius:99px;padding:4px 10px;font-size:10px;font-weight:700}
+.qr{display:flex;gap:6px;flex-wrap:wrap;align-self:flex-start}
+.qr span{border:1px solid var(--brand);color:var(--brand);border-radius:99px;padding:4px 10px;font-size:10px;background:var(--card)}
+.thB .qr span{color:#8a6d00}
+.inputbar{display:flex;gap:8px;padding:8px 12px;background:var(--card);border-top:1px solid var(--bd);align-items:center;flex:none}
+.inputbar .box{flex:1;background:var(--bg);border:1px solid var(--bd);border-radius:99px;padding:7px 12px;color:var(--t3);font-size:11px}
+.send{background:var(--brand);color:var(--btnTx);border-radius:99px;padding:7px 14px;font-weight:700;font-size:11px}
+.chathead{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--card);border-bottom:1px solid var(--bd);color:var(--t1);font-weight:700}
+.chathead .st{color:var(--t3);font-weight:400;font-size:10px;display:block}
+/* 我的 */
+.mehead{background:var(--grad);padding:22px 16px 30px;color:#fff;display:flex;gap:12px;align-items:center}
+.thB .mehead{color:#1a1a1a}
+.mehead .av{width:52px;height:52px;font-size:20px;background:rgba(255,255,255,.25);color:#fff}
+.thB .mehead .av{color:#1a1a1a}
+.mehead b{font-size:15px}
+.mehead p{font-size:10.5px;opacity:.85;margin-top:3px}
+.mestat{display:flex;background:var(--card);margin:-16px 12px 0;border-radius:14px;border:1px solid var(--bd);padding:12px 0;position:relative}
+.mestat div{flex:1;text-align:center}
+.mestat b{display:block;color:var(--t1);font-size:14px}
+.mestat span{color:var(--t3);font-size:10px}
+.mlist{background:var(--card);border:1px solid var(--bd);border-radius:14px;margin:10px 12px;overflow:hidden}
+.mlist div{display:flex;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--bd);color:var(--t1);font-size:12px}
+.mlist div:last-child{border-bottom:0}
+.mlist em{font-style:normal;color:var(--t3)}
+.legend{margin-top:34px;background:#fff;border:1px solid #e4e8eb;border-radius:10px;padding:16px 20px;font-size:13px;color:#57606a;line-height:1.9}
+.legend b{color:#1f2328}
+@media(max-width:720px){.phone{width:270px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>伊犁师范大学 · 校园二手交易平台 · 前端设计稿</h1>
+  <p class="sub">基于 newbee-mall 项目演进：面向校园场景的 C2C 闲置交易（参考闲鱼），<b>保留并强化智能客服（AI 助手）能力</b>。主方案采用<b>伊犁师范大学校徽墨绿</b> + <b>霞鹜文楷</b>书卷字体；另保留两套备选风格，点击切换对比。</p>
+
+  <div class="tabs">
+    <div class="tab on" data-s="A">方案 A · 伊师大墨绿<small>校徽墨绿 #0a5c46 + 文楷字体，书卷气、可信（推荐）</small></div>
+    <div class="tab" data-s="B">方案 B · 活力暖黄<small>对标闲鱼视觉，年轻活泼、交易氛围强</small></div>
+    <div class="tab" data-s="C">方案 C · 暗夜潮酷<small>深色模式 + 紫调，面向 Z 世代差异化</small></div>
+  </div>
+
+  <div id="schemes"></div>
+
+  <div class="legend">
+    <b>设计说明（三方案通用信息架构）：</b><br>
+    ① <b>首页</b>：校园定位 + 搜索、分类金刚区（教材/数码/生活/服饰/票券/求购）、推荐瀑布流（价格、成色标签、卖家信用）<br>
+    ② <b>商品详情</b>：大图、价格/原价、成色与入手渠道、卖家信用卡（校园认证）、想要/私聊/立即购买<br>
+    ③ <b>发布</b>：拍照上传、AI 一键估价与标题生成（复用后端 LLM 能力）、分类/成色选择、校内自提点<br>
+    ④ <b>消息</b>：会话列表置顶 <b>AI 智能客服</b>（继承 newbee-mall 的 RAG 客服），交易消息未读提醒<br>
+    ⑤ <b>AI 客服对话</b>：支持商品卡片嵌入回答（问商品直接给推荐卡片）、快捷问题、转人工<br>
+    ⑥ <b>我的</b>：校园认证标识、我卖的/我买的/我想要、钱包与卡券、客服中心入口
+  </div>
+</div>
+
+<script>
+const SCREENS = [
+  {cap:'首页', sub:'推荐瀑布流 + 校园定位', html:`
+    <div class="sb"><span>9:41</span><span>📶 🔋</span></div>
+    <div class="body">
+      <div class="nav"><span class="loc">📍 伊师大本部</span><div class="spill">🔍 搜“自行车 / 考研资料”</div></div>
+      <div class="banner">品正学实 · 校园闲置市集<small>校内自提 · 免运费 · 平台担保</small></div>
+      <div class="cats">
+        <div class="cat"><i>📚</i>教材书籍</div><div class="cat"><i>💻</i>数码电子</div>
+        <div class="cat"><i>🛏️</i>生活宿舍</div><div class="cat"><i>👟</i>服饰鞋包</div>
+        <div class="cat"><i>🎫</i>票券卡务</div><div class="cat"><i>📢</i>求购专区</div>
+      </div>
+      <div class="sec">为你推荐 <em>查看更多 ›</em></div>
+      <div class="wf">
+        <div class="g"><div class="gi" style="height:96px">🚲</div><div class="gb"><div class="gn">九成新山地车 可校内试骑</div><div class="gp">¥260 <s>¥899</s></div><div class="gs"><span class="av">王</span>王同学 · ⭐4.9</div></div></div>
+        <div class="g"><div class="gi" style="height:70px">📖</div><div class="gb"><div class="gn">考研数学全套 笔记工整</div><div class="gp">¥45 <s>¥180</s></div><div class="gs"><span class="tg tgA">几乎全新</span></div></div></div>
+        <div class="g"><div class="gi" style="height:80px">🎧</div><div class="gb"><div class="gn">蓝牙耳机 降噪款</div><div class="gp">¥120</div><div class="gs"><span class="tg tgB">急出</span><span class="av">李</span>李同学</div></div></div>
+        <div class="g"><div class="gi" style="height:64px">💡</div><div class="gb"><div class="gn">宿舍护眼台灯</div><div class="gp">¥18</div><div class="gs"><span class="tg tgA">校内自提</span></div></div></div>
+      </div>
+    </div>
+    <div class="bar"><div class="t on"><b>🏠</b>首页</div><div class="t"><b>🗂️</b>分类</div><div class="t"><div class="fab">＋</div><b style="opacity:0">＋</b>发布</div><div class="t"><b>💬</b>消息</div><div class="t"><b>👤</b>我的</div></div>`},
+  {cap:'商品详情', sub:'卖家信用 + 担保交易', html:`
+    <div class="sb"><span>9:41</span><span>📶 🔋</span></div>
+    <div class="body">
+      <div class="dimg">🚲</div>
+      <div class="dcard">
+        <div class="dprice">¥260 <s>¥899</s> <span class="tg tgB">平台担保</span></div>
+        <div class="dname">九成新山地自行车，变速顺滑，可校内试骑，毕业急出</div>
+        <div class="dmeta"><span>成色 九成新</span><span>2024 年购入</span><span>浏览 342</span></div>
+      </div>
+      <div class="seller"><span class="av">王</span><div class="sinfo"><b>王同学 ⭐4.9</b><p>🎓 已校园认证 · 计算机学院 · 在售 6 件</p></div><span class="sbtn">进店逛逛</span></div>
+      <div class="sec">商品描述</div>
+      <div style="padding:0 14px;color:var(--t2);line-height:1.6">大三购入，平时代步用，保养良好。附赠车锁和打气筒，东校区自提，支持当面验货。</div>
+    </div>
+    <div class="dact">
+      <div class="ic"><b>🤍</b>想要</div>
+      <div class="ic"><b>💬</b>私聊</div>
+      <div class="btn btnS">问 AI 客服</div>
+      <div class="btn btnP">立即购买</div>
+    </div>`},
+  {cap:'发布闲置', sub:'AI 估价 + 一键生成描述', html:`
+    <div class="sb"><span>9:41</span><span>📶 🔋</span></div>
+    <div class="body">
+      <div class="phead">发布闲置 <em>存草稿</em></div>
+      <div class="upgrid"><div class="up full">🚲</div><div class="up full">🔒</div><div class="up">＋</div></div>
+      <div class="field"><label>标题（AI 已生成 ✨）</label><div class="v">九成新山地自行车 可校内试骑</div></div>
+      <div class="field"><label>分类</label><div class="chips"><span class="chip on">运动出行</span><span class="chip">数码电子</span><span class="chip">教材书籍</span><span class="chip">生活宿舍</span></div></div>
+      <div class="field"><label>成色</label><div class="chips"><span class="chip">全新</span><span class="chip on">九成新</span><span class="chip">轻微使用</span><span class="chip">明显痕迹</span></div></div>
+      <div class="field"><label>价格 · AI 估价 ¥240~280 ✨</label><div class="v">¥ 260</div></div>
+      <div class="field"><label>交易方式</label><div class="chips"><span class="chip on">校内自提</span><span class="chip">送货上门</span><span class="chip">邮寄</span></div></div>
+    </div>
+    <div class="pubbtn">立即发布</div>`},
+  {cap:'消息列表', sub:'AI 智能客服置顶（保留自 newbee-mall）', html:`
+    <div class="sb"><span>9:41</span><span>📶 🔋</span></div>
+    <div class="body">
+      <div class="phead">消息 <em>全部已读</em></div>
+      <div class="mitem"><span class="av ai">🤖</span><div class="mbody"><b>AI 智能客服 <span class="tg tgA">官方</span></b><p>您好，我是校园交易小助手，买卖问题都可以问我~</p></div><div class="mtime">09:30</div></div>
+      <div class="mitem"><span class="av">李</span><div class="mbody"><b>李同学</b><p>耳机还在吗？可以 100 出吗</p></div><div class="mtime">10:12<br><span class="badge">2</span></div></div>
+      <div class="mitem"><span class="av">王</span><div class="mbody"><b>王同学</b><p>好的，明天下午东区门口见</p></div><div class="mtime">昨天</div></div>
+      <div class="mitem"><span class="av" style="background:var(--accent)">📦</span><div class="mbody"><b>交易提醒</b><p>您购买的「考研数学全套」已确认收货</p></div><div class="mtime">周二</div></div>
+      <div class="mitem"><span class="av" style="background:var(--brand2)">📢</span><div class="mbody"><b>求购订阅</b><p>您求购的「洗衣机」有 3 个新商品上架</p></div><div class="mtime">周一</div></div>
+    </div>
+    <div class="bar"><div class="t"><b>🏠</b>首页</div><div class="t"><b>🗂️</b>分类</div><div class="t"><div class="fab">＋</div><b style="opacity:0">＋</b>发布</div><div class="t on"><b>💬</b>消息</div><div class="t"><b>👤</b>我的</div></div>`},
+  {cap:'AI 智能客服', sub:'商品卡片嵌入 + 快捷问题（核心保留功能）', html:`
+    <div class="sb"><span>9:41</span><span>📶 🔋</span></div>
+    <div class="chathead"><span>‹</span><div>🤖 AI 智能客服<span class="st">在线 · 基于平台知识库回答 · 可转人工</span></div></div>
+    <div class="chat">
+      <div class="msg l">同学您好！我是校园交易小助手，可以帮您找商品、估价、解答交易规则～</div>
+      <div class="msg r">帮我找 300 元以内的自行车</div>
+      <div class="msg l">为您找到 2 件符合条件的商品，均支持校内自提和平台担保：
+        <div class="mini"><div class="th">🚲</div><div><b>九成新山地车 可试骑</b><i>¥260</i></div><button>去看看</button></div>
+        <div class="mini"><div class="th">🚴</div><div><b>折叠自行车 便携款</b><i>¥180</i></div><button>去看看</button></div>
+      </div>
+      <div class="qr"><span>如何发布闲置？</span><span>交易被骗怎么办？</span><span>转人工客服</span></div>
+    </div>
+    <div class="inputbar"><span>😊</span><div class="box">请输入您的问题…</div><span class="send">发送</span></div>`},
+  {cap:'我的', sub:'校园认证 + 交易管理', html:`
+    <div class="sb"><span>9:41</span><span>📶 🔋</span></div>
+    <div class="body">
+      <div class="mehead"><span class="av">陈</span><div><b>陈同学</b><p>🎓 已校园认证 · 信用分 780 · 加入 2 年</p></div></div>
+      <div class="mestat"><div><b>8</b><span>我发布的</span></div><div><b>15</b><span>我买到的</span></div><div><b>23</b><span>我想要</span></div><div><b>4</b><span>求购中</span></div></div>
+      <div class="mlist">
+        <div>💰 我的钱包 <em>余额 ¥326.00 ›</em></div>
+        <div>🎫 卡券与补贴 <em>2 张可用 ›</em></div>
+        <div>🤖 AI 智能客服 <em>7×24 在线 ›</em></div>
+        <div>⭐ 我的评价 <em>好评率 100% ›</em></div>
+      </div>
+      <div class="mlist">
+        <div>📍 常用自提点 <em>东区菜鸟驿站 ›</em></div>
+        <div>⚙️ 设置 <em>›</em></div>
+      </div>
+    </div>
+    <div class="bar"><div class="t"><b>🏠</b>首页</div><div class="t"><b>🗂️</b>分类</div><div class="t"><div class="fab">＋</div><b style="opacity:0">＋</b>发布</div><div class="t"><b>💬</b>消息</div><div class="t on"><b>👤</b>我的</div></div>`}
+];
+
+const DESCS = {
+  A:'<b>方案 A · 伊师大墨绿（推荐）：</b>主色取自伊犁师范大学校徽墨绿（#0a5c46 主按钮/导航/选中态，#1a7f63 辅助绿渐变），价格强调色改用暖金 #c98f1b（与墨绿同为校徽气质，避免红绿冲突）。全局字体改用「霞鹜文楷」，标题带书卷气，契合师范院校氛围。校训“品正学实”融入首页 Banner，强化校园归属感。',
+  B:'<b>方案 B · 活力暖黄：</b>对标闲鱼的高识别度明黄色，交易氛围与年轻感最强；但需重建整套色板与组件主题，且与 newbee-mall 品牌完全脱钩，改造工作量最大。',
+  C:'<b>方案 C · 暗夜潮酷：</b>深色底 + 紫粉强调色，差异化明显、夜间使用友好；需要完整暗色设计规范支撑，后台管理端需同步适配，工作量居中。'
+};
+
+const box = document.getElementById('schemes');
+['A','B','C'].forEach((k,i)=>{
+  const div = document.createElement('div');
+  div.className = 'scheme' + (i===0?' show':'');
+  div.innerHTML = `<div class="desc">${DESCS[k]}</div><div class="row">` +
+    SCREENS.map(s=>`<div class="unit"><div class="phone th${k}"><div class="scr">${s.html}</div></div><div class="cap">${s.cap}<span>${s.sub}</span></div></div>`).join('') +
+    `</div>`;
+  box.appendChild(div);
+});
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick = ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+    t.classList.add('on');
+    document.querySelectorAll('.scheme').forEach((s,i)=>s.classList.toggle('show', ['A','B','C'][i]===t.dataset.s));
+    window.scrollTo({top:document.querySelector('.tabs').offsetTop-20,behavior:'smooth'});
+  };
+});
+</script>
+</body>
+</html>
