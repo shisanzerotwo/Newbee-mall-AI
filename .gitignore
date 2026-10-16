@@ -35,3 +35,9 @@ ops/.smoke_body.tmp
 ops/*.sql
 !ops/init.sql
 ops/*.bak
+# 校园二手交易演示种子数据：合成数据（非真实用户数据），属可入库的演示资产
+!ops/campus_second_hand_seed.sql
+
+# 本地 AI 工具目录：会话记忆与宿主缓存，不进仓库
+.workbuddy-ai/
+.workbuddy/
