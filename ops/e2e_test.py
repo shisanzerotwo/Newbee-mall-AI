@@ -154,11 +154,21 @@ r, _ = call("POST", f"/api/goods/{target['id']}/want")
 check("取消想要", r.get("resultCode") == 200 and r["data"]["wanted"] is False)
 
 print("\n[4] 发布链路")
-r, _ = call("POST", "/api/goods", {"title": "E2E 测试闲置 台灯", "desc": "自动化测试发布",
-                                   "category": "生活宿舍", "condition": "九成新",
-                                   "price": 20, "tradeType": "校内自提"})
-new_id = r.get("data", {}).get("goodsId")
-check("发布成功并回填 goodsId", bool(new_id), f"goodsId={new_id}")
+# 发布接口目前没有删除能力，每次新建都会持续往库里塞数据 ——
+# 实测已累积 10 条同名商品并挤占推荐流首页。因此优先复用既有测试商品：
+# 首次运行验证「发布」本身，重复运行只做读取校验，不再新增。
+_existing = [g for g in (call("GET", "/api/goods/search?keyword=E2E")[0]
+                         .get("data", {}).get("list") or [])
+             if str(g.get("title", "")).startswith("E2E 测试")]
+if _existing:
+    new_id = _existing[0]["id"]
+    print(f"        （复用既有测试商品 {new_id}，本次未新建）")
+else:
+    r, _ = call("POST", "/api/goods", {"title": "E2E 测试闲置 台灯", "desc": "自动化测试发布",
+                                       "category": "生活宿舍", "condition": "九成新",
+                                       "price": 20, "tradeType": "校内自提"})
+    new_id = r.get("data", {}).get("goodsId")
+    check("发布成功并回填 goodsId", bool(new_id), f"goodsId={new_id}")
 r, _ = call("GET", f"/api/goods/{new_id}")
 check("新发布商品可查且价格换算正确", r.get("data", {}).get("price") == 20.0)
 
