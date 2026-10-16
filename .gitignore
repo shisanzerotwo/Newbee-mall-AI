@@ -44,3 +44,8 @@ ops/*.bak
 
 # 截图脚本的浏览器用户数据目录（含 Login Data / Web Data / Token 等凭据，严禁入库）
 .profile/
+
+# 前端（mall-frontend）依赖与构建产物
+node_modules/
+dist/
+.vite/

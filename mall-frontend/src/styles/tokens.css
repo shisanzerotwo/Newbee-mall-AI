@@ -1,0 +1,67 @@
+/* 设计 Token —— 与 docs/design/campus-mall-mockups.html 的 .thA 一一对应（方案 A · 伊师大墨绿） */
+:root {
+  /* 品牌 · 校徽墨绿 */
+  --brand: #0a5c46;
+  --brand-2: #1a7f63;
+  --brand-grad: linear-gradient(120deg, #084d3a, #1a7f63);
+  --brand-chip: #e4f0ea;
+
+  /* 强调 · 暖金（价格 / 促销 / 未读） */
+  --accent: #c98f1b;
+
+  /* 中性 */
+  --text-1: #1f2a26;
+  --text-2: #54605b;
+  --text-3: #8a948f;
+  --bg-page: #f5f7f6;
+  --bg-card: #ffffff;
+  --border: #e2e8e5;
+  --danger: #d1242f;
+  --success: #1a7f37;
+
+  /* 字体 */
+  --font-brand: "LXGW WenKai", -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-body: -apple-system, "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", sans-serif;
+
+  /* 阴影 */
+  --shadow-card: 0 4px 12px rgba(10, 92, 70, .08);
+
+  /* Vant 主题变量覆盖 */
+  --van-primary-color: var(--brand);
+  --van-danger-color: var(--danger);
+  --van-text-color: var(--text-1);
+  --van-text-color-2: var(--text-2);
+  --van-text-color-3: var(--text-3);
+  --van-background: var(--bg-page);
+  --van-border-color: var(--border);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text-1);
+  background: var(--bg-page);
+  line-height: 1.6;
+}
+
+.font-brand { font-family: var(--font-brand); }
+
+.price {
+  color: var(--accent);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+/* 两行截断 */
+.clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
