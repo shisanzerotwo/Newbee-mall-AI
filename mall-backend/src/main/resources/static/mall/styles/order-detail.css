@@ -66,9 +66,9 @@
 
 #personal .self-info .lfnav .title_list ul li a.active,
 #personal .self-info .lfnav .title_list ul li .active {
-    color: var(--brand-700);
+    color: var(--ink);
     font-weight: 600;
-    background: var(--brand-300);
+    background: var(--bg-3);
 }
 
 /* 右侧内容卡 */
@@ -112,15 +112,15 @@
     font-size: 12px;
     line-height: 1.5;
     font-weight: 400;
-    color: var(--text-3);
+    color: var(--t2);
 }
 
 .uc-content-box .box-hd small a {
-    color: var(--text-3);
+    color: var(--t2);
 }
 
 .uc-content-box .box-hd small a:hover {
-    color: var(--brand-600);
+    color: var(--ink);
 }
 
 .uc-content-box .box-hd .more {
@@ -166,7 +166,7 @@
 
 .uc-order-item-pay .order-status,
 .uc-order-item-pay .order-desc {
-    color: var(--brand-700);
+    color: var(--ink);
 }
 
 .order-view-box .uc-order-item .order-progress {
@@ -178,45 +178,46 @@
 .order-view-box .uc-order-item .progress-list {
     width: 100%;
     max-width: 880px;
-    height: 20px;
+    height: 22px;
     margin: 0 auto;
     padding: 0;
     list-style-type: none;
-    border-radius: 10px;
+    border-radius: var(--r-xs);
     font-size: 12px;
-    line-height: 20px;
+    line-height: 22px;
     text-align: center;
-    color: var(--text-2);
-    background-color: var(--border);
+    color: var(--t2);
+    background-color: var(--bg-3);
+    overflow: hidden;
 }
 
 .order-view-box .uc-order-item .progress-list .step {
     float: left;
     width: 20%;
-    height: 20px;
-    transition: background-color var(--ease-out);
+    height: 22px;
+    transition: background-color 160ms var(--ease);
 }
 
 .order-view-box .uc-order-item .progress-list .step:first-of-type {
-    border-top-left-radius: 10px;
-    border-bottom-left-radius: 10px;
+    border-top-left-radius: var(--r-xs);
+    border-bottom-left-radius: var(--r-xs);
 }
 
 .order-view-box .uc-order-item .progress-list .step:last-of-type {
-    border-top-right-radius: 10px;
-    border-bottom-right-radius: 10px;
+    border-top-right-radius: var(--r-xs);
+    border-bottom-right-radius: var(--r-xs);
 }
 
 .order-view-box .uc-order-item .progress-list .step-done,
 .order-view-box .uc-order-item .progress-list .step-active,
 .order-view-box .uc-order-item .progress-list .step-first {
-    background-color: var(--brand-500);
-    color: #fff;
+    background-color: var(--ink);
+    color: var(--ink-fg);
 }
 
 .order-view-box .uc-order-item .progress-list .step .info {
     margin-top: 10px;
-    color: var(--text-3);
+    color: var(--t2);
 }
 
 .uc-content-box .box-hd .clearfix {
@@ -240,9 +241,9 @@
 .order-view-box .uc-order-item .order-items-table .col {
     height: auto;
     padding: 12px 0;
-    border-bottom: 1px solid var(--bg-page);
+    border-bottom: 1px solid var(--bd);
     text-align: left;
-    color: var(--text-1);
+    color: var(--t1);
 }
 
 .order-view-box .uc-order-item .order-items-table .figure-thumb {
@@ -257,9 +258,9 @@
     width: 72px;
     height: 72px;
     object-fit: cover;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
-    background: var(--bg-page);
+    border-radius: var(--r-sm);
+    border: 1px solid var(--bd);
+    background: var(--bg-2);
 }
 
 .order-view-box .uc-order-item .order-items-table .col-name {
@@ -276,7 +277,7 @@
 }
 
 .order-view-box .uc-order-item .order-items-table .name a:hover {
-    color: var(--brand-600);
+    color: var(--ink);
 }
 
 .order-view-box .uc-order-item .order-items-table .price {

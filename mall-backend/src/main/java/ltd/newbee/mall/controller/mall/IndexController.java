@@ -89,6 +89,10 @@ public class IndexController {
         request.setAttribute("newGoodses", newGoodses);     // 新品商品
         request.setAttribute("recommendGoodses", recommendGoodses); // 推荐商品
 
+        // 首页状态条用的真实计数（不编造数字）
+        request.setAttribute("categoryCount", categories.size());
+        request.setAttribute("goodsCount", newBeeMallIndexConfigService.getGoodsCount());
+
         // 返回前台首页模板
         return "mall/index";
     }

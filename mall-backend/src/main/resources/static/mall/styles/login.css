@@ -1,41 +1,46 @@
 /* ============================================================
-   登录/注册页（重设计版）· 两页共用
+   登录 / 注册页样式 —— ONYX v3（两页共用）
+   规格：docs/redesign/DESIGN-v3.md §6（登录注册）
+   要点：居中卡片 + 品牌色标题，去掉装饰性背景图
+   ⚠️ 类名全部保留（.top/.logo/.form/.login/.login_center/.login_top/.left/.right
+      /.under-line/.login_main/.login-info/.login-info-input/.verify-code/.login_submit/.submit）。
    ============================================================ */
 
 body {
-    background: var(--bg-page);
+    background: var(--bg);
 }
 
-/* 顶部 logo 区 */
+/* 顶部 logo 区：去底色，居中品牌标识 */
 .top {
     width: 100%;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
+    background: transparent;
+    border-bottom: none;
 }
 
 .top .logo {
     width: 100%;
     max-width: 1200px;
-    height: 72px;
+    height: 88px;
     margin: 0 auto;
     padding: 0 16px;
     display: flex;
     align-items: center;
+    justify-content: center;
 }
 
 .top .logo img {
     border: none;
-    height: 48px;
+    height: 44px;
     width: auto;
     margin-top: 0;
 }
 
-/* 主体：浅色背景 + 居中白卡 */
+/* 主体：深色底 + 居中卡片 */
 .form {
     width: 100%;
     max-width: 1200px;
-    min-height: 560px;
-    margin: 40px auto;
+    min-height: 480px;
+    margin: 12px auto 40px;
     padding: 0 16px;
     background: none;
     display: flex;
@@ -48,18 +53,18 @@ body {
     max-width: 400px;
     height: auto;
     margin: 24px auto;
-    background: var(--surface);
-    color: var(--text-1);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
+    background: var(--bg-1);
+    color: var(--t1);
+    border: 1px solid var(--bd);
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-2);
     font-family: inherit;
 }
 
 .form .login .login_center {
     width: 100%;
     margin: 0;
-    padding: 28px 32px 32px;
+    padding: 32px 32px 36px;
 }
 
 .form .login .login_center.hide {
@@ -73,9 +78,10 @@ body {
 .form .login .login_center .login_top .left {
     height: auto;
     line-height: 1.4;
-    font-weight: 600;
-    font-size: 20px;
-    color: var(--text-1);
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+    color: var(--t1);
 }
 
 .form .login .login_center .login_top .right {
@@ -83,22 +89,22 @@ body {
     line-height: 1.4;
     padding-top: 6px;
     font-size: 13px;
-    color: var(--text-3);
+    color: var(--t2);
 }
 
 .form .login .login_center .login_top .right a {
-    color: var(--brand-600);
+    color: var(--ink);
     font-weight: 600;
 }
 
 .form .login .login_center .login_top .right a:hover {
-    color: var(--brand-800);
+    color: var(--ink);
 }
 
 .form .login .login_center .login_top .under-line {
     height: 1px;
-    background: var(--border);
-    margin: 16px 0 8px;
+    background: var(--bd);
+    margin: 18px 0 8px;
 }
 
 /* 表单行：label + input */
@@ -107,7 +113,7 @@ body {
 }
 
 .form .login .login_center .login_main input:focus {
-    border-color: var(--brand-500);
+    border-color: var(--ink);
 }
 
 .form .login .login_center .login-info {
@@ -116,7 +122,7 @@ body {
     height: auto;
     line-height: 1.5;
     margin: 0 0 18px;
-    color: var(--text-2);
+    color: var(--t2);
     display: flex;
     align-items: center;
     flex-wrap: wrap;
@@ -126,31 +132,37 @@ body {
     flex: 1;
     width: auto;
     min-width: 0;
-    height: 40px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 0 12px;
-    color: var(--text-1);
-    transition: border-color var(--ease-out), box-shadow var(--ease-out);
+    height: 42px;
+    background: var(--bg-2);
+    border: 1px solid var(--bd);
+    border-radius: var(--r-sm);
+    padding: 0 14px;
+    color: var(--t1);
+    transition: border-color 160ms var(--ease), box-shadow 160ms var(--ease);
+}
+
+.form .login .login_center .login-info .login-info-input::placeholder {
+    color: var(--t3);
 }
 
 .form .login .login_center .login-info .login-info-input:focus {
     outline: none;
-    box-shadow: 0 0 0 3px var(--brand-300);
+    border-color: var(--ink);
 }
 
 .form .login .login_center .login-info .verify-code {
     flex: 0 0 120px;
     width: 120px;
-    height: 40px;
+    height: 42px;
 }
 
 .form .login .login_center .login-info img {
-    height: 40px;
+    height: 42px;
     margin-left: 10px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    border: 1px solid var(--bd);
     cursor: pointer;
+    background: var(--bg-2);
 }
 
 .form .login .login_center .login_submit {
@@ -162,28 +174,32 @@ body {
     width: 100%;
     height: 44px;
     margin-left: 0;
-    background: var(--brand-700);
-    color: #fff;
-    font-size: 16px;
+    background: var(--ink);
+    color: var(--ink-fg);
+    font-size: 15px;
     font-weight: 600;
-    letter-spacing: 4px;
+    letter-spacing: 2px;
     cursor: pointer;
-    border-radius: var(--radius-sm);
-    transition: background-color var(--ease-out);
+    border-radius: var(--r-sm);
+    transition: background-color 120ms var(--ease);
 }
 
 .form .login .login_center .login_submit .submit:hover {
-    background: var(--brand-800);
+    background: var(--ink-hi);
 }
 
 /* ---------- 响应式 ---------- */
 @media screen and (max-width: 480px) {
+    .top .logo {
+        height: 68px;
+    }
+
     .form {
-        margin: 16px auto;
+        margin: 8px auto 24px;
         padding: 0 12px;
     }
 
     .form .login .login_center {
-        padding: 20px 20px 24px;
+        padding: 24px 20px 28px;
     }
 }

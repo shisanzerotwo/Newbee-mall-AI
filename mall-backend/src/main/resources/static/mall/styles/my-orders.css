@@ -66,9 +66,9 @@
 
 #personal .self-info .lfnav .title_list ul li a.active,
 #personal .self-info .lfnav .title_list ul li .active {
-    color: var(--brand-700);
+    color: var(--ink);
     font-weight: 600;
-    background: var(--brand-300);
+    background: var(--bg-3);
 }
 
 /* 右侧内容卡 */
@@ -115,11 +115,11 @@
 
 .uc-content-box .box-hd small,
 .uc-content-box .box-hd small a {
-    color: var(--text-3);
+    color: var(--t2);
 }
 
 .uc-content-box .box-hd small a:hover {
-    color: var(--brand-600);
+    color: var(--ink);
 }
 
 .uc-content-box .box-hd .more {
@@ -140,7 +140,7 @@
 }
 
 .order-list-box .box-bd > small a {
-    color: var(--brand-600);
+    color: var(--ink);
 }
 
 /* ---------- 订单卡片列表 ---------- */
@@ -177,22 +177,22 @@
 }
 
 .uc-order-item-list .order-status-closed {
-    color: var(--text-3);
-    background: var(--bg-page);
+    color: var(--t2);
+    background: var(--bg-3);
 }
 
 .uc-order-item-list .order-status-need-pay {
-    color: var(--accent-500);
-    background: var(--accent-50);
+    color: var(--price);
+    background: var(--price-dim);
 }
 
 .uc-order-item-list .order-status-success {
-    color: var(--success);
-    background: #e6f4ea;
+    color: var(--ok);
+    background: rgba(52, 211, 153, 0.14);
 }
 
 .uc-order-item-list .order-desc {
-    color: var(--text-3);
+    color: var(--t2);
 }
 
 .order-list-box .order-detail-table {
@@ -206,7 +206,7 @@
     border-bottom: 1px dashed var(--border);
     font-weight: 400;
     text-align: left;
-    color: var(--text-3);
+    color: var(--t2);
     vertical-align: bottom;
 }
 
@@ -290,13 +290,13 @@
 }
 
 .order-list-box .goods-list .name a:hover {
-    color: var(--brand-600);
+    color: var(--ink);
 }
 
 .order-list-box .goods-list .price {
     margin: 0;
     font-size: 13px;
-    color: var(--text-3);
+    color: var(--t2);
     font-variant-numeric: tabular-nums;
 }
 

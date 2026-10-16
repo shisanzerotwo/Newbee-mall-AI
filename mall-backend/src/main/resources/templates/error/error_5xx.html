@@ -5,40 +5,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>服务异常 | 500</title>
     <style>
+        :root {
+            --bg: #fafafa; --bg-1: #ffffff; --bg-2: #f4f4f5; --bg-3: #ededef;
+            --bd: #e4e4e7; --bd-2: #d4d4d8;
+            --t1: #18181b; --t2: #52525b; --t3: #6b6b75;
+            --ink: #18181b; --ink-hi: #2f2f36; --ink-fg: #ffffff;
+            --r-md: 8px; --r-sm: 6px; --ease: cubic-bezier(.4,0,.2,1);
+        }
+        html[data-theme="dark"] {
+            --bg: #0a0a0b; --bg-1: #121214; --bg-2: #1a1a1c; --bg-3: #232326;
+            --bd: #26262a; --bd-2: #38383d;
+            --t1: #fafafa; --t2: #a1a1aa; --t3: #84848e;
+            --ink: #ffffff; --ink-hi: #e4e4e7; --ink-fg: #0a0a0b;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #f6f8f9;
+            background: var(--bg);
             font-family: -apple-system, "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "Segoe UI", sans-serif;
-            color: #1f2328;
+            color: var(--t1);
             padding: 24px;
         }
-        .box { text-align: center; }
+        .box { text-align: center; max-width: 460px; }
         .code {
+            font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
             font-size: 88px;
             font-weight: 700;
             line-height: 1;
-            color: #1baeae;
-            letter-spacing: 4px;
+            letter-spacing: -0.04em;
+            color: var(--t1);
         }
-        h1 { font-size: 22px; margin: 20px 0 8px; }
-        .lead { font-size: 14px; color: #8b949e; margin-bottom: 28px; }
+        h1 { font-size: 22px; font-weight: 600; margin: 16px 0 10px; }
+        .lead { font-size: 14px; color: var(--t2); line-height: 1.7; margin-bottom: 28px; }
+        .btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
         .btn {
-            display: inline-block;
-            padding: 0 28px;
-            height: 42px;
-            line-height: 42px;
-            background: #0d7f7f;
-            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 26px;
+            height: 44px;
+            background: var(--ink);
+            color: var(--ink-fg);
             font-size: 14px;
-            border-radius: 6px;
+            font-weight: 500;
+            border-radius: var(--r-sm);
             text-decoration: none;
-            transition: background-color 150ms ease-out;
+            transition: background-color 120ms var(--ease);
         }
-        .btn:hover { background: #0a6060; color: #fff; }
+        .btn:hover { background: var(--ink-hi); color: var(--ink-fg); }
+        .btn--ghost {
+            background: transparent;
+            border: 1px solid var(--bd-2);
+            color: var(--t1);
+        }
+        .btn--ghost:hover { background: var(--bg-2); border-color: var(--bd-2); color: var(--t1); }
     </style>
 </head>
 <body>
@@ -46,7 +69,10 @@
     <div class="code">500</div>
     <h1>服务暂时不可用</h1>
     <p class="lead">服务器遇到了意外状况，我们正在全力恢复，请稍后再试。</p>
-    <a class="btn" href="/">返回首页</a>
+    <div class="btns">
+        <a class="btn" href="/">返回首页</a>
+        <a class="btn btn--ghost" href="/cs">问客服</a>
+    </div>
 </div>
 </body>
 </html>

@@ -1,5 +1,6 @@
 /* ============================================================
-   购物车页（重设计版）
+   购物车页 —— TOOLINK v4
+   要点：表头与行用 1px 线 · 去斑马纹阴影 · 结算按钮近黑实底 · 数量输入方角
    ============================================================ */
 
 #cart {
@@ -42,7 +43,7 @@
     height: auto;
     line-height: 1.5;
     font-size: 13px;
-    color: var(--text-3);
+    color: var(--text-2);
 }
 
 /* 主体卡片 */
@@ -76,9 +77,9 @@
     height: auto;
     line-height: 1;
     margin: 0;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-3);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-2);
     text-align: center;
     flex-shrink: 0;
 }
@@ -111,7 +112,12 @@
     height: auto;
     min-height: 96px;
     padding: 12px 0;
-    border-bottom: 1px solid var(--bg-page);
+    border-bottom: 1px solid var(--bd);
+    transition: background-color 120ms var(--ease);
+}
+
+#cart .cart_bg .list .content2:hover {
+    background: var(--bg-2);
 }
 
 #cart .cart_bg .list .content2:last-of-type {
@@ -179,10 +185,10 @@
 
 /* 数量输入 */
 #cart .cart_bg .list .content2 .sub_content .goods_count {
-    width: 64px;
-    height: 34px;
+    width: 60px;
+    height: 32px;
     border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    border-radius: var(--r-xs);
     text-align: center;
     font-size: 14px;
     color: var(--text-1);
@@ -191,24 +197,24 @@
 
 #cart .cart_bg .list .content2 .sub_content .goods_count:focus {
     outline: none;
-    border-color: var(--brand-500);
+    border-color: var(--ink);
 }
 
 /* 删除按钮 */
 #cart .cart_bg .list .content2 .sub_content a {
     display: inline-block;
-    width: 24px;
-    height: 24px;
-    line-height: 22px;
-    border-radius: 50%;
-    color: var(--text-3);
-    font-size: 16px;
-    transition: all var(--ease-out);
+    width: 22px;
+    height: 22px;
+    line-height: 20px;
+    border-radius: var(--r-xs);
+    color: var(--text-2);
+    font-size: 15px;
+    transition: color 120ms var(--ease), background-color 120ms var(--ease);
 }
 
 #cart .cart_bg .list .content2 .sub_content a:hover {
-    color: var(--danger);
-    background: #fce8e8;
+    color: var(--bad);
+    background: rgba(220, 38, 38, 0.08);
 }
 
 /* 空购物车提示 */
@@ -258,11 +264,12 @@
 }
 
 #cart .cart_bg .pre_order .tips ul li a {
-    color: var(--brand-600);
+    color: var(--ink);
 }
 
 #cart .cart_bg .pre_order .tips ul li a:hover {
-    color: var(--brand-800);
+    color: var(--ink-hi);
+    text-decoration: underline;
 }
 
 #cart .cart_bg .pre_order .tips ul li span {
@@ -293,35 +300,35 @@
 #cart .cart_bg .pre_order .order_div .order_button .order_button_d {
     display: block;
     width: 160px;
-    height: 44px;
-    color: #fff;
-    background: var(--brand-700);
+    height: 48px;
+    color: var(--ink-fg);
+    background: var(--ink);
     font-size: 15px;
     font-weight: 600;
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: var(--r-sm);
     cursor: pointer;
-    transition: background-color var(--ease-out);
+    transition: background-color 120ms var(--ease);
 }
 
 #cart .cart_bg .pre_order .order_div .order_button .order_button_d:hover {
-    background: var(--brand-800);
+    background: var(--ink-hi);
 }
 
 #cart .cart_bg .pre_order .order_div .order_button .order_button_c {
     display: block;
     width: 160px;
-    height: 44px;
-    color: var(--text-3);
-    background: var(--border);
+    height: 48px;
+    color: var(--t2);
+    background: var(--bg-3);
     font-size: 15px;
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: var(--r-sm);
     cursor: not-allowed;
 }
 
 #cart .cart_bg .pre_order .order_div .order_button .order_button_c:hover {
-    background: var(--border);
+    background: var(--bg-3);
 }
 
 /* ---------- 响应式 ---------- */

@@ -1,20 +1,24 @@
 /* ============================================================
-   商品详情页（重设计版）
+   商品详情页样式 —— TOOLINK v4
+   规格：docs/redesign/DESIGN-v4-D2.md §3.2（商品详情）
+   要点：信息区用 1px 线分区 · 价格为信息行（带左侧 3px 近黑竖条）· 购买区双 CTA · 评价区两栏行
+   ⚠️ 类名全部保留（.dc/.content/.title/.intro/.left/.right/.h3/.sub_title/.item_price
+      /.order/.car/.cs-ask-cs/.tb-extra/#reviewSection 系列）。
    ============================================================ */
 
-/* 面包屑条 */
+/* 面包屑条：去底色，留标题 */
 #detail .dc {
     width: 100%;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
+    background: transparent;
+    border-bottom: none;
 }
 
 #detail .dc .content {
     width: 100%;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 16px;
-    height: 52px;
+    padding: 20px 16px 0;
+    height: auto;
     display: flex;
     align-items: center;
 }
@@ -25,20 +29,21 @@
     line-height: 1;
     font-size: 18px;
     font-weight: 600;
-    color: var(--text-1);
+    letter-spacing: -0.01em;
+    color: var(--t1);
 }
 
 /* 商品主信息卡 */
 #detail .intro {
     width: 100%;
     max-width: 1200px;
-    margin: 24px auto 0;
-    padding: 24px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
+    margin: 20px auto 0;
+    padding: 20px;
+    background: var(--bg-1);
+    border: 1px solid var(--bd);
+    border-radius: var(--r-md);
     display: flex;
-    gap: 32px;
+    gap: 28px;
 }
 
 #detail .intro .left {
@@ -51,8 +56,8 @@
     width: 100%;
     aspect-ratio: 1 / 1;
     object-fit: cover;
-    border-radius: var(--radius-md);
-    background: var(--bg-page);
+    border-radius: var(--r-md);
+    background: var(--bg-2);
 }
 
 #detail .intro .left .swiper-container {
@@ -60,8 +65,16 @@
     height: 100%;
     margin: 0;
     padding: 0;
-    border-radius: var(--radius-md);
+    border-radius: var(--r-sm);
     overflow: hidden;
+    border: 1px solid var(--bd);
+}
+
+/* 主图：深色底上给商品图一点辉光，突出商品 */
+#detail .intro .left .swiper-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 #detail .intro .right {
@@ -70,42 +83,48 @@
     min-width: 0;
     width: auto;
     background: transparent;
-    padding: 8px 0;
+    padding: 4px 0;
 }
 
 #detail .intro .right .h3 {
-    margin: 0 0 8px;
-    font-size: 22px;
-    line-height: 1.4;
-    color: var(--text-1);
+    margin: 0 0 10px;
+    font-size: 24px;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+    color: var(--t1);
 }
 
 #detail .intro .right .sub_title {
     font-size: 14px;
-    color: var(--text-3);
+    color: var(--t2);
     line-height: 1.6;
     height: auto;
-    margin: 0 0 16px;
+    margin: 0 0 18px;
 }
 
+/* 价格独立卡 */
 #detail .intro .right .item_price {
     width: auto;
     float: none;
     height: auto;
-    padding: 16px 20px;
-    margin-bottom: 20px;
-    background: var(--accent-50);
-    border-radius: var(--radius-sm);
-    font-size: 24px;
-    color: var(--accent-500);
+    padding: 10px 0 10px 14px;
+    margin: 16px 0 18px;
+    background: transparent;
+    border: none;
+    border-left: 3px solid var(--ink);
+    font-size: 28px;
+    line-height: 1.2;
+    color: var(--price);
     font-weight: 700;
     font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
 }
 
 #detail .intro .right .item_price del {
     font-size: 14px;
-    margin-left: 10px;
-    color: var(--text-3);
+    margin-left: 12px;
+    color: var(--t2);
     font-weight: 400;
     text-decoration: line-through;
 }
@@ -117,34 +136,68 @@
     float: none;
     display: flex;
     gap: 12px;
+    flex-wrap: wrap;
     margin-bottom: 24px;
 }
 
 #detail .intro .right .order .car {
-    height: 44px;
-    width: 156px;
-    border: 1px solid var(--brand-700);
-    border-radius: var(--radius-sm);
-    background: var(--brand-700);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 48px;
+    width: auto;
+    min-width: 148px;
+    padding: 0 24px;
+    border: 1px solid var(--price);
+    border-radius: var(--r-sm);
+    background: var(--price);
     color: #fff;
     font-size: 15px;
+    font-weight: 600;
     cursor: pointer;
     margin-right: 0;
-    transition: background-color var(--ease-out), color var(--ease-out);
+    transition: background-color 120ms var(--ease), border-color 120ms var(--ease),
+        color 120ms var(--ease);
 }
 
 #detail .intro .right .order .car:hover {
-    background: var(--brand-800);
-    border-color: var(--brand-800);
+    filter: brightness(1.08);
 }
 
+/* 次按钮：加入购物车（描边） */
 #detail .intro .right .order .car + .car {
-    background: var(--surface);
-    color: var(--brand-700);
+    background: transparent;
+    border-color: var(--bd-2);
+    color: var(--t1);
+    filter: none;
 }
 
 #detail .intro .right .order .car + .car:hover {
-    background: var(--bg-page);
+    background: var(--bg-2);
+    border-color: var(--bd-2);
+    color: var(--t1);
+}
+
+/* 问客服：品牌色弱化按钮 */
+#detail .intro .right .order .cs-ask-cs {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 48px;
+    padding: 0 22px;
+    border-radius: var(--r-sm);
+    background: var(--bg-2);
+    border: 1px solid var(--bd);
+    color: var(--t1);
+    font-size: 15px;
+    font-weight: 600;
+    transition: background-color 120ms var(--ease), border-color 120ms var(--ease);
+}
+
+#detail .intro .right .order .cs-ask-cs:hover {
+    background: var(--bg-3);
+    border-color: var(--bd-2);
+    color: var(--t1);
 }
 
 /* 服务保障 */
@@ -154,9 +207,9 @@
     height: auto;
     width: auto;
     float: none;
-    color: var(--text-2);
-    border-top: 1px dashed var(--border);
-    padding-top: 16px;
+    color: var(--t2);
+    border-top: 1px solid var(--bd);
+    padding-top: 14px;
 }
 
 #detail .tb-extra dl {
@@ -170,7 +223,7 @@
     height: 22px;
     line-height: 22px;
     margin-bottom: 4px;
-    color: var(--text-3);
+    color: var(--t2);
 }
 
 #detail .tb-extra dl dd a {
@@ -179,23 +232,34 @@
     margin-right: 16px;
     height: 22px;
     line-height: 22px;
-    color: var(--text-2);
-    transition: color var(--ease-out);
+    color: var(--t2);
+    transition: color 160ms var(--ease);
 }
 
 #detail .tb-extra dl dd a:hover {
-    color: var(--brand-600);
+    color: var(--ink);
+}
+
+#detail .tb-extra dl dd img {
+    display: inline-block;
+    height: 16px;
+    width: auto;
+    vertical-align: -3px;
+    margin-right: 4px;
 }
 
 /* 图文详情 */
 #detail .goods {
     width: 100%;
     max-width: 1200px;
-    margin: 24px auto 0;
-    padding: 24px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
+    margin: 16px auto 0;
+    padding: 20px;
+    background: var(--bg-1);
+    border: 1px solid var(--bd);
+    border-radius: var(--r-md);
+    color: var(--t2);
+    font-size: 14px;
+    line-height: 1.9;
 }
 
 #detail .goods img {
@@ -203,66 +267,71 @@
     width: auto;
     margin: 2px auto;
     display: block;
-    border-radius: var(--radius-sm);
+    border-radius: var(--r-sm);
 }
 
 /* ---------- 用户评价区 ---------- */
 #reviewSection {
-    margin-top: 24px;
+    margin-top: 20px;
 }
 
 #reviewSection .review-head {
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--bd);
     padding-bottom: 12px;
     margin-bottom: 16px;
     font-size: 18px;
     font-weight: 600;
-    color: var(--text-1);
+    color: var(--t1);
 }
 
 #reviewSection .review-head .review-count {
-    color: var(--brand-600);
+    color: var(--t2);
+    font-weight: 400;
 }
 
 #reviewSection .review-form {
     padding: 4px 0 16px;
-    border-bottom: 1px solid var(--bg-page);
+    border-bottom: 1px solid var(--bd);
     margin-bottom: 8px;
 }
 
 #reviewSection .review-score-row {
     margin-bottom: 10px;
     font-size: 14px;
-    color: var(--text-2);
+    color: var(--t2);
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
 #reviewSection #reviewScore {
-    padding: 6px 10px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--surface);
-    color: var(--text-1);
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--bd);
+    border-radius: var(--r-sm);
+    background: var(--bg-1);
+    color: var(--t1);
 }
 
 #reviewSection #reviewContent {
     width: 100%;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 10px 12px;
+    border: 1px solid var(--bd);
+    border-radius: var(--r-sm);
+    padding: 10px 14px;
     box-sizing: border-box;
     resize: vertical;
-    color: var(--text-1);
-    background: var(--surface);
-    transition: border-color var(--ease-out), box-shadow var(--ease-out);
+    color: var(--t1);
+    background: var(--bg-1);
+    transition: border-color 120ms var(--ease);
+}
+
+#reviewSection #reviewContent::placeholder {
+    color: var(--t3);
 }
 
 #reviewSection #reviewContent:focus {
     outline: none;
-    border-color: var(--brand-500);
-    box-shadow: 0 0 0 3px var(--brand-300);
+    border-color: var(--ink);
 }
 
 #reviewSection .review-submit {
@@ -270,34 +339,56 @@
 }
 
 #reviewSection .review-submit .btn {
-    background: var(--brand-700);
-    border-color: var(--brand-700);
-    color: #fff;
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--ink-fg);
 }
 
 #reviewSection .review-submit .btn:hover {
-    background: var(--brand-800);
+    background: var(--ink-hi);
+    border-color: var(--ink-hi);
+    color: var(--ink-fg);
 }
 
+/* 评价条目：两栏行（左侧 24px 头像占位 + 右侧内容），靠 1px 线分隔 */
 #reviewSection .review-item {
-    border-bottom: 1px dashed var(--border);
-    padding: 14px 0;
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    column-gap: 10px;
+    border-bottom: 1px solid var(--bd);
+    padding: 12px 0;
+}
+
+/* 头像占位方块（纯装饰，无彩色） */
+#reviewSection .review-item::before {
+    content: "";
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--r-xs);
+    background: var(--bg-3);
+}
+
+#reviewSection .review-meta,
+#reviewSection .review-content {
+    grid-column: 2;
 }
 
 #reviewSection .review-meta {
-    font-size: 13px;
-    color: var(--text-3);
-    margin-bottom: 6px;
+    font-size: 12px;
+    color: var(--t2);
+    margin-bottom: 4px;
 }
 
 #reviewSection .review-stars {
-    color: var(--accent-500);
+    color: var(--warn);
     margin-right: 10px;
     letter-spacing: 1px;
 }
 
 #reviewSection .review-nick {
-    color: var(--text-2);
+    color: var(--t2);
 }
 
 #reviewSection .review-time {
@@ -307,17 +398,23 @@
 #reviewSection .review-content {
     font-size: 14px;
     line-height: 1.7;
-    color: var(--text-1);
+    color: var(--t1);
 }
 
 #reviewSection .review-empty {
     text-align: center;
-    color: var(--text-3);
+    color: var(--t2);
     padding: 24px 0;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 /* ---------- 响应式 ---------- */
+@media screen and (max-width: 991px) {
+    #detail .intro .left {
+        width: 340px;
+    }
+}
+
 @media screen and (max-width: 767px) {
     #detail .intro {
         flex-direction: column;
@@ -329,8 +426,18 @@
         width: 100%;
     }
 
-    #detail .intro .right .order .car {
+    #detail .intro .right .h3 {
+        font-size: 20px;
+    }
+
+    #detail .intro .right .item_price {
+        font-size: 24px;
+    }
+
+    #detail .intro .right .order .car,
+    #detail .intro .right .order .cs-ask-cs {
         flex: 1;
         width: auto;
+        min-width: 0;
     }
 }

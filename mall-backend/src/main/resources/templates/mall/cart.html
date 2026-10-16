@@ -4,8 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <title>NewBee商城-购物车</title>
-    <script>(function(){try{var t=localStorage.getItem("nb-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+    <script>(function(){try{var s=localStorage.getItem("nb-theme");var t=(s==="dark"||(s&&s!=="light"&&s!=="t3"))?"dark":"light";document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
     <link rel="stylesheet" th:href="@{mall/css/iconfont.css}">
+    <link rel="stylesheet" th:href="@{mall/css/onyx.css}">
     <link rel="stylesheet" th:href="@{mall/css/common.css}">
     <link rel="stylesheet" th:href="@{mall/css/themes.css}">
     <link rel="stylesheet" th:href="@{mall/styles/header.css}">

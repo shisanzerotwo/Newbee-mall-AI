@@ -1,0 +1,439 @@
+{
+  "base": "http://127.0.0.1:28089",
+  "generatedAt": "2026-10-08T09:39:07.018Z",
+  "overflow": [
+    {
+      "key": "home@light@1200",
+      "scrollW": 1185,
+      "clientW": 1185,
+      "bodyScrollW": 1185,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "home@light@992",
+      "scrollW": 977,
+      "clientW": 977,
+      "bodyScrollW": 977,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "home@light@768",
+      "scrollW": 753,
+      "clientW": 753,
+      "bodyScrollW": 753,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "home@light@480",
+      "scrollW": 465,
+      "clientW": 465,
+      "bodyScrollW": 465,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "home@dark@1200",
+      "scrollW": 1185,
+      "clientW": 1185,
+      "bodyScrollW": 1185,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "home@dark@992",
+      "scrollW": 977,
+      "clientW": 977,
+      "bodyScrollW": 977,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "home@dark@768",
+      "scrollW": 753,
+      "clientW": 753,
+      "bodyScrollW": 753,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "home@dark@480",
+      "scrollW": 465,
+      "clientW": 465,
+      "bodyScrollW": 465,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "search@light@1200",
+      "scrollW": 1185,
+      "clientW": 1185,
+      "bodyScrollW": 1185,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "search@light@992",
+      "scrollW": 977,
+      "clientW": 977,
+      "bodyScrollW": 977,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "search@light@768",
+      "scrollW": 753,
+      "clientW": 753,
+      "bodyScrollW": 753,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "search@light@480",
+      "scrollW": 465,
+      "clientW": 465,
+      "bodyScrollW": 465,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "search@dark@1200",
+      "scrollW": 1185,
+      "clientW": 1185,
+      "bodyScrollW": 1185,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "search@dark@992",
+      "scrollW": 977,
+      "clientW": 977,
+      "bodyScrollW": 977,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "search@dark@768",
+      "scrollW": 753,
+      "clientW": 753,
+      "bodyScrollW": 753,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "search@dark@480",
+      "scrollW": 465,
+      "clientW": 465,
+      "bodyScrollW": 465,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "detail@light@1200",
+      "scrollW": 1200,
+      "clientW": 1200,
+      "bodyScrollW": 1200,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "detail@light@992",
+      "scrollW": 992,
+      "clientW": 992,
+      "bodyScrollW": 992,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "detail@light@768",
+      "scrollW": 768,
+      "clientW": 768,
+      "bodyScrollW": 768,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "detail@light@480",
+      "scrollW": 480,
+      "clientW": 480,
+      "bodyScrollW": 480,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "detail@dark@1200",
+      "scrollW": 1200,
+      "clientW": 1200,
+      "bodyScrollW": 1200,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "detail@dark@992",
+      "scrollW": 992,
+      "clientW": 992,
+      "bodyScrollW": 992,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "detail@dark@768",
+      "scrollW": 768,
+      "clientW": 768,
+      "bodyScrollW": 768,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "detail@dark@480",
+      "scrollW": 480,
+      "clientW": 480,
+      "bodyScrollW": 480,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "cart@light@1200",
+      "scrollW": 1200,
+      "clientW": 1200,
+      "bodyScrollW": 1200,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "cart@light@992",
+      "scrollW": 992,
+      "clientW": 992,
+      "bodyScrollW": 992,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "cart@light@768",
+      "scrollW": 768,
+      "clientW": 768,
+      "bodyScrollW": 768,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "cart@light@480",
+      "scrollW": 480,
+      "clientW": 480,
+      "bodyScrollW": 480,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "cart@dark@1200",
+      "scrollW": 1200,
+      "clientW": 1200,
+      "bodyScrollW": 1200,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "cart@dark@992",
+      "scrollW": 992,
+      "clientW": 992,
+      "bodyScrollW": 992,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "cart@dark@768",
+      "scrollW": 768,
+      "clientW": 768,
+      "bodyScrollW": 768,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "cart@dark@480",
+      "scrollW": 480,
+      "clientW": 480,
+      "bodyScrollW": 480,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "login@light@1200",
+      "scrollW": 1200,
+      "clientW": 1200,
+      "bodyScrollW": 1200,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "login@light@992",
+      "scrollW": 992,
+      "clientW": 992,
+      "bodyScrollW": 992,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "login@light@768",
+      "scrollW": 768,
+      "clientW": 768,
+      "bodyScrollW": 768,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "login@light@480",
+      "scrollW": 480,
+      "clientW": 480,
+      "bodyScrollW": 480,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "login@dark@1200",
+      "scrollW": 1200,
+      "clientW": 1200,
+      "bodyScrollW": 1200,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "login@dark@992",
+      "scrollW": 992,
+      "clientW": 992,
+      "bodyScrollW": 992,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "login@dark@768",
+      "scrollW": 768,
+      "clientW": 768,
+      "bodyScrollW": 768,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "login@dark@480",
+      "scrollW": 480,
+      "clientW": 480,
+      "bodyScrollW": 480,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "cs@light@1200",
+      "scrollW": 1185,
+      "clientW": 1185,
+      "bodyScrollW": 1185,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "cs@light@992",
+      "scrollW": 977,
+      "clientW": 977,
+      "bodyScrollW": 977,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "cs@light@768",
+      "scrollW": 753,
+      "clientW": 753,
+      "bodyScrollW": 753,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "cs@light@480",
+      "scrollW": 465,
+      "clientW": 465,
+      "bodyScrollW": 465,
+      "htmlTheme": "light",
+      "overflowPx": 0
+    },
+    {
+      "key": "cs@dark@1200",
+      "scrollW": 1185,
+      "clientW": 1185,
+      "bodyScrollW": 1185,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "cs@dark@992",
+      "scrollW": 977,
+      "clientW": 977,
+      "bodyScrollW": 977,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "cs@dark@768",
+      "scrollW": 753,
+      "clientW": 753,
+      "bodyScrollW": 753,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    },
+    {
+      "key": "cs@dark@480",
+      "scrollW": 465,
+      "clientW": 465,
+      "bodyScrollW": 465,
+      "htmlTheme": "dark",
+      "overflowPx": 0
+    }
+  ],
+  "contrast": [
+    {
+      "page": "home",
+      "theme": "light",
+      "fails": []
+    },
+    {
+      "page": "home",
+      "theme": "dark",
+      "fails": []
+    },
+    {
+      "page": "detail",
+      "theme": "light",
+      "fails": []
+    },
+    {
+      "page": "detail",
+      "theme": "dark",
+      "fails": []
+    }
+  ],
+  "shots": [
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\home-light-1200.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\home-light-480.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\home-dark-1200.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\home-dark-480.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\search-light-1200.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\search-light-480.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\search-dark-1200.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\search-dark-480.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\detail-light-1200.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\detail-light-480.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\detail-dark-1200.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\detail-dark-480.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\cart-light-1200.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\cart-light-480.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\cart-dark-1200.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\cart-dark-480.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\login-light-1200.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\login-light-480.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\login-dark-1200.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\login-dark-480.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\cs-light-1200.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\cs-light-480.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\cs-dark-1200.png",
+    "D:\\GitHub\\xiangmu\\newbee-mall-ai\\docs\\screenshots\\v4\\cs-dark-480.png"
+  ],
+  "errors": []
+}

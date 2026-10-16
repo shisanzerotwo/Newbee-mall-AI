@@ -1,6 +1,13 @@
 /* ============================================================
-   首页样式（重设计版）· 规格见 docs/DESIGN.md
-   结构：1.分类菜单+轮播  2.热销图组  3.新品上线  4.为你推荐  5.响应式
+   首页样式 —— TOOLINK v4（L3/L4 结构差异化）
+   规格：docs/redesign/DESIGN-v4-D2.md §3.1
+   目标：四个区块各有各的骨架，打破「同构复制感」
+     #banner      → 侧栏索引 + 主视觉（朴素 1px 线列表）
+     #sub_banner  → 非对称宫格（1 大 3 小）
+     #flash       → 横向轨道（首卡 2 倍宽，可横滑）
+     #recommend   → 两列行式列表（图左文右，行间 1px 线）
+   ⚠️ 类名保持：#banner/.all-sort-list/.swiper-container/#sub_banner/.hot-image
+      /#flash/#recommend/.name/.discount/.item_price/.info/.counter
    ============================================================ */
 
 #content {
@@ -10,85 +17,135 @@
     width: 100%;
 }
 
-/* ---------- 1. 分类菜单 + 轮播 ---------- */
+/* ---------- 0. 区块标题统一签名：序号 + 标题 + 延伸线 ---------- */
+#content #flash > h2,
+#content #recommend > h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--t1);
+}
+
+/* 序号：monospace，第三级灰，纯装饰不承载语义 */
+#content #flash > h2::before,
+#content #recommend > h2::before {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--t3);
+    letter-spacing: 0.04em;
+}
+
+#content #flash > h2::after,
+#content #recommend > h2::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--bd);
+}
+
+#content #flash > h2::before {
+    content: "01 /";
+}
+
+#content #recommend > h2::before {
+    content: "02 /";
+}
+
+/* ---------- 1. 分类索引 + 主视觉 ---------- */
 #content #banner {
     display: flex;
     width: 100%;
     max-width: 1200px;
     flex-shrink: 0;
-    height: 440px;
-    margin-top: 16px;
+    height: 420px;
+    margin-top: 20px;
     padding: 0 16px;
+    gap: 16px;
 }
 
-/* 分类菜单：由旧版黑底改为白底浅色 */
+/* 分类索引：无底板，靠 1px 线分隔（工具风的侧栏） */
 .all-sort-list {
     position: relative;
     float: left;
-    width: 228px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    overflow: hidden;
+    width: 232px;
+    flex: none;
+    background: var(--bg-1);
+    border: 1px solid var(--bd);
+    border-radius: var(--r-md);
+    overflow: visible;
     height: 100%;
+    padding: 6px 0;
 }
 
 .all-sort-list .item {
-    height: 43.6px;
-    border-top: 1px solid var(--bg-page);
+    position: relative;
+    height: 38px;
+    border-radius: 0;
+    transition: background-color 120ms var(--ease);
 }
 
-.all-sort-list .item:first-of-type {
-    border-top: none;
+/* hover：整行淡底 + 左侧 2px 近黑竖条（无彩色） */
+.all-sort-list .item:hover {
+    background: var(--bg-2);
 }
 
-.all-sort-list .item.bo {
-    border-top: none;
+.all-sort-list .item:hover::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--ink);
 }
 
 .all-sort-list .item h3 {
     height: 100%;
-    line-height: 43px;
-    padding-left: 20px;
-    font-size: 14px;
-    font-weight: normal;
+    line-height: 38px;
+    padding-left: 16px;
+    font-size: 13px;
+    font-weight: 400;
     width: auto;
     overflow: hidden;
-    transition: background-color var(--ease-out);
 }
 
 .all-sort-list .item span {
     padding: 0 6px 0 0;
-    color: var(--brand-500);
+    color: var(--t3);
 }
 
 .all-sort-list .item a {
-    color: var(--text-1);
+    color: var(--t2);
     text-decoration: none;
-    transition: color var(--ease-out);
-}
-
-.all-sort-list .item:hover {
-    background: var(--bg-page);
+    transition: color 120ms var(--ease);
 }
 
 .all-sort-list .item a:hover {
-    font-weight: normal;
-    color: var(--brand-600);
+    color: var(--t1);
 }
 
+/* 二级分类下拉浮层 */
 .all-sort-list .item-list {
     display: none;
     position: absolute;
     width: 495px;
     min-height: 200px;
-    background: var(--surface);
-    left: 227px;
-    box-shadow: var(--shadow-md);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    top: 3px;
+    background: var(--bg-1);
+    left: 231px;
+    box-shadow: var(--sh-2);
+    border: 1px solid var(--bd);
+    border-radius: var(--r-md);
+    top: 0;
     z-index: 10;
+}
+
+.all-sort-list .item:hover .item-list {
+    display: block;
 }
 
 .item-list .subitem {
@@ -98,7 +155,7 @@
 }
 
 .item-list .subitem dl {
-    border-top: 1px solid var(--bg-page);
+    border-top: 1px solid var(--bd);
     padding: 8px 0;
     overflow: hidden;
     zoom: 1;
@@ -115,11 +172,11 @@
     text-align: left;
     padding: 3px 6px 0 0;
     font-weight: 600;
-    color: var(--brand-600);
+    color: var(--t1);
 }
 
 .item-list .subitem dt a {
-    color: var(--brand-600);
+    color: var(--t1);
     text-decoration: none;
 }
 
@@ -136,29 +193,30 @@
     line-height: 14px;
     padding: 0 8px;
     margin-top: 5px;
-    border-left: 1px solid var(--border);
+    border-left: 1px solid var(--bd);
 }
 
 .item-list .subitem dd em a,
 .item-list .cat-right dd a {
-    color: var(--text-2);
+    color: var(--t2);
     text-decoration: none;
 }
 
 .item-list .subitem dd em a:hover,
 .item-list .cat-right dd a:hover {
-    font-weight: normal;
-    color: var(--brand-600);
+    color: var(--t1);
 }
 
-/* 轮播 */
+/* 主视觉：实底，无渐变 */
 #content #banner .swiper-container {
     flex: 1;
     min-width: 0;
     height: 100%;
-    border-radius: var(--radius-md);
+    border-radius: var(--r-md);
+    border: 1px solid var(--bd);
     overflow: hidden;
-    margin-left: 16px;
+    margin-left: 0;
+    background: var(--bg-2);
 }
 
 #content #banner .swiper-container .swiper-wrapper .swiper-slide img {
@@ -167,27 +225,79 @@
     object-fit: cover;
 }
 
+/* 轮播控件：朴素近黑圆点，去彩色 */
 #content #banner .swiper-container .swiper-button-prev,
 #content #banner .swiper-container .swiper-button-next {
     --swiper-theme-color: #fff;
-    --swiper-navigation-size: 28px;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: rgba(31, 35, 40, 0.35);
-    transition: background-color var(--ease-out);
+    --swiper-navigation-size: 18px;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--r-sm);
+    background: rgba(24, 24, 27, 0.6);
+    border: none;
+    transition: background-color 120ms var(--ease);
 }
 
 #content #banner .swiper-container .swiper-button-prev:hover,
 #content #banner .swiper-container .swiper-button-next:hover {
-    background: rgba(31, 35, 40, 0.55);
+    background: rgba(24, 24, 27, 0.88);
 }
 
-/* ---------- 2. 热销图组 ---------- */
+#content #banner .swiper-container .swiper-pagination-bullet {
+    background: rgba(255, 255, 255, 0.55);
+    opacity: 1;
+    width: 14px;
+    height: 2px;
+    border-radius: 1px;
+}
+
+#content #banner .swiper-container .swiper-pagination-bullet-active {
+    background: #fff;
+    width: 24px;
+}
+
+/* ---------- 1.5 状态条：真实计数，无底板 ---------- */
+#content #statusbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    max-width: 1200px;
+    flex-shrink: 0;
+    margin: 20px auto 0;
+    padding: 10px 16px;
+    border-top: 1px solid var(--bd);
+    border-bottom: 1px solid var(--bd);
+    font-size: 12px;
+    color: var(--t2);
+}
+
+#content #statusbar .stat {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 2px;
+}
+
+#content #statusbar .stat b {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--t1);
+    font-variant-numeric: tabular-nums;
+}
+
+#content #statusbar .sep {
+    width: 1px;
+    height: 11px;
+    background: var(--bd-2);
+}
+
+/* ---------- 2. 热销：非对称宫格（首图 2x2，其余 1x1） ---------- */
 #content #sub_banner {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
+    grid-auto-rows: 148px;
+    gap: 12px;
     width: 100%;
     max-width: 1200px;
     flex-shrink: 0;
@@ -196,11 +306,24 @@
 }
 
 #content #sub_banner .hot-image {
+    position: relative;
     width: 100%;
-    aspect-ratio: 1 / 1;
-    border-radius: var(--radius-md);
+    height: 100%;
+    border-radius: var(--r-sm);
     overflow: hidden;
-    background: var(--surface);
+    background: var(--bg-2);
+    border: 1px solid var(--bd);
+    transition: border-color 120ms var(--ease);
+}
+
+/* 首个热销图放大占 2 列 2 行（非对称） */
+#content #sub_banner .hot-image:first-child {
+    grid-column: span 2;
+    grid-row: span 2;
+}
+
+#content #sub_banner .hot-image:hover {
+    border-color: var(--bd-2);
 }
 
 #content #sub_banner .hot-image a {
@@ -213,217 +336,307 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    opacity: 0.92;
-    transition: opacity var(--ease-out), transform 300ms ease-out;
+    transition: opacity 160ms var(--ease);
 }
 
 #content #sub_banner .hot-image a img:hover {
-    opacity: 1;
-    transform: scale(1.02);
+    opacity: 0.92;
 }
 
-/* ---------- 3/4. 商品区块通用（新品上线 / 为你推荐） ---------- */
-#content #flash,
-#content #recommend {
+/* ---------- 3. 新品：横向轨道（首卡 2 倍宽，可横滑） ---------- */
+#content #flash {
     position: relative;
     width: 100%;
     max-width: 1200px;
     flex-shrink: 0;
-    margin: 48px auto 0;
+    margin: 40px auto 0;
     padding: 0 16px;
 }
 
-#content #flash > h2,
-#content #recommend > h2 {
-    position: relative;
-    font-size: 20px;
-    color: var(--text-1);
+#content #flash ul {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scroll-padding-left: 0;
     padding-bottom: 12px;
-    margin-bottom: 20px;
+    /* 细滚动条，工具风 */
+    scrollbar-width: thin;
+    scrollbar-color: var(--bd-2) transparent;
 }
 
-#content #flash > h2::after,
-#content #recommend > h2::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    width: 32px;
-    height: 3px;
-    border-radius: 2px;
-    background: var(--brand-500);
+#content #flash ul::-webkit-scrollbar {
+    height: 6px;
 }
 
-#content #recommend .more {
-    position: absolute;
-    top: 4px;
-    right: 16px;
-    font-size: 13px;
-    color: var(--text-3);
-    transition: color var(--ease-out);
+#content #flash ul::-webkit-scrollbar-thumb {
+    background: var(--bd-2);
+    border-radius: 3px;
 }
 
-#content #recommend .more:hover {
-    color: var(--brand-600);
+#content #flash ul::-webkit-scrollbar-track {
+    background: transparent;
 }
 
-/* 商品卡片网格 */
-#content #flash ul,
-#content #recommend ul {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 16px;
-}
-
-#content #flash ul li,
-#content #recommend ul li {
-    width: auto;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
+#content #flash ul li {
+    flex: none;
+    width: 190px;
+    scroll-snap-align: start;
+    background: var(--bg-1);
+    border: 1px solid var(--bd);
+    border-radius: var(--r-sm);
     overflow: hidden;
-    transition: box-shadow var(--ease-out), transform var(--ease-out),
-        border-color var(--ease-out);
+    transition: border-color 120ms var(--ease);
 }
 
-#content #flash ul li:hover,
-#content #recommend ul li:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
-    border-color: transparent;
+/* 首卡 2 倍宽 —— 打破「每张卡一样大」的复制感 */
+#content #flash ul li:first-child {
+    width: 392px;
 }
 
-#content #flash ul li a,
-#content #recommend ul li a {
+#content #flash ul li:hover {
+    border-color: var(--bd-2);
+}
+
+#content #flash ul li a {
     display: block;
-    padding: 20px 16px 16px;
-    font-size: 14px;
-    text-align: center;
-    color: var(--text-1);
+    padding: 10px 10px 12px;
+    font-size: 13px;
+    text-align: left;
+    color: var(--t1);
     position: relative;
     overflow: hidden;
 }
 
-#content #flash ul li a img,
-#content #recommend ul li a img {
+#content #flash ul li a img {
     display: block;
-    width: 150px;
-    height: 150px;
+    width: 100%;
+    height: 120px;
     object-fit: cover;
-    margin: 0 auto 12px;
-    border-radius: var(--radius-sm);
-    background: var(--bg-page);
+    margin-bottom: 10px;
+    border-radius: var(--r-xs);
+    background: var(--bg-2);
 }
 
-/* 商品名：最多两行截断 */
-#content #flash ul li a .name,
-#content #recommend ul li a .name {
+/* 首卡图更高 */
+#content #flash ul li:first-child a img {
+    height: 240px;
+}
+
+#content #flash ul li a .name {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    height: auto;
-    line-height: 1.4;
-    margin-bottom: 4px;
+    line-height: 1.45;
+    color: var(--t1);
 }
 
 #content #flash ul li a .discount {
     font-size: 12px;
-    color: var(--text-3);
-    margin: 4px 0 8px;
+    color: var(--t2);
+    margin: 4px 0 6px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* 价格：暖橙强调 + 表格数字 */
+/* 价格：唯一色相 */
 #content #flash ul li a .item_price,
-#content #recommend ul li a .item_price,
-#content #flash ul li a .price,
-#content #recommend ul li a .price {
-    color: var(--accent-500);
+#content #flash ul li a .price {
+    color: var(--price);
     font-weight: 700;
     font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    margin-top: 6px;
 }
 
 #content #flash ul li a .item_price::before,
-#content #recommend ul li a .item_price::before,
-#content #flash ul li a .price::before,
-#content #recommend ul li a .price::before {
+#content #flash ul li a .price::before {
     content: "¥";
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     margin-right: 2px;
 }
 
-/* 推荐卡片的角标 */
+/* ---------- 4. 推荐：两列行式列表 ---------- */
+#content #recommend {
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+    flex-shrink: 0;
+    margin: 40px auto 0;
+    padding: 0 16px;
+}
+
+#content #recommend .more {
+    position: absolute;
+    top: 0;
+    right: 16px;
+    display: inline-flex;
+    align-items: center;
+    height: 21px;
+    font-size: 12px;
+    color: var(--t2);
+    transition: color 120ms var(--ease);
+}
+
+#content #recommend .more:hover {
+    color: var(--ink);
+    text-decoration: underline;
+}
+
+/* 两列，行间 1px 线 */
+#content #recommend ul {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0 24px;
+    border-top: 1px solid var(--bd);
+}
+
+#content #recommend ul li {
+    width: auto;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--bd);
+    border-radius: 0;
+    transition: background-color 120ms var(--ease);
+}
+
+#content #recommend ul li:hover {
+    background: var(--bg-1);
+}
+
+/* 行式布局：左图 64px + 右信息 */
+#content #recommend ul li a {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 12px;
+    row-gap: 2px;
+    position: relative;
+    padding: 12px 8px;
+    font-size: 13px;
+    text-align: left;
+    color: var(--t1);
+}
+
+#content #recommend ul li a img {
+    grid-row: 1 / span 2;
+    grid-column: 1;
+    display: block;
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: var(--r-xs);
+    background: var(--bg-2);
+}
+
+#content #recommend ul li a .name {
+    grid-column: 2;
+    grid-row: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.5;
+    color: var(--t1);
+}
+
+/* 价格移到第二行，与角标同行 */
+#content #recommend ul li a .item_price,
+#content #recommend ul li a .price {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: center;
+    color: var(--price);
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+#content #recommend ul li a .item_price::before,
+#content #recommend ul li a .price::before {
+    content: "¥";
+    font-size: 11px;
+    font-weight: 600;
+    margin-right: 1px;
+}
+
+/* 角标：行内小标签（不再是绝对定位胶囊） */
 #content #recommend ul li a .info {
     position: absolute;
     top: 12px;
-    left: 12px;
+    right: 8px;
+    z-index: 2;
     width: auto;
-    height: 22px;
-    line-height: 22px;
-    padding: 0 10px;
+    height: 18px;
+    line-height: 16px;
+    padding: 0 6px;
     text-align: center;
-    color: var(--accent-500);
-    font-size: 12px;
-    background: var(--accent-50);
-    border-radius: 11px;
+    color: var(--t2);
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--bg-2);
+    border: 1px solid var(--bd);
+    border-radius: var(--r-xs);
 }
 
 #content #recommend ul li a .info.new {
-    color: var(--brand-700);
-    background: var(--brand-300);
+    color: var(--price);
+    border-color: var(--price-dim);
+    background: var(--price-dim);
 }
 
+/* 弱信息行（"猜你喜欢"）：承载文字语义，用第二级灰 */
 #content #recommend ul li a .counter {
+    position: absolute;
+    right: 8px;
+    bottom: 12px;
     height: auto;
     line-height: 1;
-    margin-top: 8px;
-    color: var(--text-3);
-    font-size: 12px;
+    margin: 0;
+    color: var(--t2);
+    font-size: 11px;
 }
 
-/* 悬停上滑的品牌说明条 */
+/* 旧的悬停浮现条已移除（AI 味重点）。保留类名以兼容模板，但不渲染。 */
 #content #recommend ul li a .comment {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    transform: translateY(101%);
-    transition: transform 250ms ease-out;
-    box-sizing: border-box;
-    height: 70px;
-    padding: 12px 0 0 16px;
-    background: var(--brand-800);
-    color: #fff;
-    text-align: left;
-}
-
-#content #recommend ul li:hover a .comment {
-    transform: translateY(0);
-}
-
-#content #recommend ul li a .comment p {
-    font-size: 12px;
-    margin-top: 5px;
+    display: none;
 }
 
 /* ---------- 5. 响应式 ---------- */
-@media screen and (max-width: 991px) {
-    #content #banner {
-        height: 360px;
+@media screen and (max-width: 1100px) {
+    #content #flash ul li {
+        width: 176px;
     }
 
-    #content #flash ul,
-    #content #recommend ul {
-        grid-template-columns: repeat(4, 1fr);
+    #content #flash ul li:first-child {
+        width: 364px;
+    }
+}
+
+@media screen and (max-width: 991px) {
+    #content #banner {
+        height: 340px;
     }
 
     #content #sub_banner {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 12px;
+        grid-auto-rows: 124px;
+        gap: 10px;
+    }
+
+    #content #recommend ul {
+        grid-template-columns: 1fr;
+    }
+
+    #content #flash ul li a img {
+        height: 108px;
+    }
+
+    #content #flash ul li:first-child a img {
+        height: 224px;
     }
 }
 
@@ -438,22 +651,43 @@
         display: none;
     }
 
-    #content #banner .swiper-container {
-        margin-left: 0;
-    }
-
     #content #sub_banner {
         grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
+        grid-auto-rows: 108px;
+        gap: 8px;
     }
 
-    #content #flash ul,
-    #content #recommend ul {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
+    /* 手机上取消首图跨格，避免过高 */
+    #content #sub_banner .hot-image:first-child {
+        grid-column: span 2;
+        grid-row: span 1;
     }
 
-    #content #flash,
+    #content #flash {
+        margin-top: 28px;
+    }
+
+    #content #flash ul li {
+        width: 156px;
+    }
+
+    #content #flash ul li:first-child {
+        width: 300px;
+    }
+
+    #content #flash ul li a img {
+        height: 96px;
+    }
+
+    #content #flash ul li:first-child a img {
+        height: 200px;
+    }
+
+    #content #flash > h2,
+    #content #recommend > h2 {
+        margin-bottom: 12px;
+    }
+
     #content #recommend {
         margin-top: 28px;
     }

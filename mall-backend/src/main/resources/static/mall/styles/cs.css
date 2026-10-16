@@ -1,17 +1,18 @@
 @import url("/mall/css/cs-widget.css");
 
 /*!
- * cs.css —— /cs 完整页的三栏布局（M3-A）。
+ * cs.css —— /cs 完整页的三栏布局（TOOLINK v4）。
  * 组件样式在 /mall/css/cs-widget.css（与浮窗共用），经由本文件的 @import 引入：
  * 因为 head 片段是 th:replace 掉整个 <head> 的，在模板里额外加的 <link> 会被丢弃，
  * 而 head-fragment 只会按 path 加载 /mall/styles/<path>.css —— 用 @import 是最稳的接法。
  *
- * 三栏：会话历史 232px | 对话区（自适应） | 上下文面板 340px（DESIGN §8.1）
+ * 三栏：会话历史 240 | 对话区（自适应） | 上下文面板 330（DESIGN-v4-D2 §3）
+ * ⚠️ 守卫契约（CsFrontendGuardTest）：@import 必须出现在 .cs-page 之前 —— 不要调整顺序。
  */
 
 .cs-page {
     display: grid;
-    grid-template-columns: 232px minmax(0, 1fr) 340px;
+    grid-template-columns: 240px minmax(0, 1fr) 330px;
     gap: 16px;
     margin: 20px auto 40px;
     height: calc(100vh - 260px);
@@ -22,22 +23,24 @@
     display: flex;
     flex-direction: column;
     min-height: 0; /* 关键：让内部 overflow 生效（flex/grid 子项默认 min-height:auto 会撑破容器） */
-    background: var(--surface, #fff);
-    border: 1px solid var(--border, #e4e8eb);
-    border-radius: var(--radius-md, 10px);
-    box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, .07));
+    background: var(--bg-1, #ffffff);
+    border: 1px solid var(--bd, #e4e4e7);
+    border-radius: var(--r-md, 8px);
     overflow: hidden;
 }
 
 .cs-col__h {
     flex: 0 0 auto;
     margin: 0;
-    padding: 11px 14px;
+    padding: 14px 16px;
     font-size: 13px;
     font-weight: 600;
-    color: var(--text-2, #57606a);
-    background: var(--bg-page, #f6f8f9);
-    border-bottom: 1px solid var(--border, #e4e8eb);
+    color: var(--t1, #18181b);
+    background: var(--bg-2, #f4f4f5);
+    border-bottom: 1px solid var(--bd, #e4e4e7);
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 /* 会话历史（左） */
@@ -50,30 +53,70 @@
 .cs-history__item {
     display: block;
     width: 100%;
-    padding: 8px 10px;
-    margin-bottom: 4px;
-    font-size: 13px;
+    padding: 9px 12px;
+    margin-bottom: 2px;
+    font-size: 12px;
+    line-height: 1.5;
     text-align: left;
-    color: var(--text-2, #57606a);
+    color: var(--t2, #52525b);
     background: transparent;
     border: 0;
-    border-radius: var(--radius-sm, 6px);
+    border-radius: var(--r-xs, 4px);
     cursor: pointer;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    transition: background-color 120ms var(--ease, ease), color 120ms var(--ease, ease);
 }
 
-.cs-history__item:hover,
+.cs-history__item:hover {
+    background: var(--bg-2, #f4f4f5);
+    color: var(--t1, #18181b);
+}
+
+/* 激活态：近黑实底 + 反色字（去紫，对比度 17.7:1） */
 .cs-history__item.is-active {
-    background: var(--bg-page, #f6f8f9);
-    color: var(--text-1, #1f2328);
+    background: var(--ink, #18181b);
+    color: var(--ink-fg, #ffffff);
+    font-weight: 500;
 }
 
 /* 上下文面板（右） */
 .cs-panel__body {
     flex: 1 1 auto;
     overflow-y: auto;
+}
+
+/* 对话区（中）：容器本身不再加 padding，交给内部 .cs-messages / .cs-composer */
+.cs-chat {
+    background: var(--bg-1, #ffffff);
+}
+
+/* ---------- 滚动条：深色下更克制 ---------- */
+.cs-history__list::-webkit-scrollbar,
+.cs-messages::-webkit-scrollbar,
+.cs-panel__body::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.cs-history__list::-webkit-scrollbar-thumb,
+.cs-messages::-webkit-scrollbar-thumb,
+.cs-panel__body::-webkit-scrollbar-thumb {
+    background: var(--bd-2, #d4d4d8);
+    border-radius: 2px;
+}
+
+.cs-history__list::-webkit-scrollbar-thumb:hover,
+.cs-messages::-webkit-scrollbar-thumb:hover,
+.cs-panel__body::-webkit-scrollbar-thumb:hover {
+    background: var(--t2, #52525b);
+}
+
+.cs-history__list::-webkit-scrollbar-track,
+.cs-messages::-webkit-scrollbar-track,
+.cs-panel__body::-webkit-scrollbar-track {
+    background: transparent;
 }
 
 /* 窄屏：退化为单列堆叠（手机端底部抽屉属 §8.3 增强项，本次不做） */

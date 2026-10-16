@@ -27,7 +27,9 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -131,6 +133,17 @@ public class NewBeeMallIndexConfigServiceImpl implements NewBeeMallIndexConfigSe
             redisCacheUtil.set(cacheKey, newBeeMallIndexConfigGoodsVOS, Constants.INDEX_CACHE_TTL);
         }
         return newBeeMallIndexConfigGoodsVOS;
+    }
+
+    @Override
+    public int getGoodsCount() {
+        // 首页状态条只展示总数，不带筛选条件。
+        // ⚠️ PageQueryUtil 的构造器会 params.get("page").toString()，缺 key 直接 NPE，
+        //    且 mapper 的 <if test="startTime.trim()..."> 也要求 key 存在 —— 必须显式填 page/limit。
+        Map<String, Object> params = new HashMap<>();
+        params.put("page", 1);
+        params.put("limit", 1);
+        return goodsMapper.getTotalNewBeeMallGoods(new PageQueryUtil(params));
     }
 
     @Override

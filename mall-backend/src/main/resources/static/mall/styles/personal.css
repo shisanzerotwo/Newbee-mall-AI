@@ -66,9 +66,9 @@
 
 #personal .self-info .lfnav .title_list ul li a.active,
 #personal .self-info .lfnav .title_list ul li .active {
-    color: var(--brand-700);
+    color: var(--ink);
     font-weight: 600;
-    background: var(--brand-300);
+    background: var(--bg-3);
 }
 
 /* 右侧内容卡 */
@@ -99,14 +99,14 @@
 }
 
 #personal .self-info .intro .grzlbt a {
-    color: var(--brand-600);
+    color: var(--ink);
     font-size: 14px;
     font-weight: 400;
     margin-left: 0;
 }
 
 #personal .self-info .intro .grzlbt a:hover {
-    color: var(--brand-800);
+    color: var(--ink);
 }
 
 /* 资料行 */
@@ -133,7 +133,7 @@
     flex: 0 0 90px;
     font-size: 14px;
     font-weight: 600;
-    color: var(--text-3);
+    color: var(--t2);
     width: auto;
     height: auto;
     line-height: inherit;
@@ -162,11 +162,11 @@
 }
 
 #personal .self-info .intro .info_item span a {
-    color: var(--brand-600);
+    color: var(--ink);
 }
 
 #personal .self-info .intro .info_item span a:hover {
-    color: var(--brand-800);
+    color: var(--ink);
 }
 
 /* ---------- 响应式 ---------- */

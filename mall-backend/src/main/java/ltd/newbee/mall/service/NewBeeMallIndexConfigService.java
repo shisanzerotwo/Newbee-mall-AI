@@ -38,5 +38,12 @@ public interface NewBeeMallIndexConfigService {
      */
     List<NewBeeMallIndexConfigGoodsVO> getConfigGoodsesForIndex(int configType, int number);
 
+    /**
+     * 在售商品总数（首页状态条展示真实数据用）
+     *
+     * @return 商品总数
+     */
+    int getGoodsCount();
+
     Boolean deleteBatch(Long[] ids);
 }

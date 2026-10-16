@@ -41,3 +41,6 @@ ops/*.bak
 # 本地 AI 工具目录：会话记忆与宿主缓存，不进仓库
 .workbuddy-ai/
 .workbuddy/
+
+# 截图脚本的浏览器用户数据目录（含 Login Data / Web Data / Token 等凭据，严禁入库）
+.profile/

@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>新蜂商城 · 前端重设计预览（ONYX）</title>
+<script>
+  (function () {
+    try {
+      var m = location.search.match(/[?&]theme=(dark|light)/);
+      if (m) document.documentElement.setAttribute('data-theme', m[1]);
+    } catch (e) {}
+  })();
+</script>
+<link rel="stylesheet" href="onyx.css">
+</head>
+<body>
+
+<div class="pbar">
+  <div class="pbar__brand">ONYX <em>·</em> 新蜂商城前端重设计</div>
+  <nav class="pbar__nav">
+    <a href="#ds">设计系统</a>
+    <a href="#home">首页</a>
+    <a href="#list">搜索列表</a>
+    <a href="#detail">商品详情</a>
+    <a href="#cart">购物车</a>
+    <a href="#cs">AI 客服</a>
+    <a href="#admin">后台</a>
+    <a href="#error">错误页</a>
+  </nav>
+  <button class="pbar__toggle" id="themeToggle">切换明 / 暗</button>
+</div>
+
+<div class="wrap">
+
+  <header class="pintro">
+    <span class="pintro__kicker">视觉方向 v3 · 预览待确认</span>
+    <h1>把商城做成<span>深色优先</span>的 AI 原生界面</h1>
+    <p>
+      现有前台是「清爽极简 · 青绿 · 冷灰白底」的语言。ONYX 换掉这套底子：深墨底色让商品图自己发光，
+      电光紫承担品牌与交互，暖橙只留给价格与促销，用大圆角加细描边代替柔影堆叠。
+      商城与客服共用一套 token，AI 客服不再是嵌进来的外部页面，而是这套视觉里的原生能力。
+    </p>
+    <div class="pintro__meta">
+      <div>底色<b>深墨 #0A0B0F</b></div>
+      <div>品牌<b>电光紫 #6D5BFF</b></div>
+      <div>价格<b>暖橙 #FF7A3D</b></div>
+      <div>圆角<b>18 / 14 / 10</b></div>
+      <div>主题<b>深色 · 浅色双套</b></div>
+      <div>字体<b>系统栈 · 不引外部字体</b></div>
+    </div>
+  </header>
+
+  <section class="psec" id="ds">
+    <div class="psec__h">
+      <h2>设计系统</h2>
+      <span>所有页面共用这一套 token 与组件，改一处全站生效</span>
+    </div>
+
+    <div class="ds-note">
+      下面展示的是<b>深色主题（默认）</b>的色值。浅色主题复用同一套语义名，仅覆盖取值 —— 点右上角「切换明 / 暗」可实时对比，所有页面同步换肤。
+    </div>
+    <div class="ds-grid ds-grid--sw" style="margin-bottom:16px">
+      <div class="sw"><div class="sw__c" style="background:#6d5bff"></div><div class="sw__m"><b>品牌 / 主按钮</b><span>#6D5BFF</span></div></div>
+      <div class="sw"><div class="sw__c" style="background:#ff7a3d"></div><div class="sw__m"><b>价格 / 促销</b><span>#FF7A3D</span></div></div>
+      <div class="sw"><div class="sw__c" style="background:#0a0b0f"></div><div class="sw__m"><b>页面底</b><span>#0A0B0F</span></div></div>
+      <div class="sw"><div class="sw__c" style="background:#12141a"></div><div class="sw__m"><b>卡片面</b><span>#12141A</span></div></div>
+      <div class="sw"><div class="sw__c" style="background:#262a35"></div><div class="sw__m"><b>描边</b><span>#262A35</span></div></div>
+      <div class="sw"><div class="sw__c" style="background:#edeff4"></div><div class="sw__m"><b>主文字</b><span>#EDEFF4</span></div></div>
+      <div class="sw"><div class="sw__c" style="background:#34d399"></div><div class="sw__m"><b>成功 / 有货</b><span>#34D399</span></div></div>
+      <div class="sw"><div class="sw__c" style="background:#f87171"></div><div class="sw__m"><b>错误 / 失效</b><span>#F87171</span></div></div>
+    </div>
+
+    <div class="ds-grid ds-grid--3">
+      <div class="ds-card">
+        <h3>字阶</h3>
+        <div class="ts-row"><span>40 / 700</span><div style="font-size:40px;font-weight:700;letter-spacing:-.02em;line-height:1.1">页面主标题</div></div>
+        <div class="ts-row"><span>24 / 600</span><div style="font-size:24px;font-weight:600;letter-spacing:-.01em">商品标题</div></div>
+        <div class="ts-row"><span>20 / 600</span><div style="font-size:20px;font-weight:600">区块标题</div></div>
+        <div class="ts-row"><span>14 / 400</span><div style="font-size:14px">正文基线，行高 1.6</div></div>
+        <div class="ts-row"><span>12 / 400</span><div style="font-size:12px;color:var(--t3)">辅助说明与占位文字</div></div>
+      </div>
+
+      <div class="ds-card">
+        <h3>按钮</h3>
+        <div class="btns" style="margin-bottom:12px">
+          <button class="btn btn--primary">加入购物车</button>
+          <button class="btn btn--price">立即购买</button>
+        </div>
+        <div class="btns" style="margin-bottom:12px">
+          <button class="btn">次要操作</button>
+          <button class="btn btn--ghost">弱化操作</button>
+          <button class="btn btn--sm">小号</button>
+        </div>
+        <div class="btns"><button class="btn btn--primary btn--lg btn--block">大号通栏按钮</button></div>
+      </div>
+
+      <div class="ds-card">
+        <h3>表单与标签</h3>
+        <input class="field" placeholder="搜索商品关键词" style="margin-bottom:12px">
+        <div class="btns">
+          <span class="chip chip--brand">新品</span>
+          <span class="chip chip--price">直降 300</span>
+          <span class="chip chip--ok">现货</span>
+          <span class="chip chip--warn">仅剩 3 件</span>
+          <span class="chip">已下架</span>
+        </div>
+      </div>
+
+      <div class="ds-card">
+        <h3>商品卡与价格</h3>
+        <div class="gcard">
+          <div class="gcard__ph">
+            <img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/r1.jpg" alt="">
+            <span class="gcard__tag chip chip--price">直降</span>
+          </div>
+          <div class="gcard__b">
+            <div class="gcard__n">华为 Mate 40 Pro 5G 全网通 8GB+256GB</div>
+            <div class="gcard__p"><span class="price price--md"><i>¥</i>6999</span><span class="price" style="color:var(--t3);font-weight:400;font-size:12px"><del>¥7499</del></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ds-card">
+        <h3>价格层级</h3>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div><span class="price price--lg"><i>¥</i>6999</span><span style="font-size:12px;color:var(--t3);margin-left:10px">详情页主价 34px</span></div>
+          <div><span class="price price--md"><i>¥</i>1999</span><span style="font-size:12px;color:var(--t3);margin-left:10px">卡片价格 18px</span></div>
+          <div><span class="price price--sm"><i>¥</i>228</span><span style="font-size:12px;color:var(--t3);margin-left:10px">列表小价 15px</span></div>
+        </div>
+      </div>
+
+      <div class="ds-card">
+        <h3>明暗双主题</h3>
+        <p style="font-size:13px;color:var(--t2);line-height:1.8">
+          同一套 token，切 <code style="font-family:var(--font-mono);color:var(--brand-hi)">data-theme</code> 即换肤。
+          深色是主推形态，浅色保留给白天与打印场景。右上角按钮可实时切换，全站页面同时生效。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="psec" id="home">
+    <div class="psec__h"><h2>首页</h2><span>分类栏 + 主视觉 + 热销 + 新品 + 推荐</span></div>
+    <div class="frame__label">前台首页 <em>mall/index.html</em></div>
+    <div class="frame">
+      <div class="frame__bar">
+        <div class="frame__dots"><i></i><i></i><i></i></div>
+        <div class="frame__url">127.0.0.1:28089/index</div>
+      </div>
+
+      <div class="m-head">
+        <div class="m-logo">
+          <div class="m-logo__mark">蜂</div>
+          <div class="m-logo__t">新蜂商城<small>NEWBEE MALL</small></div>
+        </div>
+        <div class="m-search">
+          <input class="field" placeholder="搜索商品关键词">
+          <button class="btn btn--primary" style="border-radius:999px">搜索</button>
+        </div>
+        <nav class="m-nav">
+          <a href="#admin">后台管理</a>
+          <a href="#">主题</a>
+          <a href="#">登录</a>
+          <a href="#">注册</a>
+          <a class="m-cart" href="#cart">购物车 (0)</a>
+        </nav>
+      </div>
+
+      <div class="m-body">
+        <div class="m-hero">
+          <aside class="m-rail">
+            <a href="#list">家用电器 <span>›</span></a>
+            <a href="#list">手机 / 数码 <span>›</span></a>
+            <a href="#list">电脑 / 办公 <span>›</span></a>
+            <a href="#list">家居 / 家装 <span>›</span></a>
+            <a href="#list">男装 / 女装 <span>›</span></a>
+            <a href="#list">美妆 / 个护 <span>›</span></a>
+            <a href="#list">运动 / 户外 <span>›</span></a>
+            <a href="#list">图书 / 文娱 <span>›</span></a>
+          </aside>
+
+          <div class="m-banner">
+            <img class="m-banner__img" src="../../mall-backend/src/main/resources/static/mall/image/swiper/banner02.jpg" alt="">
+            <div class="m-banner__c">
+              <span class="chip chip--brand">Mate 40 系列 · 5G</span>
+              <h2>跃见非凡<br>超感知影像</h2>
+              <p>5nm 麒麟 9000 旗舰芯片 · 超感知徕卡电影影像</p>
+              <div class="btns">
+                <button class="btn btn--primary btn--lg">立即抢购</button>
+                <button class="btn btn--ghost btn--lg">了解详情</button>
+              </div>
+            </div>
+            <div class="m-banner__dots"><i class="on"></i><i></i><i></i></div>
+          </div>
+        </div>
+
+        <div class="m-hot">
+          <a class="m-hot__i" href="#list"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/hot1.png" alt=""><b>手机焕新</b></a>
+          <a class="m-hot__i" href="#list"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/hot2.jpg" alt=""><b>影音耳机</b></a>
+          <a class="m-hot__i" href="#list"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/hot3.jpg" alt=""><b>智能穿戴</b></a>
+          <a class="m-hot__i" href="#list"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/hot4.jpg" alt=""><b>品质家电</b></a>
+        </div>
+
+        <div class="m-sec">
+          <div class="m-sec__h">
+            <h3>新品上线</h3><em>每周三 10:00 更新</em>
+            <a href="#list">查看全部 ›</a>
+          </div>
+          <div class="m-grid">
+            <a class="gcard" href="#detail">
+              <div class="gcard__ph">
+                <img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/r1.jpg" alt="">
+                <span class="gcard__tag chip chip--brand">新品</span>
+              </div>
+              <div class="gcard__b">
+                <div class="gcard__n">华为 Mate 40 Pro 5G 全网通 8GB+256GB 亮黑色</div>
+                <div class="gcard__d">超感知徕卡影像</div>
+                <div class="gcard__p"><span class="price price--md"><i>¥</i>6999</span></div>
+              </div>
+            </a>
+            <a class="gcard" href="#detail">
+              <div class="gcard__ph">
+                <img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/hot3.jpg" alt="">
+                <span class="gcard__tag chip chip--price">热销</span>
+              </div>
+              <div class="gcard__b">
+                <div class="gcard__n">Apple AirPods Pro 主动降噪无线蓝牙耳机</div>
+                <div class="gcard__d">通透模式 · 空间音频</div>
+                <div class="gcard__p"><span class="price price--md"><i>¥</i>1999</span></div>
+              </div>
+            </a>
+            <a class="gcard" href="#detail">
+              <div class="gcard__ph">
+                <img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/m6.jpg" alt="">
+                <span class="gcard__tag chip chip--price">直降 300</span>
+              </div>
+              <div class="gcard__b">
+                <div class="gcard__n">华为平板 M6 10.8 英寸 4GB+64GB 全网通</div>
+                <div class="gcard__d">醇香音质 身临其境</div>
+                <div class="gcard__p"><span class="price price--md"><i>¥</i>1499</span><span class="price" style="color:var(--t3);font-weight:400;font-size:12px"><del>¥1799</del></span></div>
+              </div>
+            </a>
+            <a class="gcard" href="#detail">
+              <div class="gcard__ph">
+                <img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/pc.jpg" alt="">
+                <span class="gcard__tag chip chip--brand">新品</span>
+              </div>
+              <div class="gcard__b">
+                <div class="gcard__n">联想 15.6 英寸轻薄笔记本电脑 i3 8G 512G</div>
+                <div class="gcard__d">纤薄机身 金属材质</div>
+                <div class="gcard__p"><span class="price price--md"><i>¥</i>3099</span></div>
+              </div>
+            </a>
+            <a class="gcard" href="#detail">
+              <div class="gcard__ph">
+                <img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/headphones.jpg" alt="">
+                <span class="gcard__tag chip chip--warn">限量</span>
+              </div>
+              <div class="gcard__b">
+                <div class="gcard__n">小米 头戴式蓝牙耳机 一键变声 原唱消音</div>
+                <div class="gcard__d">一键变声 原唱消音</div>
+                <div class="gcard__p"><span class="price price--md"><i>¥</i>228</span></div>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <div class="m-sec">
+          <div class="m-sec__h">
+            <h3>为你推荐</h3><em>基于浏览与咨询记录</em>
+            <a href="#list">查看更多 ›</a>
+          </div>
+          <div class="m-grid">
+            <a class="gcard" href="#detail">
+              <div class="gcard__ph"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/r2.jpg" alt=""><span class="gcard__tag chip chip--brand">新品</span></div>
+              <div class="gcard__b"><div class="gcard__n">佳能 EOS 微单数码相机 15-45mm 套机</div><div class="gcard__p"><span class="price price--md"><i>¥</i>4599</span></div></div>
+            </a>
+            <a class="gcard" href="#detail">
+              <div class="gcard__ph"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/r3.jpg" alt=""><span class="gcard__tag chip chip--price">5 折起</span></div>
+              <div class="gcard__b"><div class="gcard__n">大疆 便携折叠航拍无人机 4K 高清</div><div class="gcard__p"><span class="price price--md"><i>¥</i>2899</span></div></div>
+            </a>
+            <a class="gcard" href="#detail">
+              <div class="gcard__ph"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/r4.jpg" alt=""><span class="gcard__tag chip chip--ok">现货</span></div>
+              <div class="gcard__b"><div class="gcard__n">索尼 头戴式主动降噪耳机 WH-1000XM4</div><div class="gcard__p"><span class="price price--md"><i>¥</i>1299</span></div></div>
+            </a>
+            <a class="gcard" href="#detail">
+              <div class="gcard__ph"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/air.jpg" alt=""><span class="gcard__tag chip chip--price">官降</span></div>
+              <div class="gcard__b"><div class="gcard__n">戴森 空气净化风扇 大空间快循环</div><div class="gcard__p"><span class="price price--md"><i>¥</i>1099</span></div></div>
+            </a>
+            <a class="gcard" href="#detail">
+              <div class="gcard__ph"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/baby-car.jpg" alt=""><span class="gcard__tag chip chip--brand">新品</span></div>
+              <div class="gcard__b"><div class="gcard__n">好孩子 轻便折叠婴儿推车 可登机</div><div class="gcard__p"><span class="price price--md"><i>¥</i>649</span></div></div>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="m-foot">
+        <div><b>帮助中心</b><a href="#">账户管理</a><a href="#">购物指南</a><a href="#">订单操作</a></div>
+        <div><b>服务支持</b><a href="#">售后政策</a><a href="#">配送方式</a><a href="#">支付方式</a></div>
+        <div><b>关于新蜂</b><a href="#">了解新蜂</a><a href="#">加入新蜂</a></div>
+        <div style="margin-left:auto"><b>在线客服</b><a href="#cs">7×24 小时智能客服</a></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="psec" id="list">
+    <div class="psec__h"><h2>搜索与商品列表</h2><span>筛选条 + 四列网格 + 分页</span></div>
+    <div class="frame__label">搜索结果 <em>mall/search.html</em></div>
+    <div class="frame">
+      <div class="frame__bar">
+        <div class="frame__dots"><i></i><i></i><i></i></div>
+        <div class="frame__url">127.0.0.1:28089/search?keyword=手机</div>
+      </div>
+      <div class="m-head">
+        <div class="m-logo"><div class="m-logo__mark">蜂</div><div class="m-logo__t">新蜂商城<small>NEWBEE MALL</small></div></div>
+        <div class="m-search">
+          <input class="field" value="手机">
+          <button class="btn btn--primary" style="border-radius:999px">搜索</button>
+        </div>
+        <nav class="m-nav"><a href="#admin">后台管理</a><a href="#">主题</a><a href="#">登录</a><a class="m-cart" href="#cart">购物车 (3)</a></nav>
+      </div>
+
+      <div class="m-body">
+        <div class="m-crumb"><a href="#home">首页</a> / <a href="#">手机 / 数码</a> / 手机</div>
+
+        <div class="m-filter">
+          <span class="m-filter__k">分类</span>
+          <a href="#" class="on">全部</a><a href="#">手机通讯</a><a href="#">智能穿戴</a><a href="#">手机配件</a>
+          <span class="m-filter__k" style="margin-left:16px">排序</span>
+          <a href="#" class="on">综合</a><a href="#">价格从低到高</a><a href="#">价格从高到低</a><a href="#">最新上架</a>
+        </div>
+
+        <div class="m-grid m-grid--4">
+          <a class="gcard" href="#detail">
+            <div class="gcard__ph"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/r1.jpg" alt=""><span class="gcard__tag chip chip--brand">新品</span></div>
+            <div class="gcard__b"><div class="gcard__n">华为 Mate 40 Pro 5G 全网通 8GB+256GB 亮黑色</div><div class="gcard__d">超感知徕卡影像</div><div class="gcard__p"><span class="price price--md"><i>¥</i>6999</span></div></div>
+          </a>
+          <a class="gcard" href="#detail">
+            <div class="gcard__ph"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/r5.jpg" alt=""><span class="gcard__tag chip chip--price">直降 500</span></div>
+            <div class="gcard__b"><div class="gcard__n">荣耀 8X 千元屏霸 91% 屏占比 2000 万 AI 双摄</div><div class="gcard__d">千元屏霸</div><div class="gcard__p"><span class="price price--md"><i>¥</i>1299</span><span class="price" style="color:var(--t3);font-weight:400;font-size:12px"><del>¥1799</del></span></div></div>
+          </a>
+          <a class="gcard" href="#detail">
+            <div class="gcard__ph"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/r6.jpg" alt=""><span class="gcard__tag chip chip--ok">现货</span></div>
+            <div class="gcard__b"><div class="gcard__n">华为 P30 Pro 超感光徕卡四摄 8GB+128GB</div><div class="gcard__d">超感光徕卡四摄</div><div class="gcard__p"><span class="price price--md"><i>¥</i>4488</span></div></div>
+          </a>
+          <a class="gcard" href="#detail">
+            <div class="gcard__ph"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/r2.jpg" alt=""><span class="gcard__tag chip chip--brand">新品</span></div>
+            <div class="gcard__b"><div class="gcard__n">华为 Mate 20 6GB+128GB 全面屏手机</div><div class="gcard__d">大屏长续航</div><div class="gcard__p"><span class="price price--md"><i>¥</i>3199</span></div></div>
+          </a>
+          <a class="gcard" href="#detail">
+            <div class="gcard__ph"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/r3.jpg" alt=""><span class="gcard__tag chip chip--warn">仅剩 3 件</span></div>
+            <div class="gcard__b"><div class="gcard__n">小米 11 Ultra 陶瓷机身 12GB+256GB</div><div class="gcard__d">影像新物种</div><div class="gcard__p"><span class="price price--md"><i>¥</i>5499</span></div></div>
+          </a>
+          <a class="gcard" href="#detail">
+            <div class="gcard__ph"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/r4.jpg" alt=""><span class="gcard__tag chip chip--price">热销</span></div>
+            <div class="gcard__b"><div class="gcard__n">Apple iPhone 11 128GB 双卡双待</div><div class="gcard__d">A13 仿生芯片</div><div class="gcard__p"><span class="price price--md"><i>¥</i>4599</span></div></div>
+          </a>
+          <a class="gcard" href="#detail">
+            <div class="gcard__ph"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/hot1.png" alt=""><span class="gcard__tag chip chip--brand">新品</span></div>
+            <div class="gcard__b"><div class="gcard__n">OPPO Reno 6 Pro 5G 8GB+128GB 星河入梦</div><div class="gcard__d">人像视频手机</div><div class="gcard__p"><span class="price price--md"><i>¥</i>3499</span></div></div>
+          </a>
+          <a class="gcard" href="#detail">
+            <div class="gcard__ph"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/m6.jpg" alt=""><span class="gcard__tag chip chip--price">官降</span></div>
+            <div class="gcard__b"><div class="gcard__n">华为 nova 8 5G 8GB+128GB 绮境森林</div><div class="gcard__d">前置 Vlog 双摄</div><div class="gcard__p"><span class="price price--md"><i>¥</i>2699</span></div></div>
+          </a>
+        </div>
+
+        <div class="m-pager">
+          <a href="#">‹</a><a href="#" class="on">1</a><a href="#">2</a><a href="#">3</a><a href="#">4</a><a href="#">…</a><a href="#">12</a><a href="#">›</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="psec" id="detail">
+    <div class="psec__h"><h2>商品详情</h2><span>图集 + 价格区 + 购买区 + 参数与详情</span></div>
+    <div class="frame__label">商品详情 <em>mall/detail.html</em></div>
+    <div class="frame">
+      <div class="frame__bar">
+        <div class="frame__dots"><i></i><i></i><i></i></div>
+        <div class="frame__url">127.0.0.1:28089/goods/detail/10085</div>
+      </div>
+      <div class="m-head">
+        <div class="m-logo"><div class="m-logo__mark">蜂</div><div class="m-logo__t">新蜂商城<small>NEWBEE MALL</small></div></div>
+        <div class="m-search"><input class="field" placeholder="搜索商品关键词"><button class="btn btn--primary" style="border-radius:999px">搜索</button></div>
+        <nav class="m-nav"><a href="#admin">后台管理</a><a href="#">主题</a><a href="#">登录</a><a class="m-cart" href="#cart">购物车 (3)</a></nav>
+      </div>
+
+      <div class="m-body">
+        <div class="m-crumb"><a href="#home">首页</a> / <a href="#list">手机 / 数码</a> / 华为 Mate 40 Pro</div>
+
+        <div class="m-dp">
+          <div>
+            <div class="m-gal__main"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/r1.jpg" alt=""></div>
+            <div class="m-gal__th">
+              <i class="on"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/r1.jpg" alt=""></i>
+              <i><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/r2.jpg" alt=""></i>
+              <i><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/r3.jpg" alt=""></i>
+              <i><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/r4.jpg" alt=""></i>
+            </div>
+          </div>
+
+          <div>
+            <h1 class="m-dp__t">华为 Mate 40 Pro 5G 全网通 8GB+256GB 亮黑色</h1>
+            <div class="m-dp__sub">超感知徕卡电影影像 · 5nm 麒麟 9000 旗舰芯片</div>
+
+            <div class="m-dp__price">
+              <div class="row">
+                <span class="price"><i>¥</i>6999</span>
+                <span class="chip chip--ok">现货 1000 件</span>
+              </div>
+              <div class="chips">
+                <span class="chip chip--price">满 3000 减 300</span>
+                <span class="chip chip--brand">12 期免息</span>
+                <span class="chip">以旧换新补贴 1000 元</span>
+              </div>
+            </div>
+
+            <dl class="m-spec">
+              <div class="m-spec__r"><dt>配送至</dt><dd>上海市 浦东新区 · 有货，预计明日送达</dd></div>
+              <div class="m-spec__r"><dt>服务</dt><dd>由新蜂商城发货 · 7 天无理由退货 · 全国联保</dd></div>
+              <div class="m-spec__r"><dt>颜色</dt><dd>亮黑色 / 釉白色 / 秋日胡杨</dd></div>
+            </dl>
+
+            <div class="m-buy">
+              <div class="stepper"><button>−</button><span>1</span><button>+</button></div>
+              <button class="btn btn--primary btn--lg">加入购物车</button>
+              <button class="btn btn--price btn--lg">立即购买</button>
+              <button class="btn btn--lg">♡ 收藏</button>
+            </div>
+
+            <div class="m-notes">
+              <span>正品保障</span><span>极速发货</span><span>7 天无理由</span><span>在线客服 7×24</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="m-tabs">
+          <a href="#" class="on">商品详情</a><a href="#">规格参数</a><a href="#">用户评价 (128)</a><a href="#">售后保障</a>
+        </div>
+        <div class="m-rich">
+          <p style="color:var(--t1);font-weight:600;font-size:16px;margin-bottom:10px">超感知徕卡电影影像系统</p>
+          <p>后置 5000 万像素超感知主摄 + 2000 万像素电影镜头 + 1200 万像素长焦镜头，支持 5 倍光学变焦与 50 倍数字变焦。前置 1300 万像素超感知镜头，配合 AI 算法实现隔空操控与智能支付。</p>
+          <p style="margin-top:10px">5nm 麒麟 9000 旗舰芯片，CPU 性能提升 10%，GPU 性能提升 50%。4400mAh 大电池，支持 66W 有线超级快充与 50W 无线超级快充。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="psec" id="cart">
+    <div class="psec__h"><h2>购物车与结算</h2><span>明细列表 + 吸底汇总卡</span></div>
+    <div class="frame__label">购物车 <em>mall/cart.html</em></div>
+    <div class="frame">
+      <div class="frame__bar">
+        <div class="frame__dots"><i></i><i></i><i></i></div>
+        <div class="frame__url">127.0.0.1:28089/shop-cart</div>
+      </div>
+      <div class="m-head">
+        <div class="m-logo"><div class="m-logo__mark">蜂</div><div class="m-logo__t">新蜂商城<small>NEWBEE MALL</small></div></div>
+        <div class="m-search"><input class="field" placeholder="搜索商品关键词"><button class="btn btn--primary" style="border-radius:999px">搜索</button></div>
+        <nav class="m-nav"><a href="#admin">后台管理</a><a href="#">主题</a><a href="#">登录</a><a class="m-cart" href="#cart">购物车 (3)</a></nav>
+      </div>
+
+      <div class="m-body">
+        <div class="m-ct">
+          <div class="m-ct__list">
+            <div class="m-ct__hd">
+              <span class="m-check on">✓</span><span>商品</span><span>单价</span><span>数量</span><span>小计</span>
+            </div>
+            <div class="m-ct__row">
+              <span class="m-check on">✓</span>
+              <div class="m-ct__g">
+                <img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/r1.jpg" alt="">
+                <div><b>华为 Mate 40 Pro 5G 8GB+256GB 亮黑色</b><small>亮黑色 · 官方标配</small></div>
+              </div>
+              <span class="price price--sm"><i>¥</i>6999</span>
+              <div class="stepper"><button>−</button><span>1</span><button>+</button></div>
+              <span class="price price--sm"><i>¥</i>6999</span>
+            </div>
+            <div class="m-ct__row">
+              <span class="m-check on">✓</span>
+              <div class="m-ct__g">
+                <img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/hot3.jpg" alt="">
+                <div><b>Apple AirPods Pro 主动降噪无线蓝牙耳机</b><small>白色 · 国行正品</small></div>
+              </div>
+              <span class="price price--sm"><i>¥</i>1999</span>
+              <div class="stepper"><button>−</button><span>2</span><button>+</button></div>
+              <span class="price price--sm"><i>¥</i>3998</span>
+            </div>
+            <div class="m-ct__row">
+              <span class="m-check"></span>
+              <div class="m-ct__g">
+                <img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/m6.jpg" alt="">
+                <div><b>华为平板 M6 10.8 英寸 4GB+64GB</b><small>银钻灰 · 全网通</small></div>
+              </div>
+              <span class="price price--sm"><i>¥</i>1499</span>
+              <div class="stepper"><button>−</button><span>1</span><button>+</button></div>
+              <span class="price price--sm"><i>¥</i>1499</span>
+            </div>
+          </div>
+
+          <aside class="m-sum">
+            <div class="m-sum__r"><span>已选商品</span><b>3 件</b></div>
+            <div class="m-sum__r"><span>商品总额</span><b>¥ 12496.00</b></div>
+            <div class="m-sum__r"><span>满减优惠</span><b style="color:var(--price)">− ¥ 300.00</b></div>
+            <div class="m-sum__r"><span>运费</span><b>免运费</b></div>
+            <div class="m-sum__total">
+              <span>应付合计</span>
+              <span class="price price--lg"><i>¥</i>12196</span>
+            </div>
+            <button class="btn btn--price btn--lg btn--block">去结算</button>
+            <button class="btn btn--block" style="margin-top:10px">继续购物</button>
+            <p style="margin-top:14px;font-size:11px;color:var(--t3);line-height:1.7">提交订单后可在「我的订单」中查看物流，或直接向在线客服询问订单进度。</p>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="psec" id="cs">
+    <div class="psec__h"><h2>AI 客服</h2><span>浮窗（全站唤起）+ 完整页（三栏可观测）</span></div>
+
+    <div class="frame__label">客服浮窗 <em>mall/js/cs-widget.js + css/cs-widget.css</em></div>
+    <div class="frame">
+      <div class="frame__bar">
+        <div class="frame__dots"><i></i><i></i><i></i></div>
+        <div class="frame__url">127.0.0.1:28089/goods/detail/10085 · 浮窗已唤起</div>
+      </div>
+      <div class="m-widget">
+        <div class="m-widget__bg"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/r1.jpg" alt=""></div>
+
+        <div class="cw">
+          <div class="cw__hd">
+            <div class="cw__av">蜂</div>
+            <div>
+              <b>新蜂智能客服</b>
+              <small>在线 · 已接入商品库</small>
+            </div>
+            <span class="cw__x">×</span>
+          </div>
+          <div class="cw__body">
+            <span class="cw__ctx">正在咨询：华为 Mate 40 Pro 5G（#10085）</span>
+
+            <div class="cmsg cmsg--me">这个现在有货吗？多少钱</div>
+
+            <div class="cmsg cmsg--bot">
+              有的~ 华为 Mate 40 Pro 5G 亮黑色目前现货 1000 件，售价 ¥6999。
+              <div class="cmsg__card">
+                <img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/r1.jpg" alt="">
+                <div><b>华为 Mate 40 Pro 5G</b><span>现货 1000 件 · 在售</span></div>
+                <span class="price price--sm"><i>¥</i>6999</span>
+              </div>
+            </div>
+
+            <div class="cw__tools">
+              <span class="chip chip--brand">checkStock(10085)</span>
+              <span class="chip chip--ok">已核实数据</span>
+            </div>
+
+            <div class="cs-stage"><i class="pulse"></i>正在为你查询配送范围…</div>
+          </div>
+          <div class="cw__foot">
+            <input class="field" placeholder="想问点什么？">
+            <button class="cw__send"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 8h10M8 3.5L12.5 8L8 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </div>
+        </div>
+
+        <div class="cw__fab">客服</div>
+      </div>
+    </div>
+
+    <div class="frame__label" style="margin-top:28px">客服完整页 <em>mall/cs.html</em></div>
+    <div class="frame">
+      <div class="frame__bar">
+        <div class="frame__dots"><i></i><i></i><i></i></div>
+        <div class="frame__url">127.0.0.1:28089/cs?goodsId=10085</div>
+      </div>
+      <div class="m-head">
+        <div class="m-logo"><div class="m-logo__mark">蜂</div><div class="m-logo__t">新蜂商城<small>NEWBEE MALL</small></div></div>
+        <div class="m-search"><input class="field" placeholder="搜索商品关键词"><button class="btn btn--primary" style="border-radius:999px">搜索</button></div>
+        <nav class="m-nav"><a href="#admin">后台管理</a><a href="#">主题</a><a href="#">登录</a><a class="m-cart" href="#cart">购物车 (3)</a></nav>
+      </div>
+
+      <div class="m-body">
+        <div class="cwp">
+          <aside class="cwp__col">
+            <div class="cwp__h">本次会话 <em>3 轮</em></div>
+            <div class="cwp__b cs-hist">
+              <div class="cs-hist__g">今天 15:42</div>
+              <a href="#" class="on">这个现在有货吗？多少钱</a>
+              <a href="#">多久能发货</a>
+              <a href="#">支持 7 天无理由吗</a>
+              <div class="cs-hist__g">历史</div>
+              <a href="#">上次买的平板保修到什么时候</a>
+            </div>
+          </aside>
+
+          <main class="cwp__col cs-chat">
+            <div class="cs-chat__ctx">正在咨询：<b>华为 Mate 40 Pro 5G</b>（#10085）</div>
+            <div class="cs-chat__msgs">
+              <div class="cmsg cmsg--bot">你好，我是新蜂商城的智能客服。可以问我商品有没有货、多少钱，或者订单进度。</div>
+              <div class="cmsg cmsg--me">这个现在有货吗？多少钱</div>
+              <div class="cmsg cmsg--bot">
+                有的~ 华为 Mate 40 Pro 5G 亮黑色目前现货 1000 件，售价 ¥6999。需要我帮你看下配送时间吗？
+                <div class="cmsg__card">
+                  <img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/r1.jpg" alt="">
+                  <div><b>华为 Mate 40 Pro 5G</b><span>现货 1000 件 · 在售</span></div>
+                  <span class="price price--sm"><i>¥</i>6999</span>
+                </div>
+              </div>
+              <div class="cs-stage"><i class="pulse"></i>回答中 · 正在检索知识库</div>
+            </div>
+            <div class="cs-chat__in">
+              <textarea class="field" rows="1" placeholder="想问点什么？（Enter 发送 / Shift+Enter 换行）" style="height:44px;padding-top:11px;resize:none"></textarea>
+              <button class="btn btn--primary" style="height:44px">发送</button>
+            </div>
+          </main>
+
+          <aside class="cwp__col">
+            <div class="cwp__h">上下文 <em>可观测</em></div>
+            <div class="cwp__b cwp__b--flat ctx">
+              <div class="ctx__blk">
+                <div class="ctx__k"><i class="on"></i>识别意图</div>
+                <div class="ctx__v">库存与价格咨询</div>
+                <div class="ctx__v ctx__v--muted" style="margin-top:4px">问题：这个现在有货吗？多少钱</div>
+              </div>
+              <div class="ctx__blk">
+                <div class="ctx__k"><i class="on"></i>工具调用</div>
+                <div class="ctx__row"><code>checkStock</code><b>1000 件 · 在售</b></div>
+                <div class="ctx__row"><code>getGoodsDetail</code><b>¥6999</b></div>
+              </div>
+              <div class="ctx__blk">
+                <div class="ctx__k"><i class="on"></i>命中商品</div>
+                <div class="ctx__v">华为 Mate 40 Pro 5G 全网通</div>
+                <div class="ctx__v ctx__v--price">¥6999 · 现货 1000 件</div>
+              </div>
+              <div class="ctx__blk">
+                <div class="ctx__k"><i></i>关联订单</div>
+                <div class="ctx__v ctx__v--muted">本次未带入订单</div>
+              </div>
+              <div class="ctx__blk">
+                <div class="ctx__k"><i class="on"></i>质检复核</div>
+                <div class="ctx__v ctx__v--ok">通过 · 数据一致（audit 模式）</div>
+              </div>
+              <div class="ctx__blk">
+                <div class="ctx__k"><i class="on"></i>引用来源</div>
+                <div class="ctx__src">售后政策 · 7 天无理由退货</div>
+                <div class="ctx__src">配送说明 · 上海市次日达</div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="psec" id="admin">
+    <div class="psec__h"><h2>后台管理</h2><span>侧栏换肤 + 数据面板 + 表格</span></div>
+    <div class="frame__label">数据面板 <em>admin/index.html + admin/dist/css/main.css</em></div>
+    <div class="frame">
+      <div class="frame__bar">
+        <div class="frame__dots"><i></i><i></i><i></i></div>
+        <div class="frame__url">127.0.0.1:28089/admin</div>
+      </div>
+
+      <div class="ad">
+        <aside class="ad__side">
+          <div class="m-logo"><div class="m-logo__mark">蜂</div><div class="m-logo__t">新蜂后台<small>ADMIN</small></div></div>
+          <div class="ad__g">概览</div>
+          <a href="#" class="on"><i></i>数据面板</a>
+          <div class="ad__g">商品</div>
+          <a href="#"><i></i>商品管理</a>
+          <a href="#"><i></i>分类管理</a>
+          <a href="#"><i></i>轮播图配置</a>
+          <div class="ad__g">交易</div>
+          <a href="#"><i></i>订单管理</a>
+          <a href="#"><i></i>会员管理</a>
+        </aside>
+
+        <div class="ad__main">
+          <div class="ad__top">
+            <h3>数据面板</h3>
+            <div class="sp"><span>2026-10-08</span><div class="ad__av">十</div></div>
+          </div>
+          <div class="ad__c">
+            <div class="stats">
+              <div class="stat"><span>商品总数</span><b>575</b><em>在售 573</em></div>
+              <div class="stat"><span>今日订单</span><b>128</b><em>较昨日 +12%</em></div>
+              <div class="stat"><span>今日销售额</span><b>¥ 86,420</b><em class="dn">较昨日 −3%</em></div>
+              <div class="stat"><span>客服会话</span><b>342</b><em>质检通过 100%</em></div>
+            </div>
+
+            <div class="card" style="margin-top:20px;padding:0;overflow:hidden">
+              <table class="tbl">
+                <thead>
+                  <tr><th>商品</th><th>分类</th><th>售价</th><th>库存</th><th>状态</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><div class="tbl__g"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/r1.jpg" alt=""><span>华为 Mate 40 Pro 5G</span></div></td>
+                    <td>手机通讯</td><td class="num">¥6999</td><td class="num">1000</td>
+                    <td><span class="chip chip--ok">在售</span></td>
+                  </tr>
+                  <tr>
+                    <td><div class="tbl__g"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/hot3.jpg" alt=""><span>Apple AirPods Pro</span></div></td>
+                    <td>影音配件</td><td class="num">¥1999</td><td class="num">860</td>
+                    <td><span class="chip chip--ok">在售</span></td>
+                  </tr>
+                  <tr>
+                    <td><div class="tbl__g"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/m6.jpg" alt=""><span>华为平板 M6</span></div></td>
+                    <td>平板电脑</td><td class="num">¥1499</td><td class="num">420</td>
+                    <td><span class="chip chip--ok">在售</span></td>
+                  </tr>
+                  <tr>
+                    <td><div class="tbl__g"><img src="../../mall-backend/src/main/resources/static/mall/image/sub_banner/pc.jpg" alt=""><span>联想轻薄笔记本</span></div></td>
+                    <td>电脑办公</td><td class="num">¥3099</td><td class="num">0</td>
+                    <td><span class="chip">已下架</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="psec" id="error">
+    <div class="psec__h"><h2>错误页</h2><span>404 / 5xx / 400 共用一套骨架</span></div>
+    <div class="frame__label">404 <em>error/error_404.html</em></div>
+    <div class="frame">
+      <div class="frame__bar">
+        <div class="frame__dots"><i></i><i></i><i></i></div>
+        <div class="frame__url">127.0.0.1:28089/not-exist</div>
+      </div>
+      <div class="m-head">
+        <div class="m-logo"><div class="m-logo__mark">蜂</div><div class="m-logo__t">新蜂商城<small>NEWBEE MALL</small></div></div>
+        <div class="m-search"><input class="field" placeholder="搜索商品关键词"><button class="btn btn--primary" style="border-radius:999px">搜索</button></div>
+        <nav class="m-nav"><a href="#admin">后台管理</a><a href="#">主题</a><a href="#">登录</a><a class="m-cart" href="#cart">购物车 (0)</a></nav>
+      </div>
+      <div class="m-err">
+        <div>
+          <div class="m-err__code">404</div>
+          <h3>没有找到这个页面</h3>
+          <p>链接可能已经失效，或者商品已下架。你可以回到首页继续逛逛，也可以直接问智能客服。</p>
+          <div class="btns">
+            <button class="btn btn--primary btn--lg">返回首页</button>
+            <button class="btn btn--lg">问问智能客服</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="psec" id="map" style="padding-bottom:64px">
+    <div class="psec__h"><h2>落地映射</h2><span>确认方向后按此表改文件，Java 代码零改动</span></div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table class="map">
+        <thead>
+          <tr><th style="width:26%">现状</th><th style="width:37%">改为</th><th>说明</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="old"><code>css/common.css</code> 青绿 token</td>
+            <td><code>css/onyx.css</code> 新 token 底座</td>
+            <td>整站唯一 token 来源，保留 <code>.w</code> / <code>.fl</code> 等旧类名换实现，模板结构不动</td>
+          </tr>
+          <tr>
+            <td class="old"><code>css/themes.css</code> 6 套主题</td>
+            <td>收敛为深 / 浅 2 套（可保留扩展位）</td>
+            <td>主题入口与 localStorage 逻辑复用，减少维护面</td>
+          </tr>
+          <tr>
+            <td class="old"><code>styles/</code> 13 个页面样式</td>
+            <td>逐页重写为新组件语言</td>
+            <td>首页 / 列表 / 详情 / 购物车 / 订单 / 登录注册 / 支付</td>
+          </tr>
+          <tr>
+            <td class="old"><code>css/cs-widget.css</code> + <code>styles/cs.css</code></td>
+            <td>并入同一 token，重做浮窗与三栏面板</td>
+            <td>仅样式层，<code>cs-core.js</code> 的事件契约与 DOM 类名保持不变</td>
+          </tr>
+          <tr>
+            <td class="old"><code>admin/dist/css/main.css</code> 换肤层</td>
+            <td>换为新 token 覆盖层</td>
+            <td>AdminLTE 与 jqGrid 的 DOM / 插件零改动</td>
+          </tr>
+          <tr>
+            <td class="old"><code>error/</code> 4 页</td>
+            <td>共用新骨架 + 品牌化插画位</td>
+            <td>保留原有状态码与返回逻辑</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('themeToggle');
+  btn.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    btn.textContent = next === 'dark' ? '切换明 / 暗' : '切换明 / 暗';
+  });
+})();
+</script>
+</body>
+</html>

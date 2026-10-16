@@ -1,12 +1,56 @@
 /* ============================================================
-   扫码支付页（轻量翻新）· alipay.html / wxpay.html 共用
-   保留原有类名与品牌图标资产，仅统一字体/圆角/色板
+   扫码支付页 —— TOOLINK v4 · alipay.html / wxpay.html 共用
+   规格：docs/redesign/DESIGN-v4-D2.md
+   ⚠️ 本页不引 onyx.css（独立轻页），所以在 html 选择器里自带一份
+      token 兜底，同时支持 index 页写入的 data-theme=dark 覆盖。
+   保留原有类名与品牌图标资产。
    ============================================================ */
 
 html {
     font-size: 62.5%;
     font-family: -apple-system, "PingFang SC", "HarmonyOS Sans SC",
         "Microsoft YaHei", "Segoe UI", sans-serif;
+    /* --- v4 token 兜底（默认浅色） --- */
+    --bg: #fafafa;
+    --bg-1: #ffffff;
+    --bg-2: #f4f4f5;
+    --bg-3: #ededef;
+    --bd: #e4e4e7;
+    --bd-2: #d4d4d8;
+    --t1: #18181b;
+    --t2: #52525b;
+    --t3: #6b6b75;
+    --ink: #18181b;
+    --ink-hi: #2f2f36;
+    --ink-fg: #ffffff;
+    --price: #c2410c;
+    --ok: #15803d;
+    --r-lg: 10px;
+    --r-md: 8px;
+    --r-sm: 6px;
+    --r-xs: 4px;
+    --sh-2: 0 8px 24px rgba(0, 0, 0, 0.12);
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    color-scheme: light;
+}
+
+html[data-theme="dark"] {
+    --bg: #0a0a0b;
+    --bg-1: #121214;
+    --bg-2: #1a1a1c;
+    --bg-3: #232326;
+    --bd: #26262a;
+    --bd-2: #38383d;
+    --t1: #fafafa;
+    --t2: #a1a1aa;
+    --t3: #84848e;
+    --ink: #ffffff;
+    --ink-hi: #e4e4e7;
+    --ink-fg: #0a0a0b;
+    --price: #fb923c;
+    --ok: #4ade80;
+    --sh-2: 0 8px 24px rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
 }
 
 body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, code, form, fieldset, legend, input, button, textarea, p, blockquote, th, td, hr {
@@ -15,9 +59,9 @@ body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, code, form, fiel
 }
 
 body {
-    line-height: 1.5;
+    line-height: 1.6;
     font-size: 13px;
-    color: #1f2328;
+    color: var(--t1);
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -38,18 +82,18 @@ img {
 }
 
 a {
-    color: #0d7f7f;
+    color: var(--ink);
     text-decoration: none;
 }
 
 a:hover {
-    color: #0a6060;
-    text-decoration: none;
+    color: var(--ink);
+    text-decoration: underline;
 }
 
 /* 页面主体：居中窄栏 */
 body, .body {
-    background: #f6f8f9;
+    background: var(--bg);
     height: 100%;
     max-width: 640px;
     min-width: 300px;
@@ -88,7 +132,7 @@ body, .body {
 
 .mod-title .text {
     font-size: 20px;
-    color: #1f2328;
+    color: var(--t1);
     font-weight: 600;
     vertical-align: middle;
 }
@@ -98,27 +142,28 @@ body, .body {
     min-width: 300px;
     margin: 12px auto;
     padding-bottom: 16px;
-    background: #fff;
+    background: var(--bg-1);
     text-align: center;
-    color: #1f2328;
-    border: 1px solid #e4e8eb;
-    border-radius: 8px;
-    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+    color: var(--t1);
+    border: 1px solid var(--bd);
+    border-radius: var(--r-md);
+    box-shadow: var(--sh-2);
     overflow: hidden;
 }
 
 .mod-ct .order {
     font-size: 16px;
-    color: #57606a;
+    color: var(--t2);
     padding-top: 20px;
 }
 
 .mod-ct .amount {
     font-size: 40px;
     margin-top: 8px;
-    color: #e8590c;
+    color: var(--price);
     font-weight: 700;
     font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
 }
 
 .mod-ct .qr-image {
@@ -128,6 +173,9 @@ body, .body {
 .mod-ct .qr-image img {
     width: 230px;
     height: 230px;
+    background: #fff;
+    padding: 8px;
+    border-radius: var(--r-sm);
 }
 
 /* 二维码容器 */
@@ -137,6 +185,13 @@ body, .body {
 
 .qrcode-img-area {
     display: inline-block;
+}
+
+.qrcode-img-area img {
+    background: #fff;
+    padding: 10px;
+    border-radius: var(--r-md);
+    border: 1px solid var(--bd);
 }
 
 .qrcode-loading {
@@ -151,7 +206,7 @@ body, .body {
 .time-item h1 {
     font-size: 14px;
     font-weight: 400;
-    color: #57606a;
+    color: var(--t2);
     margin: 6px 0;
     letter-spacing: 0;
     font-family: inherit;
@@ -160,7 +215,7 @@ body, .body {
 /* 扫码提示 */
 .mod-ct .tip {
     margin-top: 20px;
-    border-top: 1px dashed #e4e8eb;
+    border-top: 1px dashed var(--bd);
     padding: 16px 0 8px;
     position: relative;
 }
@@ -188,46 +243,52 @@ body, .body {
     margin-left: 20px;
     font-size: 15px;
     line-height: 28px;
+    color: var(--t2);
 }
 
 /* 支付成功按钮 */
 .btn {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     padding: 0 24px;
-    height: 38px;
-    line-height: 36px;
+    height: 40px;
+    line-height: 1;
     font-size: 14px;
-    border-radius: 6px;
-    border: 1px solid #e4e8eb;
-    background: #fff;
-    color: #1f2328;
+    font-weight: 500;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--bd-2);
+    background: transparent;
+    color: var(--t1);
     cursor: pointer;
     text-align: center;
-    transition: background-color 150ms ease-out;
+    transition: background-color 160ms var(--ease), border-color 160ms var(--ease),
+        color 160ms var(--ease), box-shadow 160ms var(--ease);
 }
 
 .btn-small {
     width: auto;
-    height: 38px;
+    height: 40px;
     font-size: 14px;
-    line-height: 36px;
     padding: 0 24px;
 }
 
 .btn-success {
-    background: #0d7f7f;
-    border-color: #0d7f7f;
-    color: #fff;
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--ink-fg);
 }
 
 .btn-success:hover {
-    background: #0a6060;
+    background: var(--ink-hi);
+    border-color: var(--ink-hi);
+    color: var(--ink-fg);
 }
 
 .foot {
     text-align: center;
     margin: 24px auto;
-    color: #8b949e;
+    color: var(--t3);
     font-size: 12px;
     line-height: 20px;
 }

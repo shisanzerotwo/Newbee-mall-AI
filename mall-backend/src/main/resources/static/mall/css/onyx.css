@@ -1,0 +1,511 @@
+/* ============================================================
+   TOOLINK · 新蜂商城前端重设计 v4 —— 视觉底座
+   方向：浅色优先 / 无彩色 / 近黑强调 / 单一价格暖橙
+        / 小圆角 + 1px 描边 + 高密度（Linear / Vercel / GitHub 气质）
+   规格：docs/redesign/DESIGN-v4-D2.md（本文是其唯一落地实现）
+   结构：1.设计 token  2.Reset  3.排版基线  4.工具类(保留类名换实现)
+         5.组件层(按钮/表单/标签/卡片)  6.分页  7.响应式  8.动效收敛
+   ⚠️ 旧 common.css 的 token 段由本文件取代；工具类类名(.w/.fl/.fr/.clearfix/.mt20)
+      全部保留，只换实现，避免模板改动。
+   ⚠️ 旧 token 别名（--brand-* / --bg-card / --border-1 等）全部重定向到中性色，
+      使未改动的 styles/*.css 自动去紫。唯一例外：客服用户气泡在 cs-widget.css
+      内显式使用 var(--price)。
+   ============================================================ */
+
+/* ---------- 1. 设计 token（浅色为默认） ---------- */
+:root {
+  color-scheme: light;
+
+  /* 表面：无彩度灰阶 */
+  --bg: #fafafa;
+  --bg-1: #ffffff;
+  --bg-2: #f4f4f5;
+  --bg-3: #ededef;
+  /* 描边：工具风的骨架 */
+  --bd: #e4e4e7;
+  --bd-2: #d4d4d8;
+  /* 文字 */
+  --t1: #18181b;
+  --t2: #52525b;
+  --t3: #6b6b75;
+  /* 近黑强调：全站唯一"交互色"（无彩色） */
+  --ink: #18181b;
+  --ink-hi: #2f2f36;
+  --ink-fg: #ffffff;
+  --ink-dim: rgba(24, 24, 27, 0.06);
+  /* 价格与促销：唯一色相（暖橙） */
+  --price: #c2410c;
+  --price-dim: #fbede4;
+  /* 语义色 */
+  --ok: #15803d;
+  --warn: #a16207;
+  --bad: #dc2626;
+  /* 形状：工具风要"方" */
+  --r-lg: 10px;
+  --r-md: 8px;
+  --r-sm: 6px;
+  --r-xs: 4px;
+  /* 间距：4pt 网格 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  /* 字阶：收敛，靠字重区分 */
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+  --fs-2xl: 28px;
+  /* 字体 */
+  --font-sans: -apple-system, "PingFang SC", "HarmonyOS Sans SC",
+    "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+  /* 动效：快、短、不弹跳 */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur: 120ms;
+  /* 阴影：只给浮层，且只有一层硬朗短影 */
+  --sh-1: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --sh-2: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  /* ===== 旧 token 名 → 中性别名（兼容既有 styles/*.css，使未改动样式自动去紫）===== */
+  --brand-300: var(--bg-3);
+  --brand-500: var(--ink);
+  --brand-600: var(--ink);
+  --brand-700: var(--ink);
+  --brand-800: var(--ink);
+  --brand: var(--ink);
+  --brand-hi: var(--ink);
+  --brand-dim: var(--bg-3);
+  --accent-500: var(--price);
+  --accent-50: var(--price-dim);
+  --text-1: var(--t1);
+  --text-2: var(--t2);
+  --text-3: var(--t3);
+  --bg-page: var(--bg);
+  --surface: var(--bg-1);
+  --border: var(--bd);
+  --danger: var(--bad);
+  --success: var(--ok);
+  --radius: var(--r-md);
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --shadow-sm: none;
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --ease-out: 120ms var(--ease);
+  /* 客服组件沿用的旧变量名（cs-widget.css / cs.css 里出现） */
+  --bg-card: var(--bg-1);
+  --border-1: var(--bd);
+  /* hero 区不再使用渐变 */
+  --grad-hero: none;
+}
+
+/* ---------- 2. Reset ---------- */
+* {
+  margin: 0;
+  padding: 0;
+  text-decoration: none;
+  list-style-type: none;
+  box-sizing: border-box;
+}
+img {
+  border: none;
+  max-width: 100%;
+}
+a {
+  color: inherit;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+ul,
+ol {
+  list-style: none;
+}
+
+/* ---------- 3. 排版基线 ---------- */
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--t1);
+  background-color: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4 {
+  line-height: 1.3;
+  font-weight: 600;
+}
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+::selection {
+  background: var(--ink-dim);
+  color: var(--t1);
+}
+
+/* ---------- 4. 工具类：保留类名，换 ONYX 实现 ---------- */
+.border {
+  border: 1px solid var(--bd);
+}
+.center {
+  margin-left: auto;
+  margin-right: auto;
+}
+.w {
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+.fl {
+  float: left;
+}
+.fr {
+  float: right;
+}
+.clear {
+  clear: both;
+}
+.clearfix::after {
+  content: "";
+  height: 0;
+  display: block;
+  clear: both;
+  visibility: hidden;
+}
+.mt20 {
+  margin-top: 20px;
+}
+.mt10 {
+  margin-top: 10px;
+}
+.ml20 {
+  margin-left: 20px;
+}
+.ml40 {
+  margin-left: 40px;
+}
+.mr40 {
+  margin-right: 40px;
+}
+.mb20 {
+  margin-bottom: 20px;
+}
+.pr {
+  padding-right: 40px;
+}
+.ft20 {
+  font-size: 18px;
+}
+.border2 {
+  border: 2px solid var(--ink);
+}
+.ftbc {
+  color: var(--ink);
+  font-weight: 600;
+}
+.h3 {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+/* ---------- 5. 组件层 ---------- */
+/* 按钮：高度 40（大 48 / 小 32），描边为主；强调态为近黑实底 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 20px;
+  height: 40px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--bd-2);
+  background: transparent;
+  color: var(--t1);
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+  user-select: none;
+  transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+.btn:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.btn-primary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--ink-fg);
+}
+.btn-primary:hover {
+  background: var(--ink-hi);
+  border-color: var(--ink-hi);
+  color: var(--ink-fg);
+}
+.btn-success {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #fff;
+}
+.btn-success:hover {
+  filter: brightness(1.08);
+  color: #fff;
+}
+.btn-danger {
+  background: var(--bad);
+  border-color: var(--bad);
+  color: #fff;
+}
+.btn-danger:hover {
+  filter: brightness(1.08);
+  color: #fff;
+}
+.btn-default {
+  background: transparent;
+}
+.btn-line-gray {
+  background: var(--bg-2);
+  border-color: transparent;
+  color: var(--t1);
+}
+.btn-line-gray:hover {
+  background: var(--bg-3);
+  color: var(--t1);
+}
+.btn-small {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+  border-radius: var(--r-xs);
+}
+.btn-price {
+  background: var(--price);
+  border-color: var(--price);
+  color: #fff;
+}
+.btn-price:hover {
+  color: #fff;
+  filter: brightness(1.08);
+}
+.btn-block {
+  width: 100%;
+}
+
+/* 表单控件 */
+.form-group {
+  margin-bottom: 16px;
+}
+.control-label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: var(--t1);
+}
+.form-control,
+.field {
+  display: block;
+  width: 100%;
+  height: 40px;
+  padding: 0 14px;
+  font-size: 14px;
+  color: var(--t1);
+  background: var(--bg-1);
+  border: 1px solid var(--bd);
+  border-radius: var(--r-sm);
+  transition: border-color var(--dur) var(--ease);
+}
+.form-control::placeholder,
+.field::placeholder {
+  color: var(--t3);
+}
+.form-control:focus,
+.field:focus {
+  outline: none;
+  border-color: var(--ink);
+}
+
+/* 状态标签：方角小标签（工具风，不再胶囊） */
+.tag,
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  height: 22px;
+  line-height: 1;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--bd);
+  background: var(--bg-2);
+  color: var(--t2);
+}
+.tag:empty {
+  display: none;
+}
+.chip--brand {
+  background: var(--bg-3);
+  border-color: var(--bd-2);
+  color: var(--t1);
+}
+.chip--price {
+  background: var(--price-dim);
+  border-color: transparent;
+  color: var(--price);
+}
+.chip--ok {
+  background: rgba(21, 128, 61, 0.08);
+  border-color: transparent;
+  color: var(--ok);
+}
+.chip--warn {
+  background: rgba(161, 98, 7, 0.08);
+  border-color: transparent;
+  color: var(--warn);
+}
+
+/* 卡片：描边为主，不用阴影 */
+.card {
+  background: var(--bg-1);
+  border: 1px solid var(--bd);
+  border-radius: var(--r-md);
+  padding: 20px;
+}
+
+/* 价格 */
+.price {
+  color: var(--price);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.price i {
+  font-style: normal;
+  font-size: 0.7em;
+  font-weight: 600;
+  margin-right: 1px;
+}
+
+/* 区块标题（旧 .sec-h 兼容） */
+.sec-h {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 19px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--t1);
+}
+
+/* ---------- 6. 分页：胶囊 ---------- */
+.page_wrap,
+.newbee-pagenavi {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.page_wrap a,
+.newbee-pagenavi a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--t2);
+  background: transparent;
+  border: 1px solid var(--bd);
+  border-radius: var(--r-xs);
+  transition: color 160ms var(--ease), border-color 160ms var(--ease),
+    background-color 160ms var(--ease);
+}
+.page_wrap a:hover,
+.newbee-pagenavi a:hover {
+  color: var(--ink);
+  border-color: var(--bd-2);
+}
+.page_wrap a.active,
+.newbee-pagenavi a.current {
+  color: var(--ink-fg);
+  background: var(--ink);
+  border-color: var(--ink);
+  font-weight: 600;
+}
+
+/* ---------- 7. 响应式 ---------- */
+@media screen and (max-width: 991px) {
+  .ml40 {
+    margin-left: 24px;
+  }
+  .mr40 {
+    margin-right: 24px;
+  }
+  .pr {
+    padding-right: 24px;
+  }
+}
+@media screen and (max-width: 767px) {
+  .ml20,
+  .ml40 {
+    margin-left: 0;
+  }
+  .mr40 {
+    margin-right: 0;
+  }
+  .pr {
+    padding-right: 0;
+  }
+  .fl,
+  .fr {
+    float: none;
+  }
+  .ft20 {
+    font-size: 16px;
+  }
+}
+
+/* ---------- 8. 动效收敛 ---------- */
+/* v3 去掉滚动入场动画（.reveal 在深色下观感偏空）。
+   若旧模板仍带 .reveal 类，这里强制其可见，避免残留不可见节点。 */
+.reveal,
+.reveal .gcard {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
