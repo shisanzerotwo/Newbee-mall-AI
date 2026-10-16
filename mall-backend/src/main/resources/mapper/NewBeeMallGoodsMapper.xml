@@ -150,6 +150,48 @@
         </where>
     </select>
 
+    <!-- 校园二手商品查询：校园过滤条件放在 SQL 层（分页后再过滤会漏数据） -->
+    <select id="findCampusGoodsList" parameterType="Map" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from tb_newbee_mall_goods_info
+        <where>
+            and (goods_category_id between 900 and 930 or goods_id &gt;= 90000)
+            <if test="keyword!=null and keyword!=''">
+                and (goods_name like CONCAT('%',#{keyword},'%') or goods_intro like CONCAT('%',#{keyword},'%')
+                     or tag like CONCAT('%',#{keyword},'%'))
+            </if>
+            <if test="goodsCategoryId!=null and goodsCategoryId!=''">
+                <choose>
+                    <!-- 校园一级分类：命中整个子树（900-930） -->
+                    <when test="goodsCategoryId == 900">
+                        and goods_category_id between 900 and 930
+                    </when>
+                    <otherwise>
+                        and goods_category_id = #{goodsCategoryId}
+                    </otherwise>
+                </choose>
+            </if>
+            <if test="goodsSellStatus!=null">
+                and goods_sell_status = #{goodsSellStatus}
+            </if>
+        </where>
+        <choose>
+            <when test="orderBy == 'price'">
+                order by selling_price asc
+            </when>
+            <when test="orderBy == 'priceDesc'">
+                order by selling_price desc
+            </when>
+            <otherwise>
+                order by goods_id desc
+            </otherwise>
+        </choose>
+        <if test="start!=null and limit!=null">
+            limit #{start},#{limit}
+        </if>
+    </select>
+
     <select id="selectByPrimaryKeys" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List"/>
@@ -199,7 +241,8 @@
       #{updateUser,jdbcType=INTEGER}, #{updateTime,jdbcType=TIMESTAMP}, #{goodsDetailContent,jdbcType=LONGVARCHAR}
       )
   </insert>
-    <insert id="insertSelective" parameterType="ltd.newbee.mall.entity.NewBeeMallGoods">
+    <!-- useGeneratedKeys：发布接口需回填 goods_id（M4 校园二手发布） -->
+    <insert id="insertSelective" parameterType="ltd.newbee.mall.entity.NewBeeMallGoods" useGeneratedKeys="true" keyProperty="goodsId">
         insert into tb_newbee_mall_goods_info
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="goodsId != null">

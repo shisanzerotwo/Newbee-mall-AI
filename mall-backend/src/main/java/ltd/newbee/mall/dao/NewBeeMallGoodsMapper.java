@@ -40,6 +40,13 @@ public interface NewBeeMallGoodsMapper {
 
     List<NewBeeMallGoods> findNewBeeMallGoodsListBySearch(PageQueryUtil pageUtil);
 
+    /**
+     * 校园二手商品查询（M4）：在 SQL 层过滤校园商品，避免「先分页后过滤」导致漏数据。
+     * 校园商品判定：分类挂 900-930（校园二手分类树）或 id ≥ 90000（种子数据段）。
+     * 支持 keyword / goodsCategoryId / goodsSellStatus / orderBy，分页键 start+limit。
+     */
+    List<NewBeeMallGoods> findCampusGoodsList(PageQueryUtil pageUtil);
+
     int getTotalNewBeeMallGoodsBySearch(PageQueryUtil pageUtil);
 
     int batchInsert(@Param("newBeeMallGoodsList") List<NewBeeMallGoods> newBeeMallGoodsList);

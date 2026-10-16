@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ltd.newbee.mall.dao.CampusOrderMapper">
+
+    <insert id="insert" useGeneratedKeys="false">
+        insert into tb_campus_order
+        (order_no, buyer_id, seller_id, goods_id, goods_title, price_fen,
+         pay_type, status, pickup_point, create_time)
+        values
+        (#{orderNo}, #{buyerId}, #{sellerId}, #{goodsId}, #{goodsTitle}, #{priceFen},
+         #{payType}, #{status}, #{pickupPoint}, now())
+    </insert>
+
+    <select id="selectByOrderNo" resultMap="OrderMap">
+        select order_no, buyer_id, seller_id, goods_id, goods_title, price_fen,
+               pay_type, status, pickup_point, create_time, pay_time
+        from tb_campus_order where order_no = #{orderNo}
+    </select>
+
+    <update id="updateStatus">
+        update tb_campus_order
+        <set>
+            <if test="payType != null">pay_type = #{payType},</if>
+            <if test="toStatus == 1">pay_time = now(),</if>
+            status = #{toStatus}
+        </set>
+        where order_no = #{orderNo} and status = #{fromStatus}
+    </update>
+
+    <select id="selectOrdersByUser" resultMap="OrderItemMap">
+        select order_no, buyer_id, seller_id, goods_id, goods_title, price_fen,
+               pay_type, status, pickup_point, create_time
+        from tb_campus_order
+        where buyer_id = #{userId} or seller_id = #{userId}
+        order by create_time desc
+        limit #{limit}
+    </select>
+
+    <select id="countActiveByGoods" resultType="int">
+        select count(1) from tb_campus_order
+        where goods_id = #{goodsId} and buyer_id = #{buyerId} and status in (0, 1)
+    </select>
+
+    <resultMap id="OrderItemMap" type="ltd.newbee.mall.controller.vo.CampusOrderItemVO">
+        <id property="orderNo" column="order_no"/>
+        <result property="goodsId" column="goods_id"/>
+        <result property="goodsTitle" column="goods_title"/>
+        <result property="priceFen" column="price_fen"/>
+        <result property="status" column="status"/>
+        <result property="payType" column="pay_type"/>
+        <result property="sellerId" column="seller_id"/>
+        <result property="pickupPoint" column="pickup_point"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <resultMap id="OrderMap" type="ltd.newbee.mall.entity.CampusOrder">
+        <id property="orderNo" column="order_no"/>
+        <result property="buyerId" column="buyer_id"/>
+        <result property="sellerId" column="seller_id"/>
+        <result property="goodsId" column="goods_id"/>
+        <result property="goodsTitle" column="goods_title"/>
+        <result property="priceFen" column="price_fen"/>
+        <result property="payType" column="pay_type"/>
+        <result property="status" column="status"/>
+        <result property="pickupPoint" column="pickup_point"/>
+        <result property="createTime" column="create_time"/>
+        <result property="payTime" column="pay_time"/>
+    </resultMap>
+</mapper>
