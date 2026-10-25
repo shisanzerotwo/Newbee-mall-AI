@@ -212,8 +212,16 @@ public class MallTools {
         return isOnSale(g) ? "在售" : "已下架";
     }
 
-    private String formatPrice(Integer price) {
-        return (price == null ? 0 : price) + ".00 元";
+    /**
+     * 价格展示：库中价格单位为「分」（如 26000 = 260.00 元），
+     * 换算为元并去掉多余的 .00，避免客服把 "4500.00 元" 照抄成 4500 元。
+     */
+    private String formatPrice(Integer priceFen) {
+        int fen = priceFen == null ? 0 : priceFen;
+        if (fen % 100 == 0) {
+            return (fen / 100) + " 元";
+        }
+        return String.format("%.2f 元", fen / 100.0);
     }
 
     private String preview(String text, int max) {
