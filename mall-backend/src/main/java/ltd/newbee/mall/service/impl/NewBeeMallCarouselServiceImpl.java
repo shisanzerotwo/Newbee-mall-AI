@@ -99,7 +99,7 @@ public class NewBeeMallCarouselServiceImpl implements NewBeeMallCarouselService 
                 new TypeReference<List<NewBeeMallIndexCarouselVO>>() {
                 });
         if (!CollectionUtils.isEmpty(cacheList)) {
-            return cacheList;
+            return onlyInternalRedirects(cacheList);
         }
         // 缓存未命中:查数据库并写入缓存
         List<NewBeeMallIndexCarouselVO> newBeeMallIndexCarouselVOS = new ArrayList<>(number);
@@ -108,6 +108,27 @@ public class NewBeeMallCarouselServiceImpl implements NewBeeMallCarouselService 
             newBeeMallIndexCarouselVOS = BeanUtil.copyList(carousels, NewBeeMallIndexCarouselVO.class);
             redisCacheUtil.set(Constants.INDEX_CAROUSEL_CACHE_KEY, newBeeMallIndexCarouselVOS, Constants.INDEX_CACHE_TTL);
         }
-        return newBeeMallIndexCarouselVOS;
+        return onlyInternalRedirects(newBeeMallIndexCarouselVOS);
+    }
+
+    /**
+     * 首页轮播只放行站内跳转：redirectUrl 必须是 "/" 开头的站内相对路径（且非 "//" 协议相对），
+     * 站外链接一律不进首页 —— 从源头消除「点击轮播图离开站点」的行为与 Open Redirect 面
+     * （2026-10-25 用户决策；保存侧白名单已同步收紧为仅站内）。
+     * 过滤放在读取侧而非写缓存侧：缓存内容保持原始，管理端编辑不受影响；
+     * 过滤后为空时，模板自带的静态 banner 兜底分支生效（无链接，不会跳站外）。
+     */
+    private List<NewBeeMallIndexCarouselVO> onlyInternalRedirects(List<NewBeeMallIndexCarouselVO> carousels) {
+        if (CollectionUtils.isEmpty(carousels)) {
+            return carousels;
+        }
+        List<NewBeeMallIndexCarouselVO> internal = new ArrayList<>(carousels.size());
+        for (NewBeeMallIndexCarouselVO carousel : carousels) {
+            String redirectUrl = carousel.getRedirectUrl();
+            if (redirectUrl != null && redirectUrl.startsWith("/") && !redirectUrl.startsWith("//")) {
+                internal.add(carousel);
+            }
+        }
+        return internal;
     }
 }

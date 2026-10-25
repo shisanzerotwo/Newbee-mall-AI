@@ -142,9 +142,11 @@ public class NewBeeMallCarouselController {
     }
 
     /**
-     * 轮播跳转链接白名单校验：仅允许站内相对路径（"/" 开头但非 "//" 协议相对）
-     * 或 http(s) 绝对地址，拦截 javascript:/data: 等危险协议注入
-     * （redirectUrl 会被原样输出到首页 <a href>，见 index.html 轮播模板块）。
+     * 轮播跳转链接白名单校验：仅允许站内相对路径（"/" 开头但非 "//" 协议相对）。
+     * http(s) 绝对地址（外链）一律拒绝 —— 点击轮播不允许离开站点（2026-10-25 用户决策，
+     * 收紧自初版的"协议白名单"；存量站外数据由首页读取侧 onlyInternalRedirects 过滤兜底）。
+     * 拦截 javascript:/data: 等危险协议注入与 "//evil.com" 式协议相对跳转
+     * （redirectUrl 会被输出到首页轮播 <a href>，见 index.html 轮播模板块）。
      * @param redirectUrl 待校验的跳转链接
      * @return true = 允许保存
      */
@@ -153,9 +155,6 @@ public class NewBeeMallCarouselController {
             return false;
         }
         String url = redirectUrl.trim();
-        if (url.startsWith("/") && !url.startsWith("//")) {
-            return true;
-        }
-        return url.startsWith("http://") || url.startsWith("https://");
+        return url.startsWith("/") && !url.startsWith("//");
     }
 }
