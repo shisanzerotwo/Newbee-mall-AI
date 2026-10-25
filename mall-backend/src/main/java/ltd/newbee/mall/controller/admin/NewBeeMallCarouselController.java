@@ -74,7 +74,8 @@ public class NewBeeMallCarouselController {
     @ResponseBody
     public Result save(@RequestBody Carousel carousel) {
         if (!StringUtils.hasText(carousel.getCarouselUrl())
-                || Objects.isNull(carousel.getCarouselRank())) {
+                || Objects.isNull(carousel.getCarouselRank())
+                || !isValidRedirectUrl(carousel.getRedirectUrl())) {
             return ResultGenerator.genFailResult("参数异常！");
         }
         String result = newBeeMallCarouselService.saveCarousel(carousel);
@@ -95,7 +96,8 @@ public class NewBeeMallCarouselController {
     public Result update(@RequestBody Carousel carousel) {
         if (Objects.isNull(carousel.getCarouselId())
                 || !StringUtils.hasText(carousel.getCarouselUrl())
-                || Objects.isNull(carousel.getCarouselRank())) {
+                || Objects.isNull(carousel.getCarouselRank())
+                || !isValidRedirectUrl(carousel.getRedirectUrl())) {
             return ResultGenerator.genFailResult("参数异常！");
         }
         String result = newBeeMallCarouselService.updateCarousel(carousel);
@@ -137,5 +139,23 @@ public class NewBeeMallCarouselController {
         } else {
             return ResultGenerator.genFailResult("删除失败");
         }
+    }
+
+    /**
+     * 轮播跳转链接白名单校验：仅允许站内相对路径（"/" 开头但非 "//" 协议相对）
+     * 或 http(s) 绝对地址，拦截 javascript:/data: 等危险协议注入
+     * （redirectUrl 会被原样输出到首页 <a href>，见 index.html 轮播模板块）。
+     * @param redirectUrl 待校验的跳转链接
+     * @return true = 允许保存
+     */
+    private boolean isValidRedirectUrl(String redirectUrl) {
+        if (!StringUtils.hasText(redirectUrl)) {
+            return false;
+        }
+        String url = redirectUrl.trim();
+        if (url.startsWith("/") && !url.startsWith("//")) {
+            return true;
+        }
+        return url.startsWith("http://") || url.startsWith("https://");
     }
 }

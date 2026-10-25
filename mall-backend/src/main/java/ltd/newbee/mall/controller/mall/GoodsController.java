@@ -123,6 +123,12 @@ public class GoodsController {
         // 通过 Service 获取商品信息
         NewBeeMallGoods goods = newBeeMallGoodsService.getNewBeeMallGoodsById(goodsId);
 
+        // 商品不存在（已删除，或首页缓存里残留的死链 goodsId）时明确拒绝：
+        // 不判空则下一行直接 NPE，落到 200 +「系统异常」页，监控里完全隐形
+        if (ObjectUtils.isEmpty(goods)) {
+            NewBeeMallException.fail(ServiceResultEnum.GOODS_NOT_EXIST.getResult());
+        }
+
         // 检查商品是否在售（SELL_STATUS_UP = 0 表示在售）
         if (Constants.SELL_STATUS_UP != goods.getGoodsSellStatus()) {
             NewBeeMallException.fail(ServiceResultEnum.GOODS_PUT_DOWN.getResult());

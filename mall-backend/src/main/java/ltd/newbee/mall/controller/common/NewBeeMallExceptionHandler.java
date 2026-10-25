@@ -82,6 +82,12 @@ public class NewBeeMallExceptionHandler {
             modelAndView.addObject("author", "十三");
             modelAndView.addObject("ltd", "新蜂商城");
             modelAndView.setViewName("error/error");
+            // 错误页不得用 200 掩盖错误性质（同上方 SSE 分支的原则）：
+            // 业务拒绝（NewBeeMallException，如「商品不存在」）→ 400；
+            // 系统异常（NPE 等，此前一直是 200，监控里完全隐形）→ 500。
+            resp.setStatus(e instanceof NewBeeMallException
+                    ? HttpServletResponse.SC_BAD_REQUEST
+                    : HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             return modelAndView;
         }
     }
